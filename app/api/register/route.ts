@@ -1,0 +1,63 @@
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcrypt'
+
+const prisma = new PrismaClient()
+
+export async function POST(req: Request) {
+  try {
+    const { name, email, password } = await req.json()
+
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!name || !email || !password) {
+      return new Response(
+        JSON.stringify({ error: 'กรุณากรอกชื่อ อีเมล และรหัสผ่าน' }),
+        { status: 400 }
+      )
+    }
+
+    // ตรวจสอบว่าอีเมลซ้ำหรือไม่
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    if (existingUser) {
+      return new Response(
+        JSON.stringify({ error: 'อีเมลนี้ถูกใช้งานแล้ว' }),
+        { status: 409 }
+      )
+    }
+
+    // แฮชรหัสผ่าน
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // สร้างผู้ใช้ใหม่
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+      },
+    })
+
+    // ตอบกลับข้อมูลที่ไม่รวม password
+    return new Response(
+      JSON.stringify({
+        message: 'สมัครสมาชิกสำเร็จ',
+        User: {
+          user_id: newUser.user_id,
+          name: newUser.name,
+          email: newUser.email,
+          createdAt: newUser.createdAt,
+        },
+      }),
+      { status: 201 }
+    )
+
+  } catch (error) {
+    console.error('Register Error:', error)
+    return new Response(
+      JSON.stringify({ error: 'เกิดข้อผิดพลาดในระบบ' }),
+      { status: 500 }
+    )
+  }
+}
