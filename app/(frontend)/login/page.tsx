@@ -8,6 +8,8 @@ import { AiOutlineMail } from "react-icons/ai";
 import { CiLock } from "react-icons/ci";
 export default function LoginPage() {
   const router = useRouter();
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -17,11 +19,35 @@ export default function LoginPage() {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add validation and submit logic
-    console.log(form);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "เข้าสู่ระบบไม่สำเร็จ");
+        return;
+      }
+      if (!data.user || !data.user.name) {
+        alert("API ไม่คืน user.name");
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem("userName", data.user.name);
+      alert("เข้าสู่ระบบสำเร็จ!");
+      window.location.href = "/";
+    } catch (err) {
+      setMessage("เกิดข้อผิดพลาด");
+    }
+    setLoading(false);
   };
 
   return (
@@ -48,13 +74,13 @@ export default function LoginPage() {
               <AiOutlineMail size={20} />
             </span>
             <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border rounded-2xl px-4 py-3 outline-none focus:border-[#D4A373] pl-10"
-            required
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full border rounded-2xl px-4 py-3 outline-none focus:border-[#D4A373] pl-10"
+              required
             />
           </div>
           <div className="relative">
@@ -62,20 +88,20 @@ export default function LoginPage() {
               <CiLock size={20} />
             </span>
             <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded-2xl px-4 py-3 outline-none focus:border-[#D4A373] pl-10"
-            required
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full border rounded-2xl px-4 py-3 outline-none focus:border-[#D4A373] pl-10"
+              required
             />
           </div>
           <button
             type="submit"
             className="w-full bg-[#D4A373] text-black font-semibold py-3 rounded-2xl hover:bg-[#FAEDCD] transition"
           >
-            Sign Up
+            Sign In
           </button>
 
           <div className="text-center text-sm text-gray-500">Or</div>

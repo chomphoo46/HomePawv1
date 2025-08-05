@@ -3,22 +3,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Define the Prisma Client generator
 generator client {
   provider = "prisma-client-js"
 }
 
-model Post {
-  id         Int      @id @default(autoincrement())
-  title      String
-  content    String?
-  createdAt  DateTime @default(now())
-}
-
 model User {
-  user_id Int    @id @default(autoincrement())
-  name    String @db.VarChar(100)
-  email   String @unique
-  password   String
+  user_id  Int    @id @default(autoincrement())
+  name     String @db.VarChar(100)
+  email    String @unique
+  password String
+
+  // Relations
+  helpActions      HelpAction[]
+  petRehomePosts   PetRehomePost[]
 }
 
+model AnimalReports {
+  report_id   Int      @id @default(autoincrement())
+  animal_type String   @db.VarChar(20)
+  description String   @db.Text
+  behavior    String   @db.VarChar(100)
+  latitude    Decimal  @db.Decimal(10, 6)
+  longitude   Decimal  @db.Decimal(10, 6)
+  status      AnimalReportStatus
+  created_at  DateTime @default(now())
+
+  // Relations
+  images      AnimalImage[]
+  actions     HelpAction[]
+}
+
+model AnimalImage {
+  id         Int    @id @default(autoincrement())
+  report_id  Int
+  image_url  String @db.Text
+
+  // Relation
+  report     AnimalReports @relation(fields: [report_id], references: [report_id])
+}
+
+model HelpAction {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  report_id   Int
+  action_type HelpActionType
+  created_at  DateTime @default(now())
+
+  // Relations
+  user   User          @relation(fields: [user_id], references: [user_id])
+  report AnimalReports @relation(fields: [report_id], references: [report_id])
+}
+
+model PetRehomePost {
+  post_id       Int               @id @default(autoincrement())
+  user_id       Int
+  phone         String            @db.VarChar(15)
+  pet_name      String            @db.VarChar(50)
+  type          String            @db.Text
+  age           String            @db.VarChar(100)
+  health_status HealthStatus
+  reason        String            @db.Text
+  status        PetRehomeStatus
+  created_at    DateTime          @default(now())
+
+  // Relation
+  user    User             @relation(fields: [user_id], references: [user_id])
+  images  PetRehomeImages[]
+}
+
+model PetRehomeImages {
+  id         Int    @id @default(autoincrement())
+  post_id    Int
+  image_url  String @db.Text
+
+  // Relation
+  post PetRehomePost @relation(fields: [post_id], references: [post_id])
+}
+
+enum AnimalReportStatus {
+  MOVED    
+  RESCUED   
+}
+
+enum HelpActionType {
+  FEED   @map("feed")
+  ADOPT  @map("adopt")
+}
+
+enum HealthStatus {
+  VACCINATED       @map("ฉีดวัดซีนแล้ว")
+  NOT_VACCINATED   @map("ยังไม่ได้ฉีดวัคซีน")
+}
+
+enum PetRehomeStatus {
+  AVAILABLE @map("available")
+  ADOPTED   @map("adopted")
+}

@@ -20,33 +20,30 @@ export default function RegisterPage() {
     setForm({ ...form, [name]: value });
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error || "สมัครสมาชิกไม่สำเร็จ");
-      return;
+      if (!res.ok) {
+        alert(data.error || "สมัครสมาชิกไม่สำเร็จ");
+        return;
+      }
+
+      alert("สมัครสมาชิกสำเร็จ!");
+      router.push("/login"); // เปลี่ยนเส้นทางไปหน้า login
+    } catch (err) {
+      console.error("Error:", err);
+      alert("เกิดข้อผิดพลาดในระบบ");
     }
-
-    alert("สมัครสมาชิกสำเร็จ!");
-    router.push("/login"); // เปลี่ยนเส้นทางไปหน้า login
-  } catch (err) {
-    console.error("Error:", err);
-    alert("เกิดข้อผิดพลาดในระบบ");
-  }
-};
-
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -103,17 +100,17 @@ export default function RegisterPage() {
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
               <CiLock size={20} />
             </span>
-             <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border rounded-2xl px-4 py-3 pl-12 outline-none focus:border-[#D4A373]"
-            required
-          />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full border rounded-2xl px-4 py-3 pl-12 outline-none focus:border-[#D4A373]"
+              required
+            />
           </div>
-    
+
           <button
             type="submit"
             className="w-full bg-[#D4A373] text-black font-semibold py-3 rounded-2xl hover:bg-[#FAEDCD] transition"

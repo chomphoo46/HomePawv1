@@ -15,18 +15,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // ตรวจสอบว่าอีเมลซ้ำหรือไม่
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
-
-    if (existingUser) {
-      return new Response(
-        JSON.stringify({ error: 'อีเมลนี้ถูกใช้งานแล้ว' }),
-        { status: 409 }
-      )
-    }
-
     // แฮชรหัสผ่าน
     const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -47,7 +35,6 @@ export async function POST(req: Request) {
           user_id: newUser.user_id,
           name: newUser.name,
           email: newUser.email,
-          createdAt: newUser.createdAt,
         },
       }),
       { status: 201 }
