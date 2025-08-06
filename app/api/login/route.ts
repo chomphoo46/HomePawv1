@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     if (!user) {
       return new Response(
-        JSON.stringify({ error: 'ไม่พบบัญชีผู้ใช้นี้' }),
+        JSON.stringify({ error: 'ไม่พบบัญชีผู้ใช้นี้ กรุณาสมัครสมาชิก' }),
         { status: 404 }
       )
     }
