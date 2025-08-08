@@ -1,94 +1,125 @@
-// app/api/rehoming-report/route.ts
+import { NextResponse } from "next/server";
+import path from "path";
+import fs from "fs/promises";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { PrismaClient, PetRehomeStatus, HealthStatus } from "@prisma/client";
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from "../auth/[...nextauth]/route";
-import { HealthStatus, PetRehomeStatus } from '@prisma/client'
-import path from 'path'
-import fs from 'fs/promises'
-import { v4 as uuidv4 } from 'uuid'
+const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest) {
+// POST - เพิ่มประกาศ
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  // ถ้าไม่ได้ล็อกอิน
+  if (!session?.user?.id) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+  }
   try {
-    // ตรวจสอบ session
-    const session = await getServerSession(authOptions)
-
-    if (!session || !session.user || !session.user.email) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    const formData = await req.formData();
+    const userIdRaw = formData.get("user_id");
+    if (!userIdRaw) {
+      return NextResponse.json(
+        { error: "user_id is required" },
+        { status: 400 }
+      );
+    }
+    const user_id = Number(userIdRaw.toString());
+    if (isNaN(user_id)) {
+      return NextResponse.json(
+        { error: "user_id must be a number" },
+        { status: 400 }
+      );
     }
 
-    // หา user จาก email
-    const user = await prisma.user.findUnique({
-      where: {
-        email: session.user.email,
-      },
-      select: {
-        user_id: true,
-      },
-    })
+    const phone = formData.get("phone") as string;
+    const pet_name = formData.get("pet_name") as string;
+    const type = formData.get("type") as string;
+    const age = formData.get("age") as string;
+    const health_status_str = formData.get("health_status")?.toString() || "";
+    const reason = formData.get("reason") as string;
+    const images = formData.getAll("images") as File[];
 
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
+    // ตรวจสอบข้อมูลบังคับ
+    if (
+      !user_id ||
+      !phone ||
+      !pet_name ||
+      !type ||
+      !age ||
+      !health_status_str ||
+      !reason ||
+      images.length === 0
+    ) {
+      return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
+    }
+    // เก็บ path ของรูปที่จะใช้บันทึก
+    const imageUrls: string[] = [];
+
+    for (const file of images) {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // สร้างชื่อไฟล์ใหม่
+      const filename = `${Date.now()}-${file.name}`;
+      const filePath = path.join(process.cwd(), "public/uploads", filename);
+
+      await fs.writeFile(filePath, buffer);
+
+      // เก็บ URL ไว้ใน array
+      imageUrls.push(`/uploads/${filename}`);
+    }
+    // แปลง health_status เป็น enum
+    const health_status =
+      HealthStatus[health_status_str as keyof typeof HealthStatus];
+    if (!health_status) {
+      return NextResponse.json(
+        { error: "health_status ไม่ถูกต้อง" },
+        { status: 400 }
+      );
     }
 
-    const formData = await req.formData()
-
-    const pet_name = formData.get('pet_name') as string
-    const type = formData.get('type') as string
-    const age = formData.get('age') as string
-    const health_status = formData.get('health_status') as string
-    const reason = formData.get('reason') as string
-    const phone = formData.get('phone') as string
-
-    if (!pet_name || !type || !age || !health_status || !reason || !phone) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 })
-    }
-
-    // สร้างโพสต์
-    const newPost = await prisma.petRehomePost.create({
+    const createdPost = await prisma.petRehomePost.create({
       data: {
+        user_id: Number(session.user.id),
+        phone,
         pet_name,
         type,
         age,
-        health_status: HealthStatus[health_status as keyof typeof HealthStatus],
+        health_status,
         reason,
-        phone,
-        user_id: user.user_id,
         status: PetRehomeStatus.AVAILABLE,
+        images: {
+          create: imageUrls.map((url) => ({
+            image_url: url,
+          })),
+        },
       },
-    })
+      include: { images: true },
+    });
 
-    // บันทึกรูป
-    const images = formData.getAll('images') as File[]
-    const savedImages = await Promise.all(
-      images.map(async (image) => {
-        const buffer = Buffer.from(await image.arrayBuffer())
-        const ext = path.extname(image.name)
-        const fileName = `${uuidv4()}${ext}`
-        const filePath = path.join(process.cwd(), 'public/uploads', fileName)
-
-        await fs.writeFile(filePath, buffer)
-
-        return prisma.petRehomeImages.create({
-          data: {
-            post_id: newPost.post_id,
-            image_url: `/uploads/${fileName}`,
-          },
-        })
-      })
-    )
-
-    return NextResponse.json(
-      {
-        message: 'โพสต์หาบ้านสำเร็จ',
-        post: newPost,
-        images: savedImages,
-      },
-      { status: 201 }
-    )
+    return NextResponse.json(createdPost, { status: 201 });
   } catch (error) {
-    console.error('[POST_PET_REHOME]', error)
-    return NextResponse.json({ message: 'Server error' }, { status: 500 })
+    console.error(error);
+    return NextResponse.json({ message: "error" }, { status: 500 });
+  }
+}
+
+// GET - ดึงประกาศทั้งหมด
+export async function GET() {
+  try {
+    const posts = await prisma.petRehomePost.findMany({
+      orderBy: { created_at: "desc" },
+      include: {
+        images: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    return NextResponse.json(posts);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
   }
 }

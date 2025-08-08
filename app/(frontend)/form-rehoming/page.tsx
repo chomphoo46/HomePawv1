@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const initialForm = {
   pet_name: "",
@@ -17,15 +19,24 @@ export default function FormRehomingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setForm(prev => ({ ...prev, images: Array.from(e.target.files as FileList) }));
+      setForm((prev) => ({
+        ...prev,
+        images: Array.from(e.target.files as FileList),
+      }));
     }
   };
 
@@ -64,10 +75,35 @@ export default function FormRehomingPage() {
     }
   };
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <p>Loading...</p>;
+  }
+
+  if (status === "authenticated" && !session) {
+    // กรณี rare session ยังไม่มา แต่ authenticated จริง
+    return <p>Loading session...</p>;
+  }
+
+  if (status === "authenticated" && session) {
+    return <div>ยินดีต้อนรับ {session.user?.email}</div>;
+  }
+
+
   return (
     <div className="max-w-xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">แจ้งหาบ้านให้สัตว์เลี้ยง</h1>
-      <form onSubmit={handleSubmit} className="space-y-5 bg-white p-6 rounded-xl shadow">
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        แจ้งหาบ้านให้สัตว์เลี้ยง
+      </h1>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 bg-white p-6 rounded-xl shadow"
+      >
         <div>
           <label className="block mb-1 font-medium">ชื่อสัตว์เลี้ยง</label>
           <input
@@ -138,7 +174,9 @@ export default function FormRehomingPage() {
           />
         </div>
         <div>
-          <label className="block mb-1 font-medium">อัปโหลดรูปภาพ (เลือกได้หลายไฟล์)</label>
+          <label className="block mb-1 font-medium">
+            อัปโหลดรูปภาพ (เลือกได้หลายไฟล์)
+          </label>
           <input
             type="file"
             name="images"
@@ -157,7 +195,7 @@ export default function FormRehomingPage() {
         >
           {submitting ? "กำลังส่ง..." : "ส่งข้อมูล"}
         </button>
-     </form>
+      </form>
     </div>
   );
 }
