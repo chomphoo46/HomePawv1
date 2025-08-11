@@ -20,6 +20,7 @@ export default function FormRehomingPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const { data: session, status } = useSession();
+  const [formData, setFormData] = useState({ dateTime: "" });
   const router = useRouter();
 
   const handleChange = (
@@ -39,6 +40,14 @@ export default function FormRehomingPage() {
       }));
     }
   };
+  useEffect(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const bangkokTime = new Date(now.getTime() - tzOffset);
+    const formattedDate = bangkokTime.toISOString().slice(0, 16);
+
+    setFormData((prev) => ({ ...prev, dateTime: formattedDate }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +58,7 @@ export default function FormRehomingPage() {
     try {
       // ส่งข้อมูลแบบ multipart/form-data
       const data = new FormData();
+      data.append("user_id", "1");
       data.append("pet_name", form.pet_name);
       data.append("type", form.type);
       data.append("age", form.age);
@@ -65,6 +75,7 @@ export default function FormRehomingPage() {
       if (res.ok) {
         setSuccess(true);
         setForm(initialForm);
+        window.location.href = "/rehoming-report";
       } else {
         setError("เกิดข้อผิดพลาดในการส่งข้อมูล");
       }
@@ -74,26 +85,6 @@ export default function FormRehomingPage() {
       setSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return <p>Loading...</p>;
-  }
-
-  if (status === "authenticated" && !session) {
-    // กรณี rare session ยังไม่มา แต่ authenticated จริง
-    return <p>Loading session...</p>;
-  }
-
-  if (status === "authenticated" && session) {
-    return <div>ยินดีต้อนรับ {session.user?.email}</div>;
-  }
-
 
   return (
     <div className="max-w-xl mx-auto py-10 px-4">
@@ -171,6 +162,17 @@ export default function FormRehomingPage() {
             value={form.phone}
             onChange={handleChange}
             required
+          />
+        </div>
+        {/* วันที่และเวลา */}
+        <div>
+          <label className="block font-semibold mb-1">วันที่และเวลาที่พบ</label>
+          <input
+            type="datetime-local"
+            name="dateTime"
+            value={formData.dateTime}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
           />
         </div>
         <div>

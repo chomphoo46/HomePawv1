@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Header from "@/app/components/Header";
+import { HiPhoto } from "react-icons/hi2";
 
 export default function ReportForm() {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState("");
   const [formData, setFormData] = useState({
     animalType: "",
     description: "",
@@ -15,15 +18,10 @@ export default function ReportForm() {
     image: null as File | null,
   });
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   useEffect(() => {
     const now = new Date();
-
-    // ปรับเวลามาเป็น Asia/Bangkok (UTC+7)
-    const tzOffset = now.getTimezoneOffset() * 60000; // นาที → ms
+    const tzOffset = now.getTimezoneOffset() * 60000;
     const bangkokTime = new Date(now.getTime() - tzOffset);
-
-    // แปลงเป็นรูปแบบที่ datetime-local ต้องการ (YYYY-MM-DDTHH:mm)
     const formattedDate = bangkokTime.toISOString().slice(0, 16);
 
     setFormData((prev) => ({ ...prev, dateTime: formattedDate }));
@@ -43,13 +41,13 @@ export default function ReportForm() {
       const file = e.target.files[0];
       setFormData({ ...formData, image: file });
       setPreviewUrl(URL.createObjectURL(file));
+      setFileName(file.name);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // สร้าง FormData เพื่อส่งไฟล์
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (value !== null) {
@@ -58,7 +56,6 @@ export default function ReportForm() {
     });
 
     console.log("Form submitted:", formData);
-    // ตัวอย่างการส่งไป API
     // fetch("/api/report", { method: "POST", body: data });
   };
 
@@ -66,11 +63,10 @@ export default function ReportForm() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="max-w-lg mx-auto p-6 bg-orange-50 rounded-2xl shadow-lg">
-          <h2 className="text-2xl font-bold text-center text-orange-600 mb-6">
-            🐾 ฟอร์มแจ้งพบสัตว์ไร้บ้าน
-          </h2>
-
+        <h2 className="text-2xl font-bold text-center text-[#D4A373] mb-6">
+          🐾 แจ้งพบสัตว์ไร้บ้าน
+        </h2>
+        <div className="bg-orange-50 rounded-xl shadow-md p-8 w-full max-w-md space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* ประเภทของสัตว์ */}
             <div>
@@ -120,6 +116,22 @@ export default function ReportForm() {
               </select>
             </div>
 
+            {/* สถานะ */}
+            <div>
+              <label className="block font-semibold mb-1">สถานะของสัตว์</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-2"
+              >
+                <option value="">-- เลือกสถานะ --</option>
+                <option value="friendly">ยังอยู่ที่เดิม</option>
+                <option value="aggressive">ได้รับการช่วยเหลือแล้ว</option>
+                <option value="other">อื่น ๆ</option>
+              </select>
+            </div>
+
             {/* สถานที่ */}
             <div>
               <label className="block font-semibold mb-1">สถานที่พบสัตว์</label>
@@ -139,35 +151,6 @@ export default function ReportForm() {
               </button>
             </div>
 
-            {/* สถานะ */}
-            <div>
-              <label className="block font-semibold mb-1">
-                สถานะปัจจุบันของสัตว์
-              </label>
-              <div className="space-y-1">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="ยังอยู่ในพื้นที่"
-                    checked={formData.status === "ยังอยู่ในพื้นที่"}
-                    onChange={handleChange}
-                  />
-                  ยังอยู่ในพื้นที่
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="status"
-                    value="ได้รับการช่วยเหลือแล้ว"
-                    checked={formData.status === "ได้รับการช่วยเหลือแล้ว"}
-                    onChange={handleChange}
-                  />
-                  ได้รับการช่วยเหลือแล้ว
-                </label>
-              </div>
-            </div>
-
             {/* วันที่และเวลา */}
             <div>
               <label className="block font-semibold mb-1">
@@ -182,37 +165,60 @@ export default function ReportForm() {
               />
             </div>
 
-            {/* อัปโหลดรูปภาพ */}
-            <div>
-              <label className="block font-semibold mb-1">อัปโหลดรูปภาพ</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="w-full"
-              />
-              {previewUrl && (
-                <img
-                  src={previewUrl}
-                  alt="Animal Preview"
-                  className="mt-3 w-full max-h-64 object-cover rounded-lg border"
-                />
-              )}
-            </div>
+            {/* อัปโหลดภาพสัตว์ */}
+            <label htmlFor="file-upload" className="block font-semibold mb-1">
+              อัปโหลดรูปภาพ
+            </label>
 
-            {/* ข้อมูลเพิ่มเติม */}
-            <div>
-              <label className="block font-semibold mb-1">
-                ข้อมูลเพิ่มเติม (ถ้ามี)
-              </label>
-              <textarea
-                name="moreInfo"
-                value={formData.moreInfo}
-                onChange={handleChange}
-                placeholder="รายละเอียดอื่น ๆ ที่อยากบอก"
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
+            {/* กล่องที่กดได้ทั้งหมด */}
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-lg p-4 block"
+            >
+              {previewUrl ? (
+                <div>
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="mx-auto max-h-64 object-contain rounded-lg"
+                  />
+                  {fileName && (
+                    <p className="mt-2 text-sm text-gray-700">{fileName}</p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <HiPhoto
+                    aria-hidden="true"
+                    className="mx-auto size-12 text-gray-300"
+                  />
+                  <div className="mt-4 flex text-sm text-gray-600 justify-center">
+                    <span className="font-semibold text-indigo-600 hover:text-indigo-500">
+                      คลิกเพื่ออัปโหลด
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    PNG, JPG, GIF สูงสุด 10MB
+                  </p>
+                </>
+              )}
+            </label>
+
+            {/* input ที่ซ่อน */}
+            <input
+              id="file-upload"
+              name="file-upload"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPreviewUrl(URL.createObjectURL(file));
+                  setFileName(file.name);
+                }
+              }}
+              className="sr-only"
+            />
 
             {/* ปุ่มส่ง */}
             <button

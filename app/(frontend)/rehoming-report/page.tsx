@@ -4,8 +4,12 @@ import Header from "@/app/components/Header";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
-  FaSearch,
-} from "react-icons/fa";
+  HiOutlineTag,
+  HiOutlineCalendar,
+  HiOutlinePhone,
+} from "react-icons/hi";
+import { MdOutlineQuestionAnswer } from "react-icons/md";
+import { FaSearch } from "react-icons/fa";
 
 export default function RehomingReportPage() {
   const router = useRouter();
@@ -121,7 +125,10 @@ export default function RehomingReportPage() {
         {/* Pet cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
           {posts.map((post: any) => (
-            <div key={post.post_id} className="border rounded p-4">
+            <div
+              key={post.post_id}
+              className="border-2 rounded-2xl p-4 shadow-md"
+            >
               {post.images?.length > 0 && (
                 <img
                   src={post.images[0].image_url}
@@ -129,17 +136,27 @@ export default function RehomingReportPage() {
                   className="w-full h-48 object-cover mb-2"
                 />
               )}
-              <h2 className="font-bold">{post.pet_name}</h2>
-              <p>ประเภท: {post.type}</p>
-              <p>อายุ: {post.age}</p>
-              <p>สุขภาพ: {post.health_status}</p>
-              <p>ติดต่อ: {post.phone}</p>
-              <p className="mt-2">{post.reason}</p>
+              <h2 className="font-bold text-2xl text-[#D4A373]">{post.pet_name}</h2>
+              <p className="flex items-center gap-2">
+                <HiOutlineTag className="text-gray-600" />
+                ประเภท: {post.type}
+              </p>
+              <p className="flex items-center gap-2">
+                <HiOutlineCalendar className="text-gray-600" />
+                อายุ: {post.age}
+              </p>
+              <p className="flex items-center gap-2">
+                <MdOutlineQuestionAnswer className="text-gray-600" />
+                เหตุผลที่หาบ้านใหม่: {post.reason}
+              </p>
+              <p className="flex items-center gap-2">
+                <HiOutlinePhone className="text-gray-600" />
+                ติดต่อ: {post.phone}
+              </p>
+              <p>{post.health_status}</p>
             </div>
           ))}
         </div>
-
-      
       </div>
     </div>
   );

@@ -1,37 +1,27 @@
 import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+// import { getServerSession } from "next-auth";
+// import { authOptions } from "@/lib/auth";
 import { PrismaClient, PetRehomeStatus, HealthStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // POST - เพิ่มประกาศ
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  // ถ้าไม่ได้ล็อกอิน
-  if (!session?.user?.id) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
-  }
+  // ---- ทดสอบ: ข้ามการเช็ค session ----
+  // const session = await getServerSession(authOptions);
+  // if (!session?.user?.id) {
+  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
+  //     status: 401,
+  //   });
+  // }
+
+  // กำหนด user_id แบบฮาร์ดโค้ดสำหรับทดสอบ
+  const user_id = 1;
+
   try {
     const formData = await req.formData();
-    const userIdRaw = formData.get("user_id");
-    if (!userIdRaw) {
-      return NextResponse.json(
-        { error: "user_id is required" },
-        { status: 400 }
-      );
-    }
-    const user_id = Number(userIdRaw.toString());
-    if (isNaN(user_id)) {
-      return NextResponse.json(
-        { error: "user_id must be a number" },
-        { status: 400 }
-      );
-    }
 
     const phone = formData.get("phone") as string;
     const pet_name = formData.get("pet_name") as string;
@@ -43,7 +33,6 @@ export async function POST(req: Request) {
 
     // ตรวจสอบข้อมูลบังคับ
     if (
-      !user_id ||
       !phone ||
       !pet_name ||
       !type ||
@@ -54,6 +43,7 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
     }
+
     // เก็บ path ของรูปที่จะใช้บันทึก
     const imageUrls: string[] = [];
 
@@ -70,6 +60,7 @@ export async function POST(req: Request) {
       // เก็บ URL ไว้ใน array
       imageUrls.push(`/uploads/${filename}`);
     }
+
     // แปลง health_status เป็น enum
     const health_status =
       HealthStatus[health_status_str as keyof typeof HealthStatus];
@@ -82,7 +73,7 @@ export async function POST(req: Request) {
 
     const createdPost = await prisma.petRehomePost.create({
       data: {
-        user_id: Number(session.user.id),
+        user_id, // ใช้ค่าที่ฮาร์ดโค้ด
         phone,
         pet_name,
         type,
@@ -118,6 +109,26 @@ export async function GET() {
     });
 
     return NextResponse.json(posts);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
+  }
+}
+// DELETE - ลบประกาศ
+export async function DELETE(req: Request) {  
+  try {
+    const { post_id } = await req.json();
+
+    if (!post_id) {
+      return NextResponse.json({ error: "post_id is required" }, { status: 400 });
+    }
+
+    // ลบประกาศ
+    const deletedPost = await prisma.petRehomePost.delete({
+      where: { post_id },
+    });
+
+    return NextResponse.json(deletedPost, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
