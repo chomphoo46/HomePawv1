@@ -123,11 +123,11 @@ export default function RehomingReportPage() {
         </div>
 
         {/* Pet cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
           {posts.map((post: any) => (
             <div
               key={post.post_id}
-              className="border-2 rounded-2xl p-4 shadow-md"
+              className="border rounded-2xl p-4 shadow-md"
             >
               {post.images?.length > 0 && (
                 <img

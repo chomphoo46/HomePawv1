@@ -1,28 +1,31 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { HiOutlineCamera } from "react-icons/hi2";
-import { GoHeart } from "react-icons/go";
+import { GoHeart, GoHome } from "react-icons/go";
 import { BiUser } from "react-icons/bi";
-import { RiUserFollowLine } from "react-icons/ri";
-import { GoHome } from "react-icons/go";
-import { RiContactsBook3Line } from "react-icons/ri";
+import { RiUserFollowLine, RiContactsBook3Line } from "react-icons/ri";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
+  const { data: session } = useSession(); // ✅ ดึงข้อมูลจาก NextAuth
   const [userName, setUserName] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [activeMenu, setActiveMenu] = useState<string>("home");
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // ดึงชื่อผู้ใช้จาก localStorage
-    const name = localStorage.getItem("userName");
-    setUserName(name);
-  }, []);
+    if (session?.user?.name) {
+      setUserName(session.user.name);
+      localStorage.setItem("userName", session.user.name); // เก็บใน localStorage เผื่อ refresh
+    } else {
+      const nameFromLocal = localStorage.getItem("username");
+      setUserName(nameFromLocal);
+    }
+  }, [session]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -38,91 +41,41 @@ export default function Header() {
   }, [showMenu]);
 
   const handleLogout = () => {
-    localStorage.removeItem("userName");
+    localStorage.removeItem("username");
     setUserName(null);
     setShowMenu(false);
-    window.location.reload();
+    signOut({ callbackUrl: "/" }); // ✅ ออกจากระบบ NextAuth
   };
 
   return (
     <header className="flex items-center justify-between px-6 py-8 pl-12 shadow">
       <h1 className="text-xl font-semibold">HomePaw</h1>
       <div className="flex space-x-2">
-        <div className="relative group">
-          <span
-            className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors
-            ${
-              pathname === "/" ? "text-[#D4A373]" : "text-black"
-            } group-hover:text-[#D4A373]`}
-          >
-            <GoHome size={20} />
-          </span>
-          <button
-            className={`px-4 py-2 pl-10 cursor-pointer transition-colors
-              ${pathname === "/" ? "text-[#D4A373]" : ""} hover:text-[#D4A373]`}
-            onClick={() => router.push("/")}
-          >
-            หน้าหลัก
-          </button>
-        </div>
-        <div className="relative group">
-          <span
-            className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors
-            ${
-              pathname === "/animal-report" ? "text-[#D4A373]" : "text-black"
-            } group-hover:text-[#D4A373]`}
-          >
-            <HiOutlineCamera size={20} />
-          </span>
-          <button
-            className={`px-4 py-2 pl-10 cursor-pointer transition-colors
-              ${
-                pathname === "/animal-report" ? "text-[#D4A373]" : ""
-              } hover:text-[#D4A373]`}
-            onClick={() => router.push("/animal-report")}
-          >
-            แจ้งพบสัตว์ไร้บ้าน
-          </button>
-        </div>
-        <div className="relative group">
-          <span
-            className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors
-            ${
-              pathname === "/rehoming-report" ? "text-[#D4A373]" : "text-black"
-            } group-hover:text-[#D4A373]`}
-          >
-            <GoHeart size={20} />
-          </span>
-          <button
-            className={`px-4 py-2 pl-10 cursor-pointer transition-colors
-              ${
-                pathname === "/rehoming-report" ? "text-[#D4A373]" : ""
-              } hover:text-[#D4A373]`}
-            onClick={() => router.push("/rehoming-report")}
-          >
-            หาบ้านให้สัตว์เลี้ยง
-          </button>
-        </div>
-        <div className="relative group">
-          <span
-            className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors
-            ${
-              pathname === "/contract" ? "text-[#D4A373]" : "text-black"
-            } group-hover:text-[#D4A373]`}
-          >
-            <RiContactsBook3Line size={20} />
-          </span>
-          <button
-            className={`px-4 py-2 pl-10 cursor-pointer transition-colors
-              ${
-                pathname === "/contract" ? "text-[#D4A373]" : ""
-              } hover:text-[#D4A373]`}
-            onClick={() => router.push("/contract")}
-          >
-            ติดต่อเรา
-          </button>
-        </div>
-        <div className="relative">
+        <NavButton
+          icon={<GoHome size={20} />}
+          label="หน้าหลัก"
+          active={pathname === "/"}
+          onClick={() => router.push("/")}
+        />
+        <NavButton
+          icon={<HiOutlineCamera size={20} />}
+          label="แจ้งพบสัตว์ไร้บ้าน"
+          active={pathname === "/animal-report"}
+          onClick={() => router.push("/animal-report")}
+        />
+        <NavButton
+          icon={<GoHeart size={20} />}
+          label="หาบ้านให้สัตว์เลี้ยง"
+          active={pathname === "/rehoming-report"}
+          onClick={() => router.push("/rehoming-report")}
+        />
+        <NavButton
+          icon={<RiContactsBook3Line size={20} />}
+          label="ติดต่อเรา"
+          active={pathname === "/contract"}
+          onClick={() => router.push("/contract")}
+        />
+        <div className="relative" ref={menuRef}>
           {userName ? (
             <>
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
@@ -158,5 +111,37 @@ export default function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavButton({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="relative group">
+      <span
+        className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+          active ? "text-[#D4A373]" : "text-black"
+        } group-hover:text-[#D4A373]`}
+      >
+        {icon}
+      </span>
+      <button
+        className={`px-4 py-2 pl-10 cursor-pointer transition-colors ${
+          active ? "text-[#D4A373]" : ""
+        } hover:text-[#D4A373]`}
+        onClick={onClick}
+      >
+        {label}
+      </button>
+    </div>
   );
 }

@@ -1,17 +1,27 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import SessionProviderWrapper from "@/app/SessionProviderWrapper";
+import "../globals.css";
+import SessionProviderWrapper from "./SessionProviderWrapper";
+import { Geist, Geist_Mono } from "next/font/google";
 
-export default async function FrontendLayout({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export default function FrontendLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
   return (
-    <SessionProviderWrapper session={session}>
-      {children}
-    </SessionProviderWrapper>
+    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <SessionProviderWrapper>
+        {children}
+      </SessionProviderWrapper>
+    </div>
   );
 }

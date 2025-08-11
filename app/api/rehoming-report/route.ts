@@ -1,24 +1,21 @@
 import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
-// import { getServerSession } from "next-auth";
-// import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { PrismaClient, PetRehomeStatus, HealthStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // POST - เพิ่มประกาศ
 export async function POST(req: Request) {
-  // ---- ทดสอบ: ข้ามการเช็ค session ----
-  // const session = await getServerSession(authOptions);
-  // if (!session?.user?.id) {
-  //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-  //     status: 401,
-  //   });
-  // }
+  // ✅ ดึง session จาก NextAuth
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  // กำหนด user_id แบบฮาร์ดโค้ดสำหรับทดสอบ
-  const user_id = 1;
+  const user_id = Number(session.user.id);
 
   try {
     const formData = await req.formData();
@@ -73,7 +70,7 @@ export async function POST(req: Request) {
 
     const createdPost = await prisma.petRehomePost.create({
       data: {
-        user_id, // ใช้ค่าที่ฮาร์ดโค้ด
+        user_id,
         phone,
         pet_name,
         type,
@@ -114,8 +111,9 @@ export async function GET() {
     return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
   }
 }
+
 // DELETE - ลบประกาศ
-export async function DELETE(req: Request) {  
+export async function DELETE(req: Request) {
   try {
     const { post_id } = await req.json();
 
@@ -123,7 +121,6 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "post_id is required" }, { status: 400 });
     }
 
-    // ลบประกาศ
     const deletedPost = await prisma.petRehomePost.delete({
       where: { post_id },
     });
