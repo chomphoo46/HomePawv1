@@ -1,15 +1,11 @@
 import "../globals.css";
 import SessionProviderWrapper from "./SessionProviderWrapper";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Mali } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const mali = Mali({
+  variable: "--font-mali",
+  subsets: ["latin", "thai"], // ต้องมี "thai" เพื่อรองรับภาษาไทย
+  weight: ["400", "500", "700"], // เลือกน้ำหนักตามต้องการ
 });
 
 export default function FrontendLayout({
@@ -18,7 +14,7 @@ export default function FrontendLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <div className={`${mali.variable} font-mali antialiased`}>
       <SessionProviderWrapper>
         {children}
       </SessionProviderWrapper>

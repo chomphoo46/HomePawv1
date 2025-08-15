@@ -16,11 +16,13 @@ model User {
   // Relations
   helpActions      HelpAction[]
   petRehomePosts   PetRehomePost[]
+  animalReports    AnimalReports[]
 }
 
 model AnimalReports {
   report_id   Int      @id @default(autoincrement())
   animal_type String   @db.VarChar(20)
+  user_id     Int?
   description String   @db.Text
   behavior    String   @db.VarChar(100)
   latitude    Decimal  @db.Decimal(10, 6)
@@ -31,6 +33,7 @@ model AnimalReports {
   // Relations
   images      AnimalImage[]
   actions     HelpAction[]
+  user   User?          @relation(fields: [user_id], references: [user_id])
 }
 
 model AnimalImage {
@@ -64,7 +67,9 @@ model PetRehomePost {
   health_status HealthStatus
   reason        String            @db.Text
   status        PetRehomeStatus
+  sex           PetSex
   created_at    DateTime          @default(now())
+  
 
   // Relation
   user    User             @relation(fields: [user_id], references: [user_id])
@@ -99,3 +104,8 @@ enum PetRehomeStatus {
   AVAILABLE @map("available")
   ADOPTED   @map("adopted")
 }
+enum PetSex {
+  MALE
+  FEMALE
+}
+

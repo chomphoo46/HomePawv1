@@ -2,7 +2,14 @@
 
 import Header from "@/app/components/Header";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
+import {
+  FaMars,
+  FaVenus,
+  FaGenderless,
+  FaSyringe,
+  FaTimesCircle,
+} from "react-icons/fa";
 import {
   HiOutlineTag,
   HiOutlineCalendar,
@@ -10,13 +17,19 @@ import {
 } from "react-icons/hi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
+import { FaCircleCheck } from "react-icons/fa6";
+import { Mali } from "next/font/google";
+const mali = Mali({
+  subsets: ["latin", "thai"],
+  weight: ["400", "500", "700"],
+});
 
 export default function RehomingReportPage() {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [filters, setFilters] = useState({
     breed: "",
-    gender: "",
+    sex: "",
     age: "",
     location: "",
     vaccinated: "",
@@ -36,9 +49,34 @@ export default function RehomingReportPage() {
     }
     fetchPosts();
   }, []);
+  // แปลงเพศเป็นภาษาไทย
+  const getSexLabel = (sex: string) => {
+    switch (sex) {
+      case "MALE":
+        return "เพศ: ผู้";
+      case "FEMALE":
+        return "เพศ: เมีย";
+      default:
+        return "ไม่ระบุ";
+    }
+  };
 
+  // Mapping สถานะสุขภาพ
+  const healthStatusIcons: Record<
+    string,
+    { label: string; icon: JSX.Element }
+  > = {
+    VACCINATED: {
+      label: "ฉีดวัคซีนแล้ว",
+      icon: <FaCircleCheck className="text-green-600" />,
+    },
+    NOT_VACCINATED: {
+      label: "ยังไม่ได้ฉีดวัคซีน",
+      icon: <FaTimesCircle className="text-red-600" />,
+    },
+  };
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className={`min-h-screen bg-white flex flex-col ${mali.className}`}>
       <Header />
       <div className="flex flex-1 flex-col items-center justify-start">
         {/* Banner */}
@@ -66,10 +104,8 @@ export default function RehomingReportPage() {
             />
             <select
               className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              value={filters.gender}
-              onChange={(e) =>
-                setFilters({ ...filters, gender: e.target.value })
-              }
+              value={filters.sex}
+              onChange={(e) => setFilters({ ...filters, sex: e.target.value })}
             >
               <option value="All">ทั้งหมด</option>
               <option value="female">เพศเมีย</option>
@@ -123,39 +159,57 @@ export default function RehomingReportPage() {
         </div>
 
         {/* Pet cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
-          {posts.map((post: any) => (
-            <div
-              key={post.post_id}
-              className="border rounded-2xl p-4 shadow-md"
-            >
-              {post.images?.length > 0 && (
-                <img
-                  src={post.images[0].image_url}
-                  alt={post.pet_name}
-                  className="w-full h-48 object-cover mb-2"
-                />
-              )}
-              <h2 className="font-bold text-2xl text-[#D4A373]">{post.pet_name}</h2>
-              <p className="flex items-center gap-2">
-                <HiOutlineTag className="text-gray-600" />
-                ประเภท: {post.type}
-              </p>
-              <p className="flex items-center gap-2">
-                <HiOutlineCalendar className="text-gray-600" />
-                อายุ: {post.age}
-              </p>
-              <p className="flex items-center gap-2">
-                <MdOutlineQuestionAnswer className="text-gray-600" />
-                เหตุผลที่หาบ้านใหม่: {post.reason}
-              </p>
-              <p className="flex items-center gap-2">
-                <HiOutlinePhone className="text-gray-600" />
-                ติดต่อ: {post.phone}
-              </p>
-              <p>{post.health_status}</p>
-            </div>
-          ))}
+        <div className="px-32">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+            {posts.map((post: any) => (
+              <div
+                key={post.post_id}
+                className="rounded-2xl p-4 shadow hover:shadow-lg transition "
+              >
+                {post.images?.length > 0 && (
+                  <img
+                    src={post.images[0].image_url}
+                    alt={post.pet_name}
+                    className="w-full h-48 object-cover mb-2 "
+                  />
+                )}
+                <h2 className="font-bold text-2xl text-[#D4A373]">
+                  {post.pet_name}
+                </h2>
+                <p className="flex items-center gap-2">
+                  <HiOutlineTag />
+                  พันธุ์: {post.type}
+                </p>
+                <p className="flex items-center gap-2">
+                  {post.sex === "MALE" ? (
+                    <FaMars />
+                  ) : post.sex === "FEMALE" ? (
+                    <FaVenus />
+                  ) : (
+                    <FaGenderless />
+                  )}
+                  {getSexLabel(post.sex)}
+                </p>
+                <p className="flex items-center gap-2">
+                  <HiOutlineCalendar />
+                  อายุ: {post.age}
+                </p>
+                <p className="flex items-center gap-2">
+                  <MdOutlineQuestionAnswer />
+                  เหตุผลที่หาบ้านใหม่: {post.reason}
+                </p>
+                <p className="flex items-center gap-2">
+                  <HiOutlinePhone />
+                  ติดต่อ: {post.phone}
+                </p>
+                <p className="flex items-center gap-2">
+                  {healthStatusIcons[post.health_status]?.icon}
+                  สุขภาพ:{" "}
+                  {healthStatusIcons[post.health_status]?.label || "ไม่ระบุ"}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -24,6 +24,7 @@ export async function POST(req: Request) {
     const pet_name = formData.get("pet_name") as string;
     const type = formData.get("type") as string;
     const age = formData.get("age") as string;
+    const sex = formData.get("sex") as string;
     const health_status_str = formData.get("health_status")?.toString() || "";
     const reason = formData.get("reason") as string;
     const images = formData.getAll("images") as File[];
@@ -33,12 +34,20 @@ export async function POST(req: Request) {
       !phone ||
       !pet_name ||
       !type ||
+      !sex ||
       !age ||
       !health_status_str ||
       !reason ||
       images.length === 0
     ) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
+    }
+    // ตรวจสอบว่า phone เป็นตัวเลขเท่านั้น
+    if (!/^[0-9]+$/.test(phone)) {
+      return NextResponse.json(
+        { error: "เบอร์โทรต้องเป็นตัวเลขเท่านั้น" },
+        { status: 400 }
+      );
     }
 
     // เก็บ path ของรูปที่จะใช้บันทึก
@@ -74,6 +83,7 @@ export async function POST(req: Request) {
         phone,
         pet_name,
         type,
+        sex,
         age,
         health_status,
         reason,
@@ -118,7 +128,10 @@ export async function DELETE(req: Request) {
     const { post_id } = await req.json();
 
     if (!post_id) {
-      return NextResponse.json({ error: "post_id is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "post_id is required" },
+        { status: 400 }
+      );
     }
 
     const deletedPost = await prisma.petRehomePost.delete({

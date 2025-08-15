@@ -4,10 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
+import { HiPhoto } from "react-icons/hi2";
+
 
 const initialForm = {
   pet_name: "",
   type: "",
+  sex: "",
   age: "",
   health_status: "",
   reason: "",
@@ -23,31 +26,39 @@ export default function FormRehomingPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ dateTime: "" });
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setPreviewUrl(URL.createObjectURL(file));
+      setFileName(file.name);
+      setForm((prev) => ({ ...prev, images: [file] }));
+    }
+  };
 
   useEffect(() => {
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     const bangkokTime = new Date(now.getTime() - tzOffset);
     const formattedDate = bangkokTime.toISOString().slice(0, 16);
-
     setFormData((prev) => ({ ...prev, dateTime: formattedDate }));
   }, []);
-  // ตรวจสอบสิทธิ์ก่อน render ฟอร์ม
+
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login"); // ปรับเป็น path หน้า login ของคุณ
+      router.push("/login");
     }
   }, [status, router]);
 
-  // ถ้ากำลังโหลด session ให้โชว์ข้อความรอ
   if (status === "loading") {
     return <div className="text-center py-10">กำลังตรวจสอบสิทธิ์...</div>;
   }
-
-  // ถ้าไม่ login ไม่ต้อง render ฟอร์ม
   if (status === "unauthenticated") {
     return null;
   }
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -57,32 +68,31 @@ export default function FormRehomingPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setForm((prev) => ({
-        ...prev,
-        images: Array.from(e.target.files as FileList),
-      }));
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError("");
     setSuccess(false);
 
+    if (!/^[0-9]+$/.test(form.phone)) {
+      setError("เบอร์โทรต้องเป็นตัวเลขเท่านั้น");
+      setSubmitting(false);
+      return;
+    }
+
     try {
-      // ส่งข้อมูลแบบ multipart/form-data
       const data = new FormData();
-      data.append("user_id", session?.user?.id ?? ""); // ใช้ id จาก session
+      data.append("user_id", session?.user?.id ?? "");
       data.append("pet_name", form.pet_name);
       data.append("type", form.type);
+      data.append("sex", form.sex);
       data.append("age", form.age);
       data.append("health_status", form.health_status);
       data.append("reason", form.reason);
       data.append("phone", form.phone);
-      form.images.forEach((file) => data.append("images", file));
+      if (form.images.length > 0) {
+        data.append("images", form.images[0]);
+      }
 
       const res = await fetch("/api/rehoming-report", {
         method: "POST",
@@ -113,7 +123,7 @@ export default function FormRehomingPage() {
         </h1>
         <form
           onSubmit={handleSubmit}
-          className="space-y-5 bg-white p-6 rounded-xl shadow"
+          className="bg-orange-50 rounded-xl shadow-md p-8 w-full max-w-md space-y-6"
         >
           <div>
             <label className="block mb-1 font-medium">ชื่อสัตว์เลี้ยง</label>
@@ -126,6 +136,7 @@ export default function FormRehomingPage() {
               required
             />
           </div>
+
           <div>
             <label className="block mb-1 font-medium">สายพันธุ์/ประเภท</label>
             <input
@@ -137,6 +148,22 @@ export default function FormRehomingPage() {
               required
             />
           </div>
+
+          <div>
+            <label className="block mb-1 font-medium">เพศ</label>
+            <select
+              name="sex"
+              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              value={form.sex}
+              onChange={handleChange}
+              required
+            >
+              <option value="">เลือกเพศ</option>
+              <option value="MALE">เพศผู้</option>
+              <option value="FEMALE">เพศเมีย</option>
+            </select>
+          </div>
+
           <div>
             <label className="block mb-1 font-medium">อายุ</label>
             <input
@@ -148,6 +175,7 @@ export default function FormRehomingPage() {
               required
             />
           </div>
+
           <div>
             <label className="block mb-1 font-medium">สถานะสุขภาพ</label>
             <select
@@ -162,6 +190,7 @@ export default function FormRehomingPage() {
               <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
             </select>
           </div>
+
           <div>
             <label className="block mb-1 font-medium">
               เหตุผลที่หาบ้านใหม่
@@ -175,6 +204,7 @@ export default function FormRehomingPage() {
               required
             />
           </div>
+
           <div>
             <label className="block mb-1 font-medium">เบอร์โทรติดต่อ</label>
             <input
@@ -186,10 +216,10 @@ export default function FormRehomingPage() {
               required
             />
           </div>
-          {/* วันที่และเวลา */}
+
           <div>
-            <label className="block font-semibold mb-1">
-              วันที่และเวลาที่พบ
+            <label className="block font-medium mb-1">
+              วันที่และเวลาที่แจ้ง
             </label>
             <input
               type="datetime-local"
@@ -199,19 +229,53 @@ export default function FormRehomingPage() {
               className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
             />
           </div>
-          <div>
-            <label className="block mb-1 font-medium">
-              อัปโหลดรูปภาพ (เลือกได้หลายไฟล์)
+
+          <div className="w-full">
+            <label className="block font-semibold mb-2 text-gray-700">
+              อัปโหลดรูปภาพ
+            </label>
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-indigo-400 hover:bg-indigo-50"
+            >
+              {previewUrl ? (
+                <div className="flex flex-col items-center bg-white p-2 rounded-lg shadow">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="max-h-40 object-cover rounded-lg"
+                  />
+                  <p className="mt-1 text-xs text-gray-600 truncate w-full text-center">
+                    {fileName}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <HiPhoto
+                    aria-hidden="true"
+                    className="mx-auto w-12 h-12 text-gray-300"
+                  />
+                  <div className="mt-4 flex text-sm text-gray-600 justify-center">
+                    <span className="font-semibold text-indigo-600 hover:text-indigo-500">
+                      คลิกเพื่ออัปโหลด
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, GIF สูงสุด 10MB
+                  </p>
+                </>
+              )}
             </label>
             <input
-              type="file"
+              id="file-upload"
               name="images"
+              type="file"
               accept="image/*"
-              multiple
               onChange={handleFileChange}
-              className="w-full"
+              className="sr-only"
             />
           </div>
+
           {error && <div className="text-red-600">{error}</div>}
           {success && <div className="text-green-600">ส่งข้อมูลสำเร็จ!</div>}
           <button

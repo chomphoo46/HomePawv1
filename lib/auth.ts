@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error("ไม่พบบัญชีผู้ใช้นี้");
+          throw new Error("ไม่พบบัญชีผู้ใช้นี้ กรุณาสมัครสมาชิก");
         }
 
         const isPasswordValid = await bcrypt.compare(
