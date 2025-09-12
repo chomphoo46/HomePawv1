@@ -35,3 +35,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 "# HomePawv1" 
+.env
+DATABASE_URL="postgresql://myuser:mypassword@localhost:5432/mydb?schema=public"
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=q8Z2bplmFXmQh8A8t9z0F8lOoB3wZ3W4uOH7cN9tA7g=
