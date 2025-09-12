@@ -49,7 +49,7 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between px-6 py-8 pl-12 shadow">
-      <h1 className="text-xl font-semibold">HomePaw</h1>
+      <h1 className="text-2xl font-semibold">HomePaw</h1>
       <div className="flex space-x-2">
         <NavButton
           icon={<GoHome size={20} />}
@@ -90,7 +90,7 @@ export default function Header() {
               {showMenu && (
                 <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
                   <button
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                    className="block w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
                     onClick={handleLogout}
                   >
                     ออกจากระบบ

@@ -170,7 +170,7 @@ export default function RehomingReportPage() {
                   <img
                     src={post.images[0].image_url}
                     alt={post.pet_name}
-                    className="w-full h-48 object-cover mb-2 "
+                    className="w-full h-75 object-cover mb-2 "
                   />
                 )}
                 <h2 className="font-bold text-2xl text-[#D4A373]">

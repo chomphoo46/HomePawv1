@@ -12,6 +12,7 @@ model User {
   name     String @db.VarChar(100)
   email    String @unique
   password String
+  role      Role     @default(user)
 
   // Relations
   helpActions      HelpAction[]
@@ -108,4 +109,7 @@ enum PetSex {
   MALE
   FEMALE
 }
-
+enum Role {
+  user
+  admin
+}

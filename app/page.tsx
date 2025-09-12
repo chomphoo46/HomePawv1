@@ -8,7 +8,7 @@ import {
 import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
-import { GoHeart } from "react-icons/go";
+import { FaHeart } from "react-icons/fa6";
 import { FiMapPin } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
@@ -128,15 +128,14 @@ export default function HomePage() {
       <Header />
 
       {/* Stats Section */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center py-6 px-4">
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center py-6 px-4">
         {[
           ["สัตว์ไร้บ้านที่พบ", stats.foundAnimals, "text-[#D4A373]"],
           ["ประกาศหาบ้าน", stats.rehomingPosts, "text-purple-600"],
-          ["คนช่วยเหลือ", 0, "text-green-600"], // TODO: เพิ่มภายหลัง
-          ["ต้องการช่วยเหลือด่วน", stats.urgentHelp, "text-red-500"],
+          ["คนช่วยเหลือ", stats.urgentHelp, "text-green-600"], // TODO: เพิ่มภายหลัง
         ].map(([label, count, color], i) => (
           <div key={i}>
-            <p className={`text-xl font-bold ${color}`}>{count}</p>
+            <p className={`text-3xl font-bold ${color}`}>{count}</p>
             <p className={color as string}>{label}</p>
           </div>
         ))}
@@ -147,9 +146,9 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-2 py-4">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-              <FiMapPin size={20} />
+              <FiMapPin size={35} style={{color: "#ff0000",}} />
             </span>
-            <h2 className="font-semibold text-lg pl-12">แผนที่สัตว์ไร้บ้าน</h2>
+            <h2 className="font-semibold text-xl pl-16">แผนที่สัตว์ไร้บ้าน</h2>
           </div>
           <div className="space-x-2">
             {["ทั้งหมด", "สุนัข", "แมว", "ล่าสุด"].map((btn, idx) => (
@@ -178,9 +177,9 @@ export default function HomePage() {
       <section className="px-4 py-8">
         <div className="relative mb-6">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-            <GoHeart size={20} />
+            <FaHeart size={35} style={{color: "#ff0000",}} />
           </span>
-          <h2 className="font-semibold text-lg mb-4 pl-12">
+          <h2 className="font-semibold text-xl mb-4 pl-16">
             ประกาศหาบ้านล่าสุด
           </h2>
         </div>
@@ -195,7 +194,7 @@ export default function HomePage() {
                   <img
                     src={post.images[0].image_url}
                     alt={post.pet_name}
-                    className="w-full h-48 object-cover mb-2 rounded-lg"
+                    className="w-full h-75 object-cover mb-2 rounded-lg"
                   />
                 )}
                 <h2 className="font-bold text-2xl text-[#D4A373]">

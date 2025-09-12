@@ -123,14 +123,14 @@ export default function FormRehomingPage() {
         </h1>
         <form
           onSubmit={handleSubmit}
-          className="bg-orange-50 rounded-xl shadow-md p-8 w-full max-w-md space-y-6"
+          className="bg-orange-50 rounded-xl shadow-md p-10 w-100 max-w-md space-y-6"
         >
           <div>
             <label className="block mb-1 font-medium">ชื่อสัตว์เลี้ยง</label>
             <input
               type="text"
               name="pet_name"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               value={form.pet_name}
               onChange={handleChange}
               required
@@ -142,7 +142,7 @@ export default function FormRehomingPage() {
             <input
               type="text"
               name="type"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               value={form.type}
               onChange={handleChange}
               required
@@ -153,7 +153,7 @@ export default function FormRehomingPage() {
             <label className="block mb-1 font-medium">เพศ</label>
             <select
               name="sex"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
               value={form.sex}
               onChange={handleChange}
               required
@@ -169,7 +169,7 @@ export default function FormRehomingPage() {
             <input
               type="text"
               name="age"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
               value={form.age}
               onChange={handleChange}
               required
@@ -180,7 +180,7 @@ export default function FormRehomingPage() {
             <label className="block mb-1 font-medium">สถานะสุขภาพ</label>
             <select
               name="health_status"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
               value={form.health_status}
               onChange={handleChange}
               required
@@ -197,7 +197,7 @@ export default function FormRehomingPage() {
             </label>
             <textarea
               name="reason"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
               value={form.reason}
               onChange={handleChange}
               rows={3}
@@ -210,7 +210,7 @@ export default function FormRehomingPage() {
             <input
               type="text"
               name="phone"
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
               value={form.phone}
               onChange={handleChange}
               required
@@ -226,17 +226,17 @@ export default function FormRehomingPage() {
               name="dateTime"
               value={formData.dateTime}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
             />
           </div>
 
           <div className="w-full">
-            <label className="block font-semibold mb-2 text-gray-700">
+            <label className="block  mb-2">
               อัปโหลดรูปภาพ
             </label>
             <label
               htmlFor="file-upload"
-              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-indigo-400 hover:bg-indigo-50"
+              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-[#D4A373]  bg-white"
             >
               {previewUrl ? (
                 <div className="flex flex-col items-center bg-white p-2 rounded-lg shadow">
@@ -255,8 +255,8 @@ export default function FormRehomingPage() {
                     aria-hidden="true"
                     className="mx-auto w-12 h-12 text-gray-300"
                   />
-                  <div className="mt-4 flex text-sm text-gray-600 justify-center">
-                    <span className="font-semibold text-indigo-600 hover:text-indigo-500">
+                  <div className="mt-4 flex text-sm  justify-center">
+                    <span className="font-semibold  hover:text-[#D4A373]">
                       คลิกเพื่ออัปโหลด
                     </span>
                   </div>
