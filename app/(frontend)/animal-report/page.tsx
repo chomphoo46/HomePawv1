@@ -65,7 +65,7 @@ export default function ReportForm() {
       <Header />
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <h2 className="text-2xl font-bold text-center text-[#D4A373] mb-6">
-          🐾 แจ้งพบสัตว์ไร้บ้าน
+          แจ้งพบสัตว์ไร้บ้าน
         </h2>
         <div className="bg-orange-50 rounded-xl shadow-md p-10 w-110 max-w-md space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +76,7 @@ export default function ReportForm() {
                 name="animalType"
                 value={formData.animalType}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               >
                 <option value="">-- เลือกประเภทสัตว์ --</option>
                 <option value="dog">สุนัข</option>
@@ -93,7 +93,7 @@ export default function ReportForm() {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="เช่น ขนสีน้ำตาล มีปลอกคอสีแดง"
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               />
             </div>
 
@@ -106,13 +106,12 @@ export default function ReportForm() {
                 name="behavior"
                 value={formData.behavior}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               >
                 <option value="">-- เลือกพฤติกรรม --</option>
                 <option value="friendly">เชื่อง</option>
                 <option value="aggressive">ดุร้าย</option>
                 <option value="injured">บาดเจ็บ</option>
-                <option value="wandering">เดินวน</option>
                 <option value="other">อื่น ๆ</option>
               </select>
             </div>
@@ -124,7 +123,7 @@ export default function ReportForm() {
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               >
                 <option value="">-- เลือกสถานะ --</option>
                 <option value="friendly">ยังอยู่ที่เดิม</option>
@@ -142,7 +141,7 @@ export default function ReportForm() {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="ปักหมุดบนแผนที่หรือกรอกชื่อสถานที่"
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               />
               <button
                 type="button"
@@ -162,7 +161,7 @@ export default function ReportForm() {
                 name="dateTime"
                 value={formData.dateTime}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2"
+                className="w-full border rounded-lg p-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               />
             </div>
 
@@ -174,7 +173,7 @@ export default function ReportForm() {
             {/* กล่องที่กดได้ทั้งหมด */}
             <label
               htmlFor="file-upload"
-              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-lg p-4 block"
+              className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-[#D4A373]  bg-white"
             >
               {previewUrl ? (
                 <div>
@@ -193,8 +192,8 @@ export default function ReportForm() {
                     aria-hidden="true"
                     className="mx-auto size-12 text-gray-300"
                   />
-                  <div className="mt-4 flex text-sm text-gray-600 justify-center">
-                    <span className="font-semibold text-indigo-600 hover:text-indigo-500">
+                  <div className="mt-4 flex text-sm justify-center">
+                    <span className="font-semibold  hover:text-[#D4A373]">
                       คลิกเพื่ออัปโหลด
                     </span>
                   </div>
@@ -224,9 +223,9 @@ export default function ReportForm() {
             {/* ปุ่มส่ง */}
             <button
               type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition"
+              className="w-full bg-[#D4A373] hover:bg-[#b98b5e] text-white font-semibold py-2 rounded-lg"
             >
-              📤 ส่งรายงาน
+              ส่งรายงาน
             </button>
           </form>
         </div>

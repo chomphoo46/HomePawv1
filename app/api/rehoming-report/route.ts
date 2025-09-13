@@ -3,7 +3,12 @@ import path from "path";
 import fs from "fs/promises";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PrismaClient, PetRehomeStatus, HealthStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  PetRehomeStatus,
+  HealthStatus,
+  PetSex,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -24,7 +29,7 @@ export async function POST(req: Request) {
     const pet_name = formData.get("pet_name") as string;
     const type = formData.get("type") as string;
     const age = formData.get("age") as string;
-    const sex = formData.get("sex") as string;
+    const sexStr = (formData.get("sex") as string)?.toUpperCase();
     const health_status_str = formData.get("health_status")?.toString() || "";
     const reason = formData.get("reason") as string;
     const images = formData.getAll("images") as File[];
@@ -34,7 +39,7 @@ export async function POST(req: Request) {
       !phone ||
       !pet_name ||
       !type ||
-      !sex ||
+      !sexStr ||
       !age ||
       !health_status_str ||
       !reason ||
@@ -76,14 +81,23 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
+    // แปลง string เป็น enum
+    let sexEnum: PetSex;
+    if (sexStr === "MALE") {
+      sexEnum = PetSex.MALE;
+    } else if (sexStr === "FEMALE") {
+      sexEnum = PetSex.FEMALE;
+    } else {
+      return NextResponse.json({ error: "sex ไม่ถูกต้อง" }, { status: 400 });
+    }
+    
     const createdPost = await prisma.petRehomePost.create({
       data: {
         user_id,
         phone,
         pet_name,
         type,
-        sex,
+        sex: sexEnum,
         age,
         health_status,
         reason,

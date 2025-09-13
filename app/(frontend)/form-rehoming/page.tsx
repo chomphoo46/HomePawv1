@@ -142,6 +142,7 @@ export default function FormRehomingPage() {
             <input
               type="text"
               name="type"
+              placeholder="เช่น บางแก้ว"
               className="w-full border rounded-lg px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373] bg-white"
               value={form.type}
               onChange={handleChange}
@@ -158,7 +159,7 @@ export default function FormRehomingPage() {
               onChange={handleChange}
               required
             >
-              <option value="">เลือกเพศ</option>
+              <option value="">-- เลือกเพศ --</option>
               <option value="MALE">เพศผู้</option>
               <option value="FEMALE">เพศเมีย</option>
             </select>
@@ -185,7 +186,7 @@ export default function FormRehomingPage() {
               onChange={handleChange}
               required
             >
-              <option value="">เลือกสถานะ</option>
+              <option value="">-- เลือกสถานะ --</option>
               <option value="VACCINATED">ฉีดวัดซีนแล้ว</option>
               <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
             </select>

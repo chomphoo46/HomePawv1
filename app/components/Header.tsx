@@ -4,14 +4,22 @@ import { HiOutlineCamera } from "react-icons/hi2";
 import { GoHeart, GoHome } from "react-icons/go";
 import { BiUser } from "react-icons/bi";
 import { RiUserFollowLine, RiContactsBook3Line } from "react-icons/ri";
+import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { Mali } from "next/font/google";
+
+const mali = Mali({
+  subsets: ["latin", "thai"],
+  weight: ["400", "500", "700"],
+});
 
 export default function Header() {
-  const { data: session } = useSession(); // ✅ ดึงข้อมูลจาก NextAuth
+  const { data: session } = useSession();
   const [userName, setUserName] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -19,7 +27,7 @@ export default function Header() {
   useEffect(() => {
     if (session?.user?.name) {
       setUserName(session.user.name);
-      localStorage.setItem("userName", session.user.name); // เก็บใน localStorage เผื่อ refresh
+      localStorage.setItem("userName", session.user.name);
     } else {
       const nameFromLocal = localStorage.getItem("username");
       setUserName(nameFromLocal);
@@ -44,13 +52,18 @@ export default function Header() {
     localStorage.removeItem("username");
     setUserName(null);
     setShowMenu(false);
-    signOut({ callbackUrl: "/" }); // ✅ ออกจากระบบ NextAuth
+    signOut({ callbackUrl: "/" });
   };
 
   return (
-    <header className="flex items-center justify-between px-6 py-8 pl-12 shadow">
-      <h1 className="text-2xl font-semibold">HomePaw</h1>
-      <div className="flex space-x-2">
+    <header
+      className={`flex items-center justify-between px-6 py-4 shadow bg-[#FEFAE0] ${mali.className}`}
+    >
+      {/* Logo */}
+      <h1 className="text-xl md:text-2xl font-semibold">HomePaw</h1>
+
+      {/* Desktop Menu */}
+      <nav className="hidden md:flex space-x-2 items-center ml-auto mr-4">
         <NavButton
           icon={<GoHome size={20} />}
           label="หน้าหลัก"
@@ -75,41 +88,93 @@ export default function Header() {
           active={pathname === "/contract"}
           onClick={() => router.push("/contract")}
         />
-        <div className="relative" ref={menuRef}>
-          {userName ? (
-            <>
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-                <RiUserFollowLine size={20} />
-              </span>
-              <button
-                className="px-4 py-2 pl-10 rounded-full hover:bg-gray-100 bg-[#FAEDCD] cursor-pointer"
-                onClick={() => setShowMenu((v) => !v)}
-              >
-                {userName}
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
-                  <button
-                    className="block w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
-                    onClick={handleLogout}
-                  >
-                    ออกจากระบบ
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <Link href="/login">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-                <BiUser size={20} />
-              </span>
-              <button className="px-4 py-2 pl-10 rounded-full hover:bg-gray-100 bg-[#FAEDCD] cursor-pointer">
-                เข้าสู่ระบบ / สมัครสมาชิก
-              </button>
-            </Link>
-          )}
-        </div>
+      </nav>
+
+      {/* User / Login (Desktop + Mobile) */}
+      <div className="relative" ref={menuRef}>
+        {userName ? (
+          <>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
+              <RiUserFollowLine size={20} />
+            </span>
+            <button
+              className="px-4 py-2 pl-10 rounded-full hover:bg-gray-100 bg-[#D4A373] cursor-pointer"
+              onClick={() => setShowMenu((v) => !v)}
+            >
+              {userName}
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
+                <button
+                  className="block w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
+                  onClick={handleLogout}
+                >
+                  ออกจากระบบ
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Link href="/login">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
+              <BiUser size={20} />
+            </span>
+            <button className="px-4 py-2 pl-10 rounded-full hover:bg-[#E9B480] bg-[#D4A373] cursor-pointer">
+              เข้าสู่ระบบ / สมัครสมาชิก
+            </button>
+          </Link>
+        )}
       </div>
+
+      {/* Mobile Menu Button */}
+      <button
+        className="md:hidden ml-2"
+        onClick={() => setShowMobileMenu((prev) => !prev)}
+      >
+        {showMobileMenu ? <HiOutlineX size={24} /> : <HiOutlineMenu size={24} />}
+      </button>
+
+      {/* Mobile Dropdown Menu */}
+      {showMobileMenu && (
+        <div className="absolute top-16 left-0 w-full bg-[#FEFAE0] shadow-md flex flex-col items-start p-4 space-y-2 md:hidden z-20">
+          <NavButton
+            icon={<GoHome size={20} />}
+            label="หน้าหลัก"
+            active={pathname === "/"}
+            onClick={() => {
+              router.push("/");
+              setShowMobileMenu(false);
+            }}
+          />
+          <NavButton
+            icon={<HiOutlineCamera size={20} />}
+            label="แจ้งพบสัตว์ไร้บ้าน"
+            active={pathname === "/animal-report"}
+            onClick={() => {
+              router.push("/animal-report");
+              setShowMobileMenu(false);
+            }}
+          />
+          <NavButton
+            icon={<GoHeart size={20} />}
+            label="หาบ้านให้สัตว์เลี้ยง"
+            active={pathname === "/rehoming-report"}
+            onClick={() => {
+              router.push("/rehoming-report");
+              setShowMobileMenu(false);
+            }}
+          />
+          <NavButton
+            icon={<RiContactsBook3Line size={20} />}
+            label="ติดต่อเรา"
+            active={pathname === "/contract"}
+            onClick={() => {
+              router.push("/contract");
+              setShowMobileMenu(false);
+            }}
+          />
+        </div>
+      )}
     </header>
   );
 }
@@ -126,7 +191,7 @@ function NavButton({
   onClick: () => void;
 }) {
   return (
-    <div className="relative group">
+    <div className="relative group w-full md:w-auto">
       <span
         className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
           active ? "text-[#D4A373]" : "text-black"
@@ -135,7 +200,7 @@ function NavButton({
         {icon}
       </span>
       <button
-        className={`px-4 py-2 pl-10 cursor-pointer transition-colors ${
+        className={`px-4 py-2 pl-10 w-full text-left md:text-center cursor-pointer transition-colors ${
           active ? "text-[#D4A373]" : ""
         } hover:text-[#D4A373]`}
         onClick={onClick}

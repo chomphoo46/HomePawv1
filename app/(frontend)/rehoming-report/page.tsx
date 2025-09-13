@@ -7,7 +7,6 @@ import {
   FaMars,
   FaVenus,
   FaGenderless,
-  FaSyringe,
   FaTimesCircle,
 } from "react-icons/fa";
 import {
@@ -18,7 +17,9 @@ import {
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
+import Link from "next/link";
 import { Mali } from "next/font/google";
+
 const mali = Mali({
   subsets: ["latin", "thai"],
   weight: ["400", "500", "700"],
@@ -26,7 +27,7 @@ const mali = Mali({
 
 export default function RehomingReportPage() {
   const router = useRouter();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     breed: "",
     sex: "",
@@ -34,6 +35,7 @@ export default function RehomingReportPage() {
     location: "",
     vaccinated: "",
   });
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   // โหลดข้อมูลตอน mount
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function RehomingReportPage() {
     }
     fetchPosts();
   }, []);
+
   // แปลงเพศเป็นภาษาไทย
   const getSexLabel = (sex: string) => {
     switch (sex) {
@@ -75,27 +78,77 @@ export default function RehomingReportPage() {
       icon: <FaTimesCircle className="text-red-600" />,
     },
   };
+
+  // Filter posts ตาม filters
+  const filteredPosts = posts.filter((post) => {
+    if (
+      filters.breed &&
+      !post.type.toLowerCase().includes(filters.breed.toLowerCase())
+    )
+      return false;
+    if (filters.sex && filters.sex !== "All") {
+      if (filters.sex === "male" && post.sex !== "MALE") return false;
+      if (filters.sex === "female" && post.sex !== "FEMALE") return false;
+    }
+    if (filters.age && filters.age !== "All") {
+      const ageNumber = parseInt(post.age, 10);
+      switch (filters.age) {
+        case "0-1year":
+          if (ageNumber < 0 || ageNumber > 1) return false;
+          break;
+        case "1-5year":
+          if (ageNumber < 1 || ageNumber > 5) return false;
+          break;
+        case "5-10year":
+          if (ageNumber < 5 || ageNumber > 10) return false;
+          break;
+        case "10year up":
+          if (ageNumber < 10) return false;
+          break;
+      }
+    }
+    if (filters.vaccinated) {
+      if (
+        filters.vaccinated === "vaccinated" &&
+        post.health_status !== "VACCINATED"
+      )
+        return false;
+      if (
+        filters.vaccinated === "unvaccinated" &&
+        post.health_status !== "NOT_VACCINATED"
+      )
+        return false;
+    }
+    return true;
+  });
+
+  //เรียงตามวันที่สร้าง
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+  });
+
   return (
     <div className={`min-h-screen bg-white flex flex-col ${mali.className}`}>
       <Header />
-      <div className="flex flex-1 flex-col items-center justify-start">
+      <div className="flex flex-1 flex-col items-center justify-start w-full">
         {/* Banner */}
-        <div className="w-full h-80 shadow p-8 mb-8 flex flex-col items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-center mb-10">
+        <div className="w-full h-auto shadow p-6 md:p-8 mb-8 flex flex-col items-center text-center">
+          <h1 className="text-xl md:text-3xl font-bold mb-18">
             “หนึ่งการรับเลี้ยง เปลี่ยนหนึ่งชีวิต”
           </h1>
           <button
-            className="bg-[#D4A373] hover:bg-[#d4a373cd] text-lg text-white px-8 py-2 rounded-3xl font-semibold mb-10 mt-10 cursor-pointer"
+            className="bg-[#D4A373] hover:bg-[#d4a373cd] text-base md:text-xl text-white px-6 md:px-8 py-2 rounded-3xl font-semibold mb-18 cursor-pointer"
             onClick={() => router.push("/form-rehoming")}
           >
             หาบ้านให้สัตว์เลี้ยงของคุณ คลิกที่นี่
           </button>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-3 w-full justify-center mb-8 mt-8">
-            <label className="text-gray-700 p-2">ค้นหาสัตว์เลี้ยง:</label>
+          <div className="flex flex-wrap gap-3 w-full justify-center">
             <input
-              className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               placeholder="สายพันธุ์"
               value={filters.breed}
               onChange={(e) =>
@@ -103,7 +156,7 @@ export default function RehomingReportPage() {
               }
             />
             <select
-              className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               value={filters.sex}
               onChange={(e) => setFilters({ ...filters, sex: e.target.value })}
             >
@@ -112,7 +165,7 @@ export default function RehomingReportPage() {
               <option value="male">เพศผู้</option>
             </select>
             <select
-              className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               value={filters.age}
               onChange={(e) => setFilters({ ...filters, age: e.target.value })}
             >
@@ -123,7 +176,7 @@ export default function RehomingReportPage() {
               <option value="10year up">อายุ 10 ปีขึ้นไป</option>
             </select>
             <input
-              className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               placeholder="สถานที่"
               value={filters.location}
               onChange={(e) =>
@@ -131,7 +184,7 @@ export default function RehomingReportPage() {
               }
             />
             <select
-              className="border rounded-lg px-3 py-2 w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               value={filters.vaccinated}
               onChange={(e) =>
                 setFilters({ ...filters, vaccinated: e.target.value })
@@ -148,39 +201,49 @@ export default function RehomingReportPage() {
         </div>
 
         {/* Results header */}
-        <div className="w-full max-w-6xl flex justify-between items-center mb-4">
+        <div className="w-full max-w-6xl flex justify-between items-center px-4 mb-4">
           <span className="text-black text-sm">
-            กำลังแสดง {posts.length} รายการ
+            กำลังแสดง {sortedPosts.length} รายการ
           </span>
-          <select className="border rounded px-2 py-1 text-sm">
-            <option>เรียงตาม: ใหม่ล่าสุด</option>
-            <option>เรียงตาม: เก่าที่สุด</option>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={sortOrder}
+            onChange={(e) =>
+              setSortOrder(e.target.value as "newest" | "oldest")
+            }
+          >
+            <option value={"newest"}>เรียงตาม: ใหม่ล่าสุด</option>
+            <option value={"oldest"}>เรียงตาม: เก่าที่สุด</option>
           </select>
         </div>
 
         {/* Pet cards grid */}
-        <div className="px-32">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-            {posts.map((post: any) => (
-              <div
+        <div className="px-4 md:px-8 lg:px-4 w-full max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2 sm:p-4 justify-items-center">
+            {sortedPosts.map((post: any) => (
+              <Link
                 key={post.post_id}
-                className="rounded-2xl p-4 shadow hover:shadow-lg transition "
+                href={`/rehoming-report/${post.post_id}`}
+                className="w-full max-w-sm rounded-2xl p-4 shadow hover:shadow-lg transition cursor-pointer flex flex-col bg-white"
               >
-                {post.images?.length > 0 && (
+                {post.images?.length > 0 ? (
                   <img
                     src={post.images[0].image_url}
                     alt={post.pet_name}
-                    className="w-full h-75 object-cover mb-2 "
+                    className="w-full aspect-[4/3] object-cover mb-2 rounded-xl"
                   />
+                ) : (
+                  <div className="w-full aspect-[4/3] bg-gray-200 flex items-center justify-center rounded-xl">
+                    <span className="text-gray-500">ไม่มีรูปภาพ</span>
+                  </div>
                 )}
-                <h2 className="font-bold text-2xl text-[#D4A373]">
+                <h2 className="font-bold text-lg md:text-2xl text-[#D4A373] truncate">
                   {post.pet_name}
                 </h2>
-                <p className="flex items-center gap-2">
-                  <HiOutlineTag />
-                  พันธุ์: {post.type}
+                <p className="flex items-center gap-2 text-sm md:text-base">
+                  <HiOutlineTag /> พันธุ์: {post.type}
                 </p>
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 text-sm md:text-base">
                   {post.sex === "MALE" ? (
                     <FaMars />
                   ) : post.sex === "FEMALE" ? (
@@ -190,24 +253,21 @@ export default function RehomingReportPage() {
                   )}
                   {getSexLabel(post.sex)}
                 </p>
-                <p className="flex items-center gap-2">
-                  <HiOutlineCalendar />
-                  อายุ: {post.age}
+                <p className="flex items-center gap-2 text-sm md:text-base">
+                  <HiOutlineCalendar /> อายุ: {post.age}
                 </p>
-                <p className="flex items-center gap-2">
-                  <MdOutlineQuestionAnswer />
-                  เหตุผลที่หาบ้านใหม่: {post.reason}
+                <p className="flex items-center gap-2 text-sm md:text-base">
+                  <MdOutlineQuestionAnswer /> เหตุผล: {post.reason}
                 </p>
-                <p className="flex items-center gap-2">
-                  <HiOutlinePhone />
-                  ติดต่อ: {post.phone}
+                <p className="flex items-center gap-2 text-sm md:text-base">
+                  <HiOutlinePhone /> ติดต่อ: {post.phone}
                 </p>
-                <p className="flex items-center gap-2">
+                <p className="flex items-center gap-2 text-sm md:text-base">
                   {healthStatusIcons[post.health_status]?.icon}
                   สุขภาพ:{" "}
                   {healthStatusIcons[post.health_status]?.label || "ไม่ระบุ"}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
