@@ -3,17 +3,13 @@
 import Header from "@/app/components/Header";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, JSX } from "react";
-import {
-  FaMars,
-  FaVenus,
-  FaGenderless,
-  FaTimesCircle,
-} from "react-icons/fa";
+import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
 import {
   HiOutlineTag,
   HiOutlineCalendar,
   HiOutlinePhone,
 } from "react-icons/hi";
+import { FiMapPin } from "react-icons/fi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
@@ -71,14 +67,27 @@ export default function RehomingReportPage() {
   > = {
     VACCINATED: {
       label: "ฉีดวัคซีนแล้ว",
-      icon: <FaCircleCheck className="text-green-600" />,
+      icon: <FaCircleCheck size={22} style={{ color: "green" }} />,
     },
     NOT_VACCINATED: {
       label: "ยังไม่ได้ฉีดวัคซีน",
-      icon: <FaTimesCircle className="text-red-600" />,
+      icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
     },
   };
-
+  // Mapping สถานะการทำหมัน
+  const neuteredstatusIcons: Record<
+    string,
+    { label: string; icon: JSX.Element }
+  > = {
+    NEUTERED: {
+      label: "ทำหมันแล้ว",
+      icon: <FaCircleCheck size={22} style={{ color: "green" }} />,
+    },
+    NOT_NEUTERED: {
+      label: "ยังไม่ได้ทำหมัน",
+      icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
+    },
+  };
   // Filter posts ตาม filters
   const filteredPosts = posts.filter((post) => {
     if (
@@ -110,15 +119,22 @@ export default function RehomingReportPage() {
     if (filters.vaccinated) {
       if (
         filters.vaccinated === "vaccinated" &&
-        post.health_status !== "VACCINATED"
+        post.vaccination_status !== "VACCINATED"
       )
         return false;
       if (
         filters.vaccinated === "unvaccinated" &&
-        post.health_status !== "NOT_VACCINATED"
+        post.vaccination_status !== "NOT_VACCINATED"
       )
         return false;
     }
+    // กรองตามสถานที่
+    if (
+      filters.location &&
+      !post.address.toLowerCase().includes(filters.location.toLowerCase())
+    )
+      return false;
+
     return true;
   });
 
@@ -175,6 +191,7 @@ export default function RehomingReportPage() {
               <option value="5-10year">อายุ 5-10 ปี</option>
               <option value="10year up">อายุ 10 ปีขึ้นไป</option>
             </select>
+
             <input
               className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
               placeholder="สถานที่"
@@ -194,7 +211,7 @@ export default function RehomingReportPage() {
               <option value="vaccinated">ฉีดวัคซีนแล้ว</option>
               <option value="unvaccinated">ยังไม่ได้ฉีด</option>
             </select>
-            <button className="border px-4 py-2 rounded-lg cursor-pointer hover:bg-[#FAEDCD]">
+            <button className="border px-4 py-2 rounded-lg cursor-pointer bg-[#FEFAE0] hover:bg-[#FAEDCD]">
               <FaSearch />
             </button>
           </div>
@@ -206,7 +223,7 @@ export default function RehomingReportPage() {
             กำลังแสดง {sortedPosts.length} รายการ
           </span>
           <select
-            className="border rounded px-2 py-1 text-sm"
+            className="border rounded px-2 py-1 text-sm bg-[#FEFAE0]"
             value={sortOrder}
             onChange={(e) =>
               setSortOrder(e.target.value as "newest" | "oldest")
@@ -218,7 +235,7 @@ export default function RehomingReportPage() {
         </div>
 
         {/* Pet cards grid */}
-        <div className="px-4 md:px-8 lg:px-4 w-full max-w-7xl">
+        <div className="px-4 md:px-8 lg:px-4 w-full ml-160">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2 sm:p-4 justify-items-center">
             {sortedPosts.map((post: any) => (
               <Link
@@ -263,10 +280,29 @@ export default function RehomingReportPage() {
                   <HiOutlinePhone /> ติดต่อ: {post.phone}
                 </p>
                 <p className="flex items-center gap-2 text-sm md:text-base">
-                  {healthStatusIcons[post.health_status]?.icon}
-                  สุขภาพ:{" "}
-                  {healthStatusIcons[post.health_status]?.label || "ไม่ระบุ"}
+                  <FiMapPin />
+                  <span className="truncate">{post.address}</span>
                 </p>
+
+                <div className="flex items-center gap-6 text-sm md:text-base py-2">
+                  {/* Vaccination status */}
+                  <div className="flex items-center gap-2 max-w-[50%] truncate">
+                    {healthStatusIcons[post.vaccination_status]?.icon}
+                    <span className="truncate">
+                      {healthStatusIcons[post.vaccination_status]?.label ||
+                        "ไม่ระบุ"}
+                    </span>
+                  </div>
+
+                  {/* Neutered status */}
+                  <div className="flex items-center gap-2 max-w-[50%] truncate">
+                    {neuteredstatusIcons[post.neutered_status]?.icon}
+                    <span className="truncate">
+                      {neuteredstatusIcons[post.neutered_status]?.label ||
+                        "ไม่ระบุ"}
+                    </span>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>

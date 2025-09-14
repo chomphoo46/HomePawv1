@@ -6,15 +6,17 @@ import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
 import { HiPhoto } from "react-icons/hi2";
 
-
 const initialForm = {
   pet_name: "",
   type: "",
   sex: "",
   age: "",
-  health_status: "",
+  vaccination_status: "",
+  neutered_status: "",
   reason: "",
   phone: "",
+  contact: "",
+  address: "",
   images: [] as File[],
 };
 
@@ -87,9 +89,12 @@ export default function FormRehomingPage() {
       data.append("type", form.type);
       data.append("sex", form.sex);
       data.append("age", form.age);
-      data.append("health_status", form.health_status);
+      data.append("vaccination_status", form.vaccination_status);
+      data.append("neutered_status", form.neutered_status);
       data.append("reason", form.reason);
       data.append("phone", form.phone);
+      data.append("contact", form.contact);
+      data.append("address", form.address);
       if (form.images.length > 0) {
         data.append("images", form.images[0]);
       }
@@ -115,15 +120,15 @@ export default function FormRehomingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="max-w-xl mx-auto py-10 px-4">
+      <div className="max-w-xl mx-auto py-10 px-4 ">
         <h1 className="text-2xl font-bold mb-6 text-center">
           แจ้งหาบ้านให้สัตว์เลี้ยง
         </h1>
         <form
           onSubmit={handleSubmit}
-          className="bg-orange-50 rounded-xl shadow-md p-10 w-100 max-w-md space-y-6"
+          className="bg-[#FEFAE0] rounded-xl shadow-md p-10 w-100 max-w-md space-y-6"
         >
           <div>
             <label className="block mb-1 font-medium">ชื่อสัตว์เลี้ยง</label>
@@ -178,17 +183,32 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">สถานะสุขภาพ</label>
+            <label className="block mb-1 font-medium">สถานะวัคซีน</label>
             <select
-              name="health_status"
+              name="vaccination_status"
               className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
-              value={form.health_status}
+              value={form.vaccination_status}
               onChange={handleChange}
               required
             >
-              <option value="">-- เลือกสถานะ --</option>
+              <option value="">-- เลือกสถานะวัคซีน --</option>
               <option value="VACCINATED">ฉีดวัดซีนแล้ว</option>
               <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block mb-1 font-medium">สถานะการทำหมัน</label>
+            <select
+              name="neutered_status"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              value={form.neutered_status}
+              onChange={handleChange}
+              required
+            >
+              <option value="">-- เลือกสถานะการทำหมัน --</option>
+              <option value="NEUTERED">ทำหมันแล้ว</option>
+              <option value="NOT_NEUTERED">ยังไม่ได้ทำหมัน</option>
             </select>
           </div>
 
@@ -219,6 +239,33 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
+            <label className="block mb-1 font-medium">
+              ช่องทางติดต่ออื่น(ถ้ามี)
+            </label>
+            <input
+              type="text"
+              name="contact"
+              placeholder="เช่น ไอดีไลน์ หรือ เฟสบุ๊ค"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              value={form.contact}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 font-medium">ที่อยู่</label>
+            <textarea
+              name="address"
+              placeholder="บ้านเลขที่, ถนน, ตําบล, อําเภอ, จังหวัด, รหัสไปรษณีย์"
+              className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
+              value={form.address}
+              onChange={handleChange}
+              rows={3}
+              required
+            />
+          </div>
+
+          <div>
             <label className="block font-medium mb-1">
               วันที่และเวลาที่แจ้ง
             </label>
@@ -230,11 +277,8 @@ export default function FormRehomingPage() {
               className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
             />
           </div>
-
           <div className="w-full">
-            <label className="block  mb-2">
-              อัปโหลดรูปภาพ
-            </label>
+            <label className="block  mb-2">อัปโหลดรูปภาพ</label>
             <label
               htmlFor="file-upload"
               className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-[#D4A373]  bg-white"

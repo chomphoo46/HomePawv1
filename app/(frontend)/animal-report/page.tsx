@@ -64,10 +64,10 @@ export default function ReportForm() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <h2 className="text-2xl font-bold text-center text-[#D4A373] mb-6">
+        <h2 className="text-2xl font-bold text-center mb-6">
           แจ้งพบสัตว์ไร้บ้าน
         </h2>
-        <div className="bg-orange-50 rounded-xl shadow-md p-10 w-110 max-w-md space-y-6">
+        <div className="bg-[#FEFAE0] rounded-xl shadow-md p-10 w-110 max-w-md space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* ประเภทของสัตว์ */}
             <div>

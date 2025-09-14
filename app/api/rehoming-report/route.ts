@@ -6,7 +6,8 @@ import { authOptions } from "@/lib/auth";
 import {
   PrismaClient,
   PetRehomeStatus,
-  HealthStatus,
+  VaccinationStatus,
+  NeuteredStatus,
   PetSex,
 } from "@prisma/client";
 
@@ -30,8 +31,15 @@ export async function POST(req: Request) {
     const type = formData.get("type") as string;
     const age = formData.get("age") as string;
     const sexStr = (formData.get("sex") as string)?.toUpperCase();
-    const health_status_str = formData.get("health_status")?.toString() || "";
+    const vaccinationStr = (
+      formData.get("vaccination_status") as string
+    )?.toUpperCase();
+    const neuteredStr = (
+      formData.get("neutered_status") as string
+    )?.toUpperCase();
     const reason = formData.get("reason") as string;
+    const address = formData.get("address") as string;
+    const contact = formData.get("contact") as string;
     const images = formData.getAll("images") as File[];
 
     // ตรวจสอบข้อมูลบังคับ
@@ -41,8 +49,10 @@ export async function POST(req: Request) {
       !type ||
       !sexStr ||
       !age ||
-      !health_status_str ||
+      !vaccinationStr ||
+      !neuteredStr ||
       !reason ||
+      !address ||
       images.length === 0
     ) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
@@ -72,12 +82,21 @@ export async function POST(req: Request) {
       imageUrls.push(`/uploads/${filename}`);
     }
 
-    // แปลง health_status เป็น enum
-    const health_status =
-      HealthStatus[health_status_str as keyof typeof HealthStatus];
-    if (!health_status) {
+    // แปลง string เป็น enum
+    const vaccination_status =
+      VaccinationStatus[vaccinationStr as keyof typeof VaccinationStatus];
+    if (!vaccination_status) {
       return NextResponse.json(
-        { error: "health_status ไม่ถูกต้อง" },
+        { error: "vaccination_status ไม่ถูกต้อง" },
+        { status: 400 }
+      );
+    }
+
+    const neutered_status =
+      NeuteredStatus[neuteredStr as keyof typeof NeuteredStatus];
+    if (!neutered_status) {
+      return NextResponse.json(
+        { error: "neutered_status ไม่ถูกต้อง" },
         { status: 400 }
       );
     }
@@ -90,7 +109,7 @@ export async function POST(req: Request) {
     } else {
       return NextResponse.json({ error: "sex ไม่ถูกต้อง" }, { status: 400 });
     }
-    
+
     const createdPost = await prisma.petRehomePost.create({
       data: {
         user_id,
@@ -99,7 +118,10 @@ export async function POST(req: Request) {
         type,
         sex: sexEnum,
         age,
-        health_status,
+        vaccination_status,
+        neutered_status,
+        address,
+        contact,
         reason,
         status: PetRehomeStatus.AVAILABLE,
         images: {

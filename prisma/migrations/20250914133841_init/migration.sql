@@ -1,14 +1,23 @@
 -- CreateEnum
-CREATE TYPE "public"."AnimalReportStatus" AS ENUM ('ย้ายที่อยู่', 'ได้รับการช่วยเหลือ');
+CREATE TYPE "public"."AnimalReportStatus" AS ENUM ('MOVED', 'RESCUED');
 
 -- CreateEnum
 CREATE TYPE "public"."HelpActionType" AS ENUM ('feed', 'adopt');
 
 -- CreateEnum
-CREATE TYPE "public"."HealthStatus" AS ENUM ('ฉีดวัดซีนแล้ว', 'ยังไม่ได้ฉีดวัคซีน');
+CREATE TYPE "public"."VaccinationStatus" AS ENUM ('ฉีดวัดซีนแล้ว', 'ยังไม่ได้ฉีดวัคซีน');
+
+-- CreateEnum
+CREATE TYPE "public"."NeuteredStatus" AS ENUM ('ทำหมันแล้ว', 'ยังไม่ได้่ทำหมัน');
 
 -- CreateEnum
 CREATE TYPE "public"."PetRehomeStatus" AS ENUM ('available', 'adopted');
+
+-- CreateEnum
+CREATE TYPE "public"."PetSex" AS ENUM ('MALE', 'FEMALE');
+
+-- CreateEnum
+CREATE TYPE "public"."Role" AS ENUM ('user', 'admin');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
@@ -16,6 +25,7 @@ CREATE TABLE "public"."User" (
     "name" VARCHAR(100) NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
+    "role" "public"."Role" NOT NULL DEFAULT 'user',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("user_id")
 );
@@ -24,6 +34,7 @@ CREATE TABLE "public"."User" (
 CREATE TABLE "public"."AnimalReports" (
     "report_id" SERIAL NOT NULL,
     "animal_type" VARCHAR(20) NOT NULL,
+    "user_id" INTEGER,
     "description" TEXT NOT NULL,
     "behavior" VARCHAR(100) NOT NULL,
     "latitude" DECIMAL(10,6) NOT NULL,
@@ -62,9 +73,13 @@ CREATE TABLE "public"."PetRehomePost" (
     "pet_name" VARCHAR(50) NOT NULL,
     "type" TEXT NOT NULL,
     "age" VARCHAR(100) NOT NULL,
-    "health_status" "public"."HealthStatus" NOT NULL,
+    "vaccination_status" "public"."VaccinationStatus" NOT NULL,
     "reason" TEXT NOT NULL,
     "status" "public"."PetRehomeStatus" NOT NULL,
+    "sex" "public"."PetSex" NOT NULL,
+    "address" VARCHAR(255) NOT NULL,
+    "contact" VARCHAR(100) NOT NULL,
+    "neutered_status" "public"."NeuteredStatus" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "PetRehomePost_pkey" PRIMARY KEY ("post_id")
@@ -81,6 +96,9 @@ CREATE TABLE "public"."PetRehomeImages" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
+
+-- AddForeignKey
+ALTER TABLE "public"."AnimalReports" ADD CONSTRAINT "AnimalReports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."User"("user_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."AnimalImage" ADD CONSTRAINT "AnimalImage_report_id_fkey" FOREIGN KEY ("report_id") REFERENCES "public"."AnimalReports"("report_id") ON DELETE RESTRICT ON UPDATE CASCADE;
