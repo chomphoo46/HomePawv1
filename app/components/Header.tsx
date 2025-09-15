@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { HiOutlineCamera } from "react-icons/hi2";
 import { GoHeart, GoHome } from "react-icons/go";
 import { BiUser } from "react-icons/bi";
+import { FiLogOut } from "react-icons/fi";
 import { RiUserFollowLine, RiContactsBook3Line } from "react-icons/ri";
 import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
 import Link from "next/link";
@@ -98,18 +99,30 @@ export default function Header() {
               <RiUserFollowLine size={20} />
             </span>
             <button
-              className="px-4 py-2 pl-10 rounded-full hover:bg-gray-100 bg-[#D4A373] cursor-pointer"
+              className="px-4 py-2 pl-10 rounded-full hover:bg-[#E9B480] bg-[#D4A373] cursor-pointer"
               onClick={() => setShowMenu((v) => !v)}
             >
               {userName}
             </button>
+
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
+              <div className="absolute right-0 mt-2 w-44 bg-white border rounded shadow z-10">
+                {/* เมนูโปรไฟล์ */}
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
+                >
+                  <RiUserFollowLine size={18} className="text-black" />
+                  <span>โพสต์ของฉัน</span>
+                </Link>
+
+                {/* เมนูออกจากระบบ */}
                 <button
-                  className="block w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center gap-2 w-full text-left text-sm px-4 py-2 hover:bg-gray-100"
                   onClick={handleLogout}
                 >
-                  ออกจากระบบ
+                  <FiLogOut size={18} className="text-black" />
+                  <span>ออกจากระบบ</span>
                 </button>
               </div>
             )}
@@ -131,7 +144,11 @@ export default function Header() {
         className="md:hidden ml-2"
         onClick={() => setShowMobileMenu((prev) => !prev)}
       >
-        {showMobileMenu ? <HiOutlineX size={24} /> : <HiOutlineMenu size={24} />}
+        {showMobileMenu ? (
+          <HiOutlineX size={24} />
+        ) : (
+          <HiOutlineMenu size={24} />
+        )}
       </button>
 
       {/* Mobile Dropdown Menu */}

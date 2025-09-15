@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef, JSX } from "react";
+import Link from "next/link";
 import {
   HiOutlineTag,
   HiOutlineCalendar,
@@ -30,10 +31,16 @@ export default function HomePage() {
     urgentHelp: 0,
   });
 
-  // Mapping ค่าเพศ
-  const sexLabels: Record<string, { label: string; icon: JSX.Element }> = {
-    MALE: { label: "เพศ:  ผู้", icon: <FaMars /> },
-    FEMALE: { label: "เพศ:  เมีย", icon: <FaVenus /> },
+  // แปลงเพศเป็นภาษาไทย
+  const getSexLabel = (sex: string) => {
+    switch (sex) {
+      case "MALE":
+        return "เพศ: ผู้";
+      case "FEMALE":
+        return "เพศ: เมีย";
+      default:
+        return "ไม่ระบุ";
+    }
   };
 
   // Mapping สถานะสุขภาพ
@@ -50,7 +57,20 @@ export default function HomePage() {
       icon: <FaTimesCircle className="text-red-600" />,
     },
   };
-
+  // Mapping สถานะการทำหมัน
+  const neuteredstatusIcons: Record<
+    string,
+    { label: string; icon: JSX.Element }
+  > = {
+    NEUTERED: {
+      label: "ทำหมันแล้ว",
+      icon: <FaCircleCheck className="text-green-600" />,
+    },
+    NOT_NEUTERED: {
+      label: "ยังไม่ได้ทำหมัน",
+      icon: <FaTimesCircle className="text-red-600" />,
+    },
+  };
   useEffect(() => {
     const name = localStorage.getItem("userName");
     setUserName(name);
@@ -130,9 +150,9 @@ export default function HomePage() {
       {/* Stats Section */}
       <section className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center py-6 px-4">
         {[
-          ["สัตว์ไร้บ้านที่พบ", stats.foundAnimals, "text-[#D4A373]"],
           ["ประกาศหาบ้าน", stats.rehomingPosts, "text-purple-600"],
-          ["คนช่วยเหลือ", stats.urgentHelp, "text-green-600"], // TODO: เพิ่มภายหลัง
+          ["สัตว์ไร้บ้านที่พบ", stats.foundAnimals, "text-[#D4A373]"],
+          ["คนช่วยเหลือ", stats.urgentHelp, "text-green-600"],
         ].map(([label, count, color], i) => (
           <div key={i}>
             <p className={`text-3xl font-bold ${color}`}>{count}</p>
@@ -146,7 +166,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-2 py-4">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-              <FiMapPin size={35} style={{color: "#ff0000",}} />
+              <FiMapPin size={35} style={{ color: "#ff0000" }} />
             </span>
             <h2 className="font-semibold text-xl pl-16">แผนที่สัตว์ไร้บ้าน</h2>
           </div>
@@ -177,7 +197,7 @@ export default function HomePage() {
       <section className="px-4 py-8">
         <div className="relative mb-6">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black">
-            <FaHeart size={35} style={{color: "#ff0000",}} />
+            <FaHeart size={35} style={{ color: "#ff0000" }} />
           </span>
           <h2 className="font-semibold text-xl mb-4 pl-16">
             ประกาศหาบ้านล่าสุด
@@ -186,46 +206,78 @@ export default function HomePage() {
         <div className="bg-white rounded-2xl shadow-xl p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {posts.map((post) => (
-              <div
+              <Link
                 key={post.post_id}
-                className="rounded-2xl p-4 shadow hover:shadow-lg transition"
+                href={`/rehoming-report/${post.post_id}`}
+                className="w-full max-w-sm rounded-2xl p-4 shadow hover:shadow-lg transition cursor-pointer flex flex-col bg-white"
               >
-                {post.images?.length > 0 && (
+                {post.images?.length > 0 ? (
                   <img
                     src={post.images[0].image_url}
                     alt={post.pet_name}
-                    className="w-full h-75 object-cover mb-2 rounded-lg"
+                    className="w-full aspect-[4/3] object-cover mb-2 rounded-xl"
                   />
+                ) : (
+                  <div className="w-full aspect-[4/3] bg-gray-200 flex items-center justify-center rounded-xl">
+                    <span className="text-gray-500">ไม่มีรูปภาพ</span>
+                  </div>
                 )}
-                <h2 className="font-bold text-2xl text-[#D4A373]">
-                  {post.pet_name}
-                </h2>
-                <p className="flex items-center gap-2">
-                  <HiOutlineTag />
-                  พันธุ์: {post.type}
-                </p>
-                <p className="flex items-center gap-2">
-                  {sexLabels[post.sex]?.icon}
-                  {sexLabels[post.sex]?.label || "ไม่ระบุ"}
-                </p>
-                <p className="flex items-center gap-2">
-                  <HiOutlineCalendar />
-                  อายุ: {post.age}
-                </p>
-                <p className="flex items-center gap-2">
-                  <MdOutlineQuestionAnswer />
-                  เหตุผล: {post.reason}
-                </p>
-                <p className="flex items-center gap-2">
-                  <HiOutlinePhone />
-                  ติดต่อ: {post.phone}
-                </p>
-                <p className="flex items-center gap-2">
-                  {healthStatusIcons[post.vaccination_status]?.icon}
-                  สุขภาพ:{" "}
-                  {healthStatusIcons[post.vaccination_status]?.label || "ไม่ระบุ"}
-                </p>
-              </div>
+                 <div className="p-4 flex flex-col gap-2">
+                    <h2 className="font-bold text-lg md:text-xl text-[#D4A373] line-clamp-1">
+                      {post.pet_name}
+                    </h2>
+
+                    <div className="text-sm md:text-base text-gray-600 space-y-1">
+                      <p className="flex items-center gap-2">
+                        <HiOutlineTag className="text-[#D4A373]" /> พันธุ์:{" "}
+                        {post.type}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        {post.sex === "MALE" ? (
+                          <FaMars className="text-blue-500" />
+                        ) : post.sex === "FEMALE" ? (
+                          <FaVenus className="text-pink-500" />
+                        ) : (
+                          <FaGenderless className="text-gray-400" />
+                        )}
+                        {getSexLabel(post.sex)}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <HiOutlineCalendar className="text-[#D4A373]" /> อายุ:{" "}
+                        {post.age}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <MdOutlineQuestionAnswer className="text-[#D4A373]" />{" "}
+                        เหตุผล: {post.reason}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <HiOutlinePhone className="text-[#D4A373]" />{" "}
+                        {post.phone}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <FiMapPin className="text-red-500" />
+                        <span className="truncate">{post.address}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs md:text-sm pt-3 border-t mt-2">
+                      <div className="flex items-center gap-2 truncate">
+                        {healthStatusIcons[post.vaccination_status]?.icon}
+                        <span>
+                          {healthStatusIcons[post.vaccination_status]?.label ||
+                            "ไม่ระบุ"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 truncate">
+                        {neuteredstatusIcons[post.neutered_status]?.icon}
+                        <span>
+                          {neuteredstatusIcons[post.neutered_status]?.label ||
+                            "ไม่ระบุ"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+              </Link>
             ))}
           </div>
           <div className="text-center border border-[#D4A373] rounded-2xl mt-4 p-2">

@@ -131,7 +131,9 @@ export default function FormRehomingPage() {
           className="bg-[#FEFAE0] rounded-xl shadow-md p-10 w-100 max-w-md space-y-6"
         >
           <div>
-            <label className="block mb-1 font-medium">ชื่อสัตว์เลี้ยง</label>
+            <label className="block mb-1 font-medium">
+              ชื่อสัตว์เลี้ยง <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="pet_name"
@@ -143,7 +145,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">สายพันธุ์/ประเภท</label>
+            <label className="block mb-1 font-medium">
+              สายพันธุ์/ประเภท <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="type"
@@ -156,7 +160,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">เพศ</label>
+            <label className="block mb-1 font-medium">
+              เพศ <span className="text-red-500">*</span>
+            </label>
             <select
               name="sex"
               className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
@@ -171,7 +177,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">อายุ</label>
+            <label className="block mb-1 font-medium">
+              อายุ <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="age"
@@ -183,7 +191,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">สถานะวัคซีน</label>
+            <label className="block mb-1 font-medium">
+              สถานะวัคซีน <span className="text-red-500">*</span>
+            </label>
             <select
               name="vaccination_status"
               className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
@@ -198,7 +208,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">สถานะการทำหมัน</label>
+            <label className="block mb-1 font-medium">
+              สถานะการทำหมัน <span className="text-red-500">*</span>
+            </label>
             <select
               name="neutered_status"
               className="w-full border rounded-lg bg-white px-3 py-2 outline-none focus:border-2 focus:border-[#D4A373]"
@@ -214,7 +226,7 @@ export default function FormRehomingPage() {
 
           <div>
             <label className="block mb-1 font-medium">
-              เหตุผลที่หาบ้านใหม่
+              เหตุผลที่หาบ้านใหม่ <span className="text-red-500">*</span>
             </label>
             <textarea
               name="reason"
@@ -227,7 +239,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">เบอร์โทรติดต่อ</label>
+            <label className="block mb-1 font-medium">
+              เบอร์โทรติดต่อ <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="phone"
@@ -253,7 +267,9 @@ export default function FormRehomingPage() {
           </div>
 
           <div>
-            <label className="block mb-1 font-medium">ที่อยู่</label>
+            <label className="block mb-1 font-medium">
+              ที่อยู่ <span className="text-red-500">*</span>
+            </label>
             <textarea
               name="address"
               placeholder="บ้านเลขที่, ถนน, ตําบล, อําเภอ, จังหวัด, รหัสไปรษณีย์"
@@ -267,7 +283,7 @@ export default function FormRehomingPage() {
 
           <div>
             <label className="block font-medium mb-1">
-              วันที่และเวลาที่แจ้ง
+              วันที่และเวลาที่แจ้ง <span className="text-red-500">*</span>
             </label>
             <input
               type="datetime-local"
@@ -278,7 +294,9 @@ export default function FormRehomingPage() {
             />
           </div>
           <div className="w-full">
-            <label className="block  mb-2">อัปโหลดรูปภาพ</label>
+            <label className="block  mb-2">
+              อัปโหลดรูปภาพ <span className="text-red-500">*</span>
+            </label>
             <label
               htmlFor="file-upload"
               className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-6 block transition-all hover:border-[#D4A373]  bg-white"

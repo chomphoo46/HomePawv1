@@ -7,13 +7,13 @@ import {
   FaVenus,
   FaGenderless,
   FaTimesCircle,
-  FaMapPin,
 } from "react-icons/fa";
 import {
   HiOutlineTag,
   HiOutlineCalendar,
   HiOutlinePhone,
 } from "react-icons/hi";
+import { RiContactsBook3Line } from "react-icons/ri";
 import { BiUser } from "react-icons/bi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
@@ -69,11 +69,11 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
   > = {
     NEUTERED: {
       label: "ทำหมันแล้ว",
-      icon: <FaCircleCheck size={22} style={{ color: "green" }} />,
+      icon: <FaCircleCheck size={24} style={{ color: "green" }} />,
     },
     NOT_NEUTERED: {
       label: "ยังไม่ได้ทำหมัน",
-      icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
+      icon: <FaTimesCircle size={24} style={{ color: "red" }} />,
     },
   };
 
@@ -320,6 +320,17 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 <span className="font-semibold">Tel:</span> {animal.phone}
               </p>
             </div>
+
+            {/* เบอร์โทร */}
+            <div className="flex items-center">
+              <div className="flex items-center gap-2 px-2 text-sm md:text-base">
+                <RiContactsBook3Line />
+              </div>
+              <p className="text-gray-800">
+                <span className="font-semibold">ช่องทางติดต่ออื่นๆ:</span> {animal.contact || "-"}
+              </p>
+            </div>
+
 
             {/* ผู้โพสต์ */}
             <div className="flex items-center">

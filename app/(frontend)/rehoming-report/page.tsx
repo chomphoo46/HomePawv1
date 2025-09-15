@@ -146,7 +146,7 @@ export default function RehomingReportPage() {
   });
 
   return (
-    <div className={`min-h-screen bg-white flex flex-col ${mali.className}`}>
+    <div className={`min-h-screen bg-white ${mali.className}`}>
       <Header />
       <div className="flex flex-1 flex-col items-center justify-start w-full">
         {/* Banner */}
@@ -155,65 +155,92 @@ export default function RehomingReportPage() {
             “หนึ่งการรับเลี้ยง เปลี่ยนหนึ่งชีวิต”
           </h1>
           <button
-            className="bg-[#D4A373] hover:bg-[#d4a373cd] text-base md:text-xl text-white px-6 md:px-8 py-2 rounded-3xl font-semibold mb-18 cursor-pointer"
+            className="animate-bounce bg-[#D4A373] hover:bg-[#d4a373cd] text-base md:text-xl text-white px-6 md:px-8 py-2 rounded-3xl font-semibold mb-18 cursor-pointer"
             onClick={() => router.push("/form-rehoming")}
           >
             หาบ้านให้สัตว์เลี้ยงของคุณ คลิกที่นี่
           </button>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-3 w-full justify-center">
-            <input
-              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              placeholder="สายพันธุ์"
-              value={filters.breed}
-              onChange={(e) =>
-                setFilters({ ...filters, breed: e.target.value })
-              }
-            />
-            <select
-              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              value={filters.sex}
-              onChange={(e) => setFilters({ ...filters, sex: e.target.value })}
-            >
-              <option value="All">ทั้งหมด</option>
-              <option value="female">เพศเมีย</option>
-              <option value="male">เพศผู้</option>
-            </select>
-            <select
-              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              value={filters.age}
-              onChange={(e) => setFilters({ ...filters, age: e.target.value })}
-            >
-              <option value="All">ทั้งหมด</option>
-              <option value="0-1year">อายุ 0-1 ปี</option>
-              <option value="1-5year">อายุ 1-5 ปี</option>
-              <option value="5-10year">อายุ 5-10 ปี</option>
-              <option value="10year up">อายุ 10 ปีขึ้นไป</option>
-            </select>
+          <div className="flex flex-wrap gap-4 w-full justify-center">
+            <div className="flex flex-col">
+              <span className="mb-1 text-left pl-1">สายพันธุ์</span>
+              <input
+                className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+                value={filters.breed}
+                onChange={(e) =>
+                  setFilters({ ...filters, breed: e.target.value })
+                }
+              />
+            </div>
 
-            <input
-              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              placeholder="สถานที่"
-              value={filters.location}
-              onChange={(e) =>
-                setFilters({ ...filters, location: e.target.value })
-              }
-            />
-            <select
-              className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
-              value={filters.vaccinated}
-              onChange={(e) =>
-                setFilters({ ...filters, vaccinated: e.target.value })
-              }
-            >
-              <option value="">ทั้งหมด</option>
-              <option value="vaccinated">ฉีดวัคซีนแล้ว</option>
-              <option value="unvaccinated">ยังไม่ได้ฉีด</option>
-            </select>
-            <button className="border px-4 py-2 rounded-lg cursor-pointer bg-[#FEFAE0] hover:bg-[#FAEDCD]">
-              <FaSearch />
-            </button>
+            <div className="flex flex-col">
+              <span className="mb-1 text-left pl-1">เพศ</span>
+              <select
+                className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+                value={filters.sex}
+                onChange={(e) =>
+                  setFilters({ ...filters, sex: e.target.value })
+                }
+              >
+                <option value="All">ทั้งหมด</option>
+                <option value="female">เพศเมีย</option>
+                <option value="male">เพศผู้</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <span className="mb-1 text-left pl-1">อายุ</span>
+              <select
+                className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+                value={filters.age}
+                onChange={(e) =>
+                  setFilters({ ...filters, age: e.target.value })
+                }
+              >
+                <option value="All">ทั้งหมด</option>
+                <option value="0-1year">อายุ 0-1 ปี</option>
+                <option value="1-5year">อายุ 1-5 ปี</option>
+                <option value="5-10year">อายุ 5-10 ปี</option>
+                <option value="10year up">อายุ 10 ปีขึ้นไป</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <span className="mb-1 text-left pl-1">สถานที่</span>
+              <input
+                className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+                value={filters.location}
+                onChange={(e) =>
+                  setFilters({ ...filters, location: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <span className="mb-1 text-left pl-1">Vaccinated</span>
+              <select
+                className="border rounded-lg px-3 py-2 w-40 md:w-48 outline-none focus:border-2 focus:border-[#D4A373]"
+                value={filters.vaccinated}
+                onChange={(e) =>
+                  setFilters({ ...filters, vaccinated: e.target.value })
+                }
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="vaccinated">ฉีดวัคซีนแล้ว</option>
+                <option value="unvaccinated">ยังไม่ได้ฉีด</option>
+              </select>
+            </div>
+
+            {/* ปุ่มเสิร์จ */}
+            <div className="flex items-end">
+              <button
+                className="border rounded-lg cursor-pointer bg-[#FEFAE0] hover:bg-[#FAEDCD] 
+                       w-20 md:w-20 h-[42px] flex items-center justify-center"
+              >
+                <FaSearch />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -235,75 +262,98 @@ export default function RehomingReportPage() {
         </div>
 
         {/* Pet cards grid */}
-        <div className="px-4 md:px-8 lg:px-4 w-full ml-160">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2 sm:p-4 justify-items-center">
+        <div className="px-4 md:px-8 lg:px-12 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 ml-12">
             {sortedPosts.map((post: any) => (
-              <Link
+              <div
                 key={post.post_id}
-                href={`/rehoming-report/${post.post_id}`}
-                className="w-full max-w-sm rounded-2xl p-4 shadow hover:shadow-lg transition cursor-pointer flex flex-col bg-white"
+                className="relative w-full rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all bg-white group border border-gray-100"
               >
-                {post.images?.length > 0 ? (
-                  <img
-                    src={post.images[0].image_url}
-                    alt={post.pet_name}
-                    className="w-full aspect-[4/3] object-cover mb-2 rounded-xl"
-                  />
-                ) : (
-                  <div className="w-full aspect-[4/3] bg-gray-200 flex items-center justify-center rounded-xl">
-                    <span className="text-gray-500">ไม่มีรูปภาพ</span>
-                  </div>
-                )}
-                <h2 className="font-bold text-lg md:text-2xl text-[#D4A373] truncate">
-                  {post.pet_name}
-                </h2>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  <HiOutlineTag /> พันธุ์: {post.type}
-                </p>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  {post.sex === "MALE" ? (
-                    <FaMars />
-                  ) : post.sex === "FEMALE" ? (
-                    <FaVenus />
+                <Link
+                  key={post.post_id}
+                  href={`/rehoming-report/${post.post_id}`}
+                  className="flex flex-col"
+                >
+                  {/* Image */}
+                  {post.images?.length > 0 ? (
+                    <img
+                      src={post.images[0].image_url}
+                      alt={post.pet_name}
+                      className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   ) : (
-                    <FaGenderless />
+                    <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                      ไม่มีรูปภาพ
+                    </div>
                   )}
-                  {getSexLabel(post.sex)}
-                </p>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  <HiOutlineCalendar /> อายุ: {post.age}
-                </p>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  <MdOutlineQuestionAnswer /> เหตุผล: {post.reason}
-                </p>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  <HiOutlinePhone /> ติดต่อ: {post.phone}
-                </p>
-                <p className="flex items-center gap-2 text-sm md:text-base">
-                  <FiMapPin />
-                  <span className="truncate">{post.address}</span>
-                </p>
 
-                <div className="flex items-center gap-6 text-sm md:text-base py-2">
-                  {/* Vaccination status */}
-                  <div className="flex items-center gap-2 max-w-[50%] truncate">
-                    {healthStatusIcons[post.vaccination_status]?.icon}
-                    <span className="truncate">
-                      {healthStatusIcons[post.vaccination_status]?.label ||
-                        "ไม่ระบุ"}
-                    </span>
+                  {/* Content */}
+                  <div className="p-4 text-sm md:text-base text-gray-700 space-y-2">
+                    <h3 className="text-xl font-semibold text-[#D4A373] truncate">
+                      {post.pet_name}
+                    </h3>
+
+                    <p className="flex items-center gap-2">
+                      <HiOutlineTag className="text-[#D4A373]" />{" "}
+                      {post.type || "ไม่ระบุ"}
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      {post.sex === "MALE" ? (
+                        <FaMars className="text-blue-500" />
+                      ) : post.sex === "FEMALE" ? (
+                        <FaVenus className="text-pink-500" />
+                      ) : (
+                        <FaGenderless className="text-gray-400" />
+                      )}
+                      {getSexLabel(post.sex)}
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <HiOutlineCalendar className="text-[#D4A373]" /> อายุ:{" "}
+                      {post.age || "ไม่ระบุ"}
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <MdOutlineQuestionAnswer className="text-[#D4A373]" />{" "}
+                      เหตุผล:{" "}
+                      <span className="truncate">
+                        {post.reason || "ไม่ระบุ"}
+                      </span>
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <HiOutlinePhone className="text-[#D4A373]" />{" "}
+                      {post.phone || "ไม่ระบุ"}
+                    </p>
+
+                    <p className="flex items-center gap-2">
+                      <FiMapPin className="text-red-500" />
+                      <span className="truncate">
+                        {post.address || "ไม่ระบุ"}
+                      </span>
+                    </p>
                   </div>
 
-                  {/* Neutered status */}
-                  <div className="flex items-center gap-2 max-w-[50%] truncate">
-                    {neuteredstatusIcons[post.neutered_status]?.icon}
-                    <span className="truncate">
-                      {neuteredstatusIcons[post.neutered_status]?.label ||
-                        "ไม่ระบุ"}
-                    </span>
+                  {/* Footer */}
+                  <div className="flex items-center gap-4 text-xs md:text-sm pt-3 border-t mt-2 px-4">
+                    <div className="flex items-center gap-2 truncate">
+                      {healthStatusIcons[post.vaccination_status]?.icon}
+                      <span>
+                        {healthStatusIcons[post.vaccination_status]?.label ||
+                          "ไม่ระบุ"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 truncate">
+                      {neuteredstatusIcons[post.neutered_status]?.icon}
+                      <span>
+                        {neuteredstatusIcons[post.neutered_status]?.label ||
+                          "ไม่ระบุ"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </div>
