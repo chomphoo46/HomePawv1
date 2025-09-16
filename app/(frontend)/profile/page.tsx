@@ -136,8 +136,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab("rehoming")}
                 className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 ${
                   activeTab === "rehoming"
-                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg"
-                    : "text-gray-600 hover:text-orange-500 hover:bg-orange-50"
+                    ? "bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE] text-[#D4A373] shadow-lg"
+                    : "text-gray-600 hover:text-[#D4A373] hover:bg-orange-50"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
