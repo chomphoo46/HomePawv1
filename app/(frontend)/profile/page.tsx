@@ -114,6 +114,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUpdate = async (post_id: string, formData: any) => {
+    try {
+      const res = await fetch("/api/rehoming-report/my-posts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          post_id,
+          ...formData, // เช่น { title, description, location }
+        }),
+      });
+
+      if (!res.ok) throw new Error("แก้ไขโพสต์ไม่สำเร็จ");
+
+      const updated = await res.json();
+      console.log("อัปเดตโพสต์แล้ว:", updated);
+      alert("แก้ไขโพสต์เรียบร้อย ✅");
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการแก้ไขโพสต์");
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-white ${mali.className}`}>
       <Header />
@@ -127,7 +149,7 @@ export default function ProfilePage() {
             จัดการโพสต์หาบ้านและแจ้งพบสัตว์เลี้ยงของคุณ
           </p>
         </div>
-        
+
         {/* Tab Navigation */}
         <div className="mb-8">
           <div className="border-b border-gray-200 bg-white rounded-t-2xl shadow-sm">
@@ -284,6 +306,15 @@ export default function ProfilePage() {
                   onClick={() => handleDelete(post.post_id)}
                   className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
                   title="ลบโพสต์"
+                >
+                  <FaTrash size={18} />
+                </button>
+
+                {/* ปุ่มแก้ไขโพสต์ */}
+                <button
+                  onClick={() => handleUpdate(post.post_id)}
+                  className="absolute top-3 right-13 bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
+                  title="แก้ไขโพสต์"
                 >
                   <FaTrash size={18} />
                 </button>
