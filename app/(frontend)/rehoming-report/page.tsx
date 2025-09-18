@@ -314,7 +314,7 @@ export default function RehomingReportPage() {
 
         {/* Pet cards grid */}
         <div className="px-4 md:px-8 lg:px-12 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 ml-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {sortedPosts.map((post: any) => (
               <div
                 key={post.post_id}

@@ -129,18 +129,13 @@ export default function FormRehomingPage() {
     }
   };
 
-  const steps = [
-    { id: 1, title: "ข้อมูลพื้นฐาน", icon: FaPaw },
-    { id: 2, title: "สุขภาพ", icon: HiHeart },
-    { id: 3, title: "การติดต่อ", icon: HiSparkles },
-  ];
-
+ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
       <Header />
       
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#D4A373] to-[#E76F51] text-white py-12 mb-8">
+      <div className="bg-gradient-to-r from-[#D4A373] to-[#f1e8ad] text-white py-12 mb-8">
         <div className="max-w-4xl mx-auto text-center px-4">
           <div className="flex items-center justify-center gap-3 mb-4">
             <HiHeart className="text-4xl animate-pulse" />
@@ -154,41 +149,7 @@ export default function FormRehomingPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-12">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep >= step.id;
-              const isCompleted = currentStep > step.id;
-              
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className={`
-                    flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300
-                    ${isActive 
-                      ? 'bg-[#D4A373] border-[#D4A373] text-white shadow-lg' 
-                      : 'bg-white border-gray-300 text-gray-400'
-                    }
-                  `}>
-                    {isCompleted ? <FaCheck /> : <Icon />}
-                  </div>
-                  <div className="ml-3 hidden sm:block">
-                    <div className={`text-sm font-medium ${isActive ? 'text-[#D4A373]' : 'text-gray-500'}`}>
-                      {step.title}
-                    </div>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-4 transition-all duration-300 ${
-                      currentStep > step.id ? 'bg-[#D4A373]' : 'bg-gray-200'
-                    }`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
+       
         {/* Form */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-[#FEFAE0] to-[#FAEDCD] px-6 py-4 border-b">
@@ -303,8 +264,8 @@ export default function FormRehomingPage() {
                     required
                   >
                     <option value="">-- เลือกสถานะวัคซีน --</option>
-                    <option value="VACCINATED">✅ ฉีดวัดซีนแล้ว</option>
-                    <option value="NOT_VACCINATED">❌ ยังไม่ได้ฉีดวัคซีน</option>
+                    <option value="VACCINATED">ฉีดวัดซีนแล้ว</option>
+                    <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
                   </select>
                 </div>
 
@@ -322,8 +283,8 @@ export default function FormRehomingPage() {
                     required
                   >
                     <option value="">-- เลือกสถานะการทำหมัน --</option>
-                    <option value="NEUTERED">✅ ทำหมันแล้ว</option>
-                    <option value="NOT_NEUTERED">❌ ยังไม่ได้ทำหมัน</option>
+                    <option value="NEUTERED">ทำหมันแล้ว</option>
+                    <option value="NOT_NEUTERED">ยังไม่ได้ทำหมัน</option>
                   </select>
                 </div>
               </div>
@@ -488,7 +449,7 @@ export default function FormRehomingPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-gradient-to-r from-[#D4A373] to-[#E76F51] hover:from-[#E76F51] hover:to-[#D4A373] 
+              className="w-full bg-gradient-to-r fbg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
                        text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
                        transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
                        disabled:cursor-not-allowed disabled:transform-none text-lg"
