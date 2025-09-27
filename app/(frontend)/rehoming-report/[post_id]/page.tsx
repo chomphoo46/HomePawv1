@@ -2,12 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { JSX } from "react";
 import Header from "@/app/components/Header";
 import Link from "next/link";
-import {
-  FaMars,
-  FaVenus,
-  FaGenderless,
-  FaTimesCircle,
-} from "react-icons/fa";
+import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
 import {
   HiOutlineTag,
   HiOutlineCalendar,
@@ -31,8 +26,13 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
 
   // ดึงข้อมูลสัตว์เลี้ยงพร้อม relation images
   const animal = await prisma.petRehomePost.findUnique({
-    where: { post_id: postId },
-    include: { images: true, user: true },
+    where: {
+      post_id: Number(params.post_id),
+    },
+    include: {
+      images: true,
+      user: true,
+    },
   });
 
   // แปลงเพศเป็นภาษาไทย
@@ -327,10 +327,10 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 <RiContactsBook3Line />
               </div>
               <p className="text-gray-800">
-                <span className="font-semibold">ช่องทางติดต่ออื่นๆ:</span> {animal.contact || "-"}
+                <span className="font-semibold">ช่องทางติดต่ออื่นๆ:</span>{" "}
+                {animal.contact || "-"}
               </p>
             </div>
-
 
             {/* ผู้โพสต์ */}
             <div className="flex items-center">

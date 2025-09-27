@@ -79,13 +79,28 @@ export async function DELETE(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const user_id = Number(session.user.id);
 
+    // ดึงค่าที่ส่งมาจาก frontend
     const body = await req.json();
-    const { post_id, pet_name,phone,type,sex,age,vaccination_status,neutered_status,address,contact,reason,status} = body;
+    const {
+      post_id,
+      pet_name,
+      phone,
+      type,
+      sex,
+      age,
+      vaccination_status,
+      neutered_status,
+      address,
+      contact,
+      reason,
+      status,
+    } = body;
 
     if (!post_id) {
       return NextResponse.json(
@@ -94,29 +109,37 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // ตรวจสอบว่าโพสต์นี้เป็นของผู้ใช้เองจริงไหม
-     const post = await prisma.petRehomePost.findUnique({ where: { post_id } });
-    if (!post || post.user_id !== user_id) {
+    // ตรวจสอบว่าโพสต์นี้มีจริงและเป็นของ user ที่ล็อกอิน
+    const post = await prisma.petRehomePost.findUnique({
+      where: { post_id },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "ไม่พบโพสต์" }, { status: 404 });
+    }
+
+    if (post.user_id !== user_id) {
       return NextResponse.json(
-        { error: "คุณไม่สามารถลบโพสต์นี้ได้" },
+        { error: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้" },
         { status: 403 }
       );
     }
-    // อัปเดตโพสต์
+
+    // อัปเดตโพสต์ (เฉพาะฟิลด์ที่ส่งมา ไม่บังคับต้องใส่ทั้งหมด)
     const updatedPost = await prisma.petRehomePost.update({
       where: { post_id },
       data: {
-        pet_name,
-        type,
-        sex,
-        age,
-        vaccination_status,
-        neutered_status,
-        address,
-        contact,
-        reason,
-        status,
-        phone
+        ...(pet_name && { pet_name }),
+        ...(phone && { phone }),
+        ...(type && { type }),
+        ...(sex && { sex }),
+        ...(age && { age }),
+        ...(vaccination_status && { vaccination_status }),
+        ...(neutered_status && { neutered_status }),
+        ...(address && { address }),
+        ...(contact && { contact }),
+        ...(reason && { reason }),
+        ...(status && { status }),
       },
     });
 

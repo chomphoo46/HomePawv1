@@ -33,6 +33,20 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"rehoming" | "found">("rehoming");
   const [rehomingPosts, setRehomingPosts] = useState([]);
   const [foundPosts, setFoundPosts] = useState([]);
+  const [formData, setFormData] = useState({
+    phone: "",
+    pet_name: "",
+    type: "",
+    sex: "",
+    age: "",
+    vaccination_status: "",
+    neutered_status: "",
+    address: "",
+    contact: "",
+    reason: "",
+    images: [] as File[],
+  });
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
@@ -114,6 +128,7 @@ export default function ProfilePage() {
     }
   };
 
+  // ฟังก์ชันแก้ไขโพสต์
   const handleUpdate = async (post_id: string, formData: any) => {
     try {
       const res = await fetch("/api/rehoming-report/my-posts", {
@@ -121,7 +136,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           post_id,
-          ...formData, // เช่น { title, description, location }
+          formData, // เช่น { title, description, location }
         }),
       });
 
@@ -310,14 +325,13 @@ export default function ProfilePage() {
                   <FaTrash size={18} />
                 </button>
 
-                {/* ปุ่มแก้ไขโพสต์ */}
-                <button
-                  onClick={() => handleUpdate(post.post_id)}
-                  className="absolute top-3 right-13 bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
+                <Link
+                  href={`/rehoming-report/edit/${post.post_id}`}
+                  className="absolute top-3 right-12 bg-white p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition"
                   title="แก้ไขโพสต์"
                 >
-                  <FaTrash size={18} />
-                </button>
+                  ✏️
+                </Link>
               </div>
             ))}
           </div>
