@@ -20,6 +20,7 @@ import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaCircleCheck } from "react-icons/fa6";
 import Link from "next/link";
 import { Mali } from "next/font/google";
+import { MdModeEdit } from "react-icons/md";
 
 const mali = Mali({
   subsets: ["latin", "thai"],
@@ -325,12 +326,13 @@ export default function ProfilePage() {
                   <FaTrash size={18} />
                 </button>
 
+                {/* ปุ่มแก้ไขโพสต์ */}
                 <Link
                   href={`/rehoming-report/edit/${post.post_id}`}
-                  className="absolute top-3 right-12 bg-white p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition"
+                  className="absolute top-3 right-13 bg-white p-2 rounded-full shadow hover:bg-green-50 hover:text-green-600 transition"
                   title="แก้ไขโพสต์"
                 >
-                  ✏️
+                  <MdModeEdit size={20} />
                 </Link>
               </div>
             ))}
