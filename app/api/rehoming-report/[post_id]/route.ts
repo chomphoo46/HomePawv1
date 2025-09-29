@@ -8,11 +8,12 @@ const prisma = new PrismaClient();
 // GET - ดึงข้อมูลโพสต์เดียว
 export async function GET(
   req: Request,
-  { params }: { params: { post_id: string } }
+  context: { params: Promise<{ post_id: string }>  }
 ) {
   try {
+    const { post_id } = await context.params; 
     const post = await prisma.petRehomePost.findUnique({
-      where: { post_id: Number(params.post_id) },
+      where: { post_id: Number(post_id) },
       include: { images: true, user: true },
     });
 
@@ -30,18 +31,20 @@ export async function GET(
 // PATCH - แก้ไขโพสต์
 export async function PATCH(
   req: Request,
-  { params }: { params: { post_id: string } }
+  context: { params: Promise<{ post_id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const user_id = Number(session.user.id);
+    const user_id = session.user.id;
 
     const body = await req.json();
     const { deletedImageIds, images, created_at, ...rest } = body;
-    const postId = Number(params.post_id);
+
+    const { post_id } = await context.params;
+    const postId = Number(post_id);
 
     // ตรวจสอบว่าเป็นเจ้าของโพสต์
     const post = await prisma.petRehomePost.findUnique({

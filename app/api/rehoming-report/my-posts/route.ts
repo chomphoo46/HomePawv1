@@ -39,7 +39,7 @@ export async function DELETE(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const user_id = Number(session.user.id);
+    const user_id = session.user.id;
 
     const { post_id } = await req.json();
     if (!post_id) {
@@ -83,7 +83,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user_id = Number(session.user.id);
+    const user_id = session.user.id;
 
     // ดึงค่าที่ส่งมาจาก frontend
     const body = await req.json();
