@@ -21,8 +21,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user_id = Number(session.user.id);
-
   try {
     const formData = await req.formData();
 
@@ -112,7 +110,7 @@ export async function POST(req: Request) {
 
     const createdPost = await prisma.petRehomePost.create({
       data: {
-        user_id,
+        user_id: session.user.id,
         phone,
         pet_name,
         type,

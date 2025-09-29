@@ -21,10 +21,11 @@ CREATE TYPE "public"."Role" AS ENUM ('user', 'admin');
 
 -- CreateTable
 CREATE TABLE "public"."User" (
-    "user_id" SERIAL NOT NULL,
+    "user_id" TEXT NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "googleId" TEXT,
+    "password" TEXT,
     "role" "public"."Role" NOT NULL DEFAULT 'user',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("user_id")
@@ -34,7 +35,7 @@ CREATE TABLE "public"."User" (
 CREATE TABLE "public"."AnimalReports" (
     "report_id" SERIAL NOT NULL,
     "animal_type" VARCHAR(20) NOT NULL,
-    "user_id" INTEGER,
+    "user_id" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "behavior" VARCHAR(100) NOT NULL,
     "latitude" DECIMAL(10,6) NOT NULL,
@@ -57,7 +58,7 @@ CREATE TABLE "public"."AnimalImage" (
 -- CreateTable
 CREATE TABLE "public"."HelpAction" (
     "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "report_id" INTEGER NOT NULL,
     "action_type" "public"."HelpActionType" NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -68,7 +69,7 @@ CREATE TABLE "public"."HelpAction" (
 -- CreateTable
 CREATE TABLE "public"."PetRehomePost" (
     "post_id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "phone" VARCHAR(15) NOT NULL,
     "pet_name" VARCHAR(50) NOT NULL,
     "type" TEXT NOT NULL,
@@ -97,8 +98,11 @@ CREATE TABLE "public"."PetRehomeImages" (
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "User_googleId_key" ON "public"."User"("googleId");
+
 -- AddForeignKey
-ALTER TABLE "public"."AnimalReports" ADD CONSTRAINT "AnimalReports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."User"("user_id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."AnimalReports" ADD CONSTRAINT "AnimalReports_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."User"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."AnimalImage" ADD CONSTRAINT "AnimalImage_report_id_fkey" FOREIGN KEY ("report_id") REFERENCES "public"."AnimalReports"("report_id") ON DELETE RESTRICT ON UPDATE CASCADE;

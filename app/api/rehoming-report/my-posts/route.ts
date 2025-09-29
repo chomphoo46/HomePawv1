@@ -14,10 +14,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user_id = Number(session.user.id);
+    const user_id = session.user.id;
 
     const posts = await prisma.petRehomePost.findMany({
-      where: { user_id },
+      where: { user_id: String(user_id) },
       orderBy: { created_at: "desc" },
       include: {
         images: true,
@@ -51,7 +51,7 @@ export async function DELETE(req: Request) {
 
     // ตรวจสอบว่าโพสต์เป็นของผู้ใช้นี้
     const post = await prisma.petRehomePost.findUnique({ where: { post_id } });
-    if (!post || post.user_id !== user_id) {
+    if (!post || post.user_id !== String(user_id)) {
       return NextResponse.json(
         { error: "คุณไม่สามารถลบโพสต์นี้ได้" },
         { status: 403 }
@@ -118,7 +118,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "ไม่พบโพสต์" }, { status: 404 });
     }
 
-    if (post.user_id !== user_id) {
+    if (post.user_id !== String(user_id)) {
       return NextResponse.json(
         { error: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้" },
         { status: 403 }

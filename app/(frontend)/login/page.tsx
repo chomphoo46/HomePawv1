@@ -20,10 +20,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (session?.user?.name) {
-      console.log("ชื่อผู้ใช้:", session.user.name);
-      localStorage.setItem("username", session.user.name); // ✅ เก็บใน localStorage
+      localStorage.setItem("username", session.user.name);
     }
   }, [session]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -46,21 +46,12 @@ export default function LoginPage() {
       return;
     }
 
-    // ดึงข้อมูล session เพื่อเอาชื่อผู้ใช้
-    try {
-      const sessionRes = await fetch("/api/auth/session");
-      const sessionData = await sessionRes.json();
-      if (sessionData?.user?.name) {
-        localStorage.setItem("username", sessionData.user.name);
-      }
-    } catch (err) {
-      console.error("Error fetching session:", err);
-    }
-
-    // ล็อกอินสำเร็จ → ไปหน้า Home
     router.push("/");
   };
-
+  const handleGoogleLogin = async () => {
+    // ใช้ callbackUrl เพื่อ redirect หลัง login
+    await signIn("google", { callbackUrl: "/" });
+  };
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Left side - Map image */}
@@ -125,22 +116,10 @@ export default function LoginPage() {
 
           <div className="text-center text-sm text-gray-500">Or</div>
 
+          {/* Google Login */}
           <button
             type="button"
-            onClick={async () => {
-              const res = await signIn("google", { callbackUrl: "/" });
-              if (!res?.error) {
-                try {
-                  const sessionRes = await fetch("/api/auth/session");
-                  const sessionData = await sessionRes.json();
-                  if (sessionData?.user?.name) {
-                    localStorage.setItem("username", sessionData.user.name);
-                  }
-                } catch (err) {
-                  console.error("Error fetching session:", err);
-                }
-              }
-            }}
+            onClick={handleGoogleLogin}
             className="w-full border py-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#FAEDCD] transition"
           >
             <FcGoogle size={20} />
