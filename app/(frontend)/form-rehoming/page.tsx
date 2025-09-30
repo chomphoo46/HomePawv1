@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
 import { HiPhoto, HiHeart, HiSparkles } from "react-icons/hi2";
 import { FaPaw, FaCheck } from "react-icons/fa";
+import { url } from "inspector";
 
 const initialForm = {
   pet_name: "",
@@ -29,16 +30,17 @@ export default function FormRehomingPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ dateTime: "" });
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [fileName, setFileName] = useState<string>("");
-  const [currentStep, setCurrentStep] = useState(1);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setPreviewUrl(URL.createObjectURL(file));
-      setFileName(file.name);
-      setForm((prev) => ({ ...prev, images: [file] }));
+    if (e.target.files) {
+      const files = Array.from(e.target.files).slice(0, 5); // จำกัด 5 รูป
+      setForm((prev) => ({ ...prev, images: files }));
+
+      // สร้าง preview url
+      const urls = files.map((file) => URL.createObjectURL(file));
+      setPreviewUrls(urls);
     }
   };
 
@@ -66,7 +68,7 @@ export default function FormRehomingPage() {
       </div>
     );
   }
-  
+
   if (status === "unauthenticated") {
     return null;
   }
@@ -106,7 +108,9 @@ export default function FormRehomingPage() {
       data.append("contact", form.contact);
       data.append("address", form.address);
       if (form.images.length > 0) {
-        data.append("images", form.images[0]);
+        form.images.forEach((file) => {
+          data.append("images", file);
+        });
       }
 
       const res = await fetch("/api/rehoming-report", {
@@ -129,33 +133,36 @@ export default function FormRehomingPage() {
     }
   };
 
- 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
       <Header />
-      
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#D4A373] to-[#f1e8ad] text-white py-12 mb-8">
         <div className="max-w-4xl mx-auto text-center px-4">
           <div className="flex items-center justify-center gap-3 mb-4">
             <HiHeart className="text-4xl animate-pulse" />
-            <h1 className="text-3xl md:text-4xl font-bold">แจ้งหาบ้านให้สัตว์เลี้ยง</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">
+              แจ้งหาบ้านให้สัตว์เลี้ยง
+            </h1>
             <HiHeart className="text-4xl animate-pulse" />
           </div>
           <p className="text-lg opacity-90 max-w-2xl mx-auto">
-            ช่วยให้น้องหาบ้านใหม่ที่อบอุ่น เพื่อให้น้องได้รับความรักและการดูแลที่ดีที่สุด
+            ช่วยให้น้องหาบ้านใหม่ที่อบอุ่น
+            เพื่อให้น้องได้รับความรักและการดูแลที่ดีที่สุด
           </p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-12">
-       
         {/* Form */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-gradient-to-r from-[#FEFAE0] to-[#FAEDCD] px-6 py-4 border-b">
             <div className="flex items-center gap-2">
               <FaPaw className="text-[#D4A373]" />
-              <span className="font-medium text-gray-700">กรอกข้อมูลสัตว์เลี้ยง</span>
+              <span className="font-medium text-gray-700">
+                กรอกข้อมูลสัตว์เลี้ยง
+              </span>
             </div>
           </div>
 
@@ -164,7 +171,9 @@ export default function FormRehomingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                 <FaPaw className="text-[#D4A373]" />
-                <h3 className="text-lg font-semibold text-gray-800">ข้อมูลพื้นฐาน</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  ข้อมูลพื้นฐาน
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,7 +255,9 @@ export default function FormRehomingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                 <HiHeart className="text-red-500" />
-                <h3 className="text-lg font-semibold text-gray-800">ข้อมูลสุขภาพ</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  ข้อมูลสุขภาพ
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,7 +323,9 @@ export default function FormRehomingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                 <HiSparkles className="text-[#E76F51]" />
-                <h3 className="text-lg font-semibold text-gray-800">ข้อมูลการติดต่อ</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  ข้อมูลการติดต่อ
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -387,29 +400,32 @@ export default function FormRehomingPage() {
             {/* Image Upload */}
             <div>
               <label className="block mb-3 font-medium text-gray-700">
-                อัปโหลดรูปภาพ <span className="text-red-500">*</span>
+                อัปโหลดรูปภาพ (1-5 รูป) <span className="text-red-500">*</span>
               </label>
               <label
                 htmlFor="file-upload"
                 className="cursor-pointer border-2 border-dashed border-gray-300 rounded-2xl p-8 block 
                          transition-all hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-gray-50"
               >
-                {previewUrl ? (
-                  <div className="flex flex-col items-center">
-                    <div className="relative group">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="max-h-48 rounded-xl shadow-lg object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 
-                                    transition-opacity duration-300 flex items-center justify-center">
-                        <span className="text-white font-medium">คลิกเพื่อเปลี่ยนรูป</span>
+                {previewUrls.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {previewUrls.map((url, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Preview ${idx + 1}`}
+                          className="max-h-48 rounded-xl shadow-lg object-cover w-full"
+                        />
+                        <div
+                          className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 
+                        transition-opacity duration-300 flex items-center justify-center"
+                        >
+                          <span className="text-white font-medium">
+                            รูปที่ {idx + 1}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <p className="mt-3 text-sm text-gray-600 font-medium text-center">
-                      {fileName}
-                    </p>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -418,7 +434,7 @@ export default function FormRehomingPage() {
                       คลิกเพื่ออัปโหลดรูปภาพ
                     </div>
                     <p className="text-sm text-gray-500">
-                      PNG, JPG, GIF สูงสุด 10MB
+                      PNG, JPG, GIF สูงสุด 10MB (ไม่เกิน 5 รูป)
                     </p>
                   </div>
                 )}
@@ -428,6 +444,7 @@ export default function FormRehomingPage() {
                 name="images"
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleFileChange}
                 className="sr-only"
               />

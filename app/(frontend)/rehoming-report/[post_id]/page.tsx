@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { JSX } from "react";
+
 import Header from "@/app/components/Header";
 import Link from "next/link";
 import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
@@ -173,41 +174,44 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
         </div>
 
         {/* รูปภาพแบบ Grid */}
-        <div className="mb-8">
+        <div className="mb-8 max-w-3xl mx-auto">
           {animal.images.length > 0 ? (
-            <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
-              {/* รูปใหญ่ซ้าย */}
-              <div className="col-span-1 row-span-2">
+            animal.images.length === 1 ? (
+              // รูปเดียว → ตรงกลาง
+              <div className="flex justify-center">
                 <img
-                  src={animal.images[0]?.image_url}
+                  src={animal.images[0].image_url}
                   alt={`${animal.pet_name}-1`}
-                  className="w-full h-full object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  className="w-full max-w-md object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
                 />
               </div>
-
-              {/* รูปเล็กด้านขวา */}
-              {animal.images.slice(1, 5).map((img, index) => (
-                <div key={img.id} className="aspect-square">
+            ) : (
+              // หลายรูป → Grid ปกติ
+              <div className="grid grid-cols-3 gap-4">
+                {/* รูปใหญ่ซ้าย */}
+                <div className="col-span-1 row-span-2">
                   <img
-                    src={img.image_url}
-                    alt={`${animal.pet_name}-${index + 2}`}
+                    src={animal.images[0]?.image_url}
+                    alt={`${animal.pet_name}-1`}
                     className="w-full h-full object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
                   />
                 </div>
-              ))}
 
-              {/* เติมช่องว่างถ้ารูปไม่พอ */}
-              {Array.from({
-                length: Math.max(0, 4 - animal.images.slice(1).length),
-              }).map((_, index) => (
-                <div
-                  key={`empty-${index}`}
-                  className="aspect-square bg-gray-100 rounded-lg"
-                ></div>
-              ))}
-            </div>
+                {/* รูปเล็กด้านขวา */}
+                {animal.images.slice(1).map((img, index) => (
+                  <div key={img.id} className="aspect-square">
+                    <img
+                      src={img.image_url}
+                      alt={`${animal.pet_name}-${index + 2}`}
+                      className="w-full h-full object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           ) : (
-            <div className="max-w-3xl mx-auto h-80 bg-gray-100 rounded-lg flex items-center justify-center shadow-inner">
+            // ไม่มีรูป
+            <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center shadow-inner">
               <div className="text-center">
                 <svg
                   className="w-16 h-16 text-gray-400 mx-auto mb-4"

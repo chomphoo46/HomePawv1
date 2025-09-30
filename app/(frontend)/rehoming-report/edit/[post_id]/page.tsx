@@ -312,6 +312,21 @@ export default function EditRehomingPage() {
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20"
               />
             </div>
+             <div>
+                  <label className="block mb-2 font-medium text-gray-700">
+                    ช่องทางติดต่ออื่น
+                  </label>
+                  <input
+                    type="text"
+                    name="contact"
+                    placeholder="เช่น Line ID, Facebook"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
+                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
+                             transition-all duration-300 bg-white"
+                    value={formData.contact}
+                    onChange={handleChange}
+                  />
+                </div>
 
             <div>
               <label className="block font-medium text-gray-700">

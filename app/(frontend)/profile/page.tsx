@@ -285,7 +285,7 @@ export default function ProfilePage() {
                         {post.age}
                       </p>
                       <p className="flex items-center gap-2">
-                        <MdOutlineQuestionAnswer className="text-[#D4A373]" />{" "}
+                        <MdOutlineQuestionAnswer className="text-[#D4A373] flex-shrink-0" />{" "}
                         เหตุผล: {post.reason}
                       </p>
                       <p className="flex items-center gap-2">
@@ -293,27 +293,33 @@ export default function ProfilePage() {
                         {post.phone}
                       </p>
                       <p className="flex items-center gap-2">
-                        <FiMapPin className="text-red-500" />
+                        <FiMapPin className="text-red-500 flex-shrink-0" />
                         <span className="truncate">{post.address}</span>
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs md:text-sm pt-3 border-t mt-2">
-                      <div className="flex items-center gap-2 truncate">
-                        {healthStatusIcons[post.vaccination_status]?.icon}
-                        <span>
-                          {healthStatusIcons[post.vaccination_status]?.label ||
-                            "ไม่ระบุ"}
+                    {/* Footer */}
+                  <div className="px-4 pb-4 pt-2 mt-auto">
+                    <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5 truncate min-w-0">
+                        <span className="flex-shrink-0">
+                          {healthStatusIcons[post.vaccination_status]?.icon}
+                        </span>
+                        <span className="truncate">
+                          {healthStatusIcons[post.vaccination_status]?.label || "ไม่ระบุ"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 truncate">
-                        {neuteredstatusIcons[post.neutered_status]?.icon}
-                        <span>
-                          {neuteredstatusIcons[post.neutered_status]?.label ||
-                            "ไม่ระบุ"}
+
+                      <div className="flex items-center gap-1.5 truncate min-w-0">
+                        <span className="flex-shrink-0">
+                          {neuteredstatusIcons[post.neutered_status]?.icon}
+                        </span>
+                        <span className="truncate">
+                          {neuteredstatusIcons[post.neutered_status]?.label || "ไม่ระบุ"}
                         </span>
                       </div>
                     </div>
+                  </div>
                   </div>
                 </Link>
 

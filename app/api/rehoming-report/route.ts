@@ -51,7 +51,8 @@ export async function POST(req: Request) {
       !neuteredStr ||
       !reason ||
       !address ||
-      images.length === 0
+      images.length === 0 ||
+      images.length > 5
     ) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
     }
@@ -144,7 +145,9 @@ export async function GET() {
     const posts = await prisma.petRehomePost.findMany({
       orderBy: { created_at: "desc" },
       include: {
-        images: true,
+        images: {
+          take: 1, // ดึงเฉพาะรูปแรก
+        },
         user: { select: { name: true, email: true } },
       },
     });
@@ -166,6 +169,26 @@ export async function DELETE(req: Request) {
         { error: "post_id is required" },
         { status: 400 }
       );
+    }
+
+    // หา images ของโพสต์นี้ก่อน
+    const post = await prisma.petRehomePost.findUnique({
+      where: { post_id },
+      include: { images: true },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "ไม่พบโพสต์" }, { status: 404 });
+    }
+
+    // ลบไฟล์จริงใน public/uploads
+    for (const img of post.images) {
+      const filePath = path.join(process.cwd(), "public", img.image_url);
+      try {
+        await fs.unlink(filePath);
+      } catch (err) {
+        console.warn(`⚠️ ลบไฟล์ไม่สำเร็จ: ${filePath}`);
+      }
     }
 
     const deletedPost = await prisma.petRehomePost.delete({
