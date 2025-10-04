@@ -173,44 +173,105 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
           </div>
         </div>
 
-        {/* รูปภาพแบบ Grid */}
-        <div className="mb-8 max-w-3xl mx-auto">
+        <div className="mb-8 max-w-5xl mx-auto">
           {animal.images.length > 0 ? (
-            animal.images.length === 1 ? (
-              // รูปเดียว → ตรงกลาง
-              <div className="flex justify-center">
-                <img
-                  src={animal.images[0].image_url}
-                  alt={`${animal.pet_name}-1`}
-                  className="w-full max-w-md object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                />
-              </div>
-            ) : (
-              // หลายรูป → Grid ปกติ
-              <div className="grid grid-cols-3 gap-4">
-                {/* รูปใหญ่ซ้าย */}
-                <div className="col-span-1 row-span-2">
-                  <img
-                    src={animal.images[0]?.image_url}
-                    alt={`${animal.pet_name}-1`}
-                    className="w-full h-full object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                  />
-                </div>
+            (() => {
+              const count = animal.images.length;
+              const imgs = animal.images.slice(0, 5); // จำกัด 5 รูป
 
-                {/* รูปเล็กด้านขวา */}
-                {animal.images.slice(1).map((img, index) => (
-                  <div key={img.id} className="aspect-square">
-                    <img
-                      src={img.image_url}
-                      alt={`${animal.pet_name}-${index + 2}`}
-                      className="w-full h-full object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                    />
-                  </div>
-                ))}
-              </div>
-            )
+              switch (count) {
+                // 1️⃣ รูปเดียว → กลางจอ, ขนาดพอดี
+                case 1:
+                  return (
+                    <div className="flex justify-center">
+                      <img
+                        src={imgs[0].image_url}
+                        alt={`${animal.pet_name}-1`}
+                        className="w-80 max-w-md object-cover rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                      />
+                    </div>
+                  );
+
+                // 2️⃣ สองรูป → ขนาดเท่ากันตรงกลาง
+                case 2:
+                  return (
+                    <div className="flex justify-center gap-4 flex-wrap">
+                      {imgs.map((img, i) => (
+                        <img
+                          key={img.id}
+                          src={img.image_url}
+                          alt={`${animal.pet_name}-${i + 1}`}
+                          className="w-48 h-48 md:w-64 md:h-64 object-cover rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                        />
+                      ))}
+                    </div>
+                  );
+
+                // 3️⃣ สามรูป → ขนาดเท่ากันเรียงกลาง
+                case 3:
+                  return (
+                    <div className="flex justify-center gap-4 flex-wrap">
+                      {imgs.map((img, i) => (
+                        <img
+                          key={img.id}
+                          src={img.image_url}
+                          alt={`${animal.pet_name}-${i + 1}`}
+                          className="w-50 h-50 md:w-64 md:h-64 object-cover rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                        />
+                      ))}
+                    </div>
+                  );
+
+                // 4️⃣ สี่รูป → 2 บน 2 ล่าง
+                case 4:
+                  return (
+                    <div className="max-w-[500px] mx-auto grid grid-cols-2 gap-2">
+                      {imgs.map((img, i) => (
+                        <div key={img.id} className="aspect-square w-full">
+                          <img
+                            src={img.image_url}
+                            alt={`${animal.pet_name}-${i + 1}`}
+                            className="w-full h-full object-cover rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+
+                // 5️⃣ ห้ารูป → ซ้ายใหญ่ ขวาเล็ก 4 รูป
+                default:
+                  return (
+                    <div className="grid grid-cols-[3fr_2fr] gap-3 max-w-6xl mx-auto">
+                      {/* รูปใหญ่ซ้าย */}
+                      <div className="overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ">
+                        <img
+                          src={imgs[0].image_url}
+                          alt={`${animal.pet_name}-1`}
+                          className="w-full h-full object-cover aspect-[4/3]  transition-transform duration-500"
+                        />
+                      </div>
+
+                      {/* รูปขวาเล็ก 4 รูป */}
+                      <div className="grid grid-rows-2 grid-cols-2 gap-3">
+                        {imgs.slice(1, 5).map((img, i) => (
+                          <div
+                            key={img.id}
+                            className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300  aspect-square"
+                          >
+                            <img
+                              src={img.image_url}
+                              alt={`${animal.pet_name}-${i + 2}`}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+              }
+            })()
           ) : (
-            // ไม่มีรูป
             <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center shadow-inner">
               <div className="text-center">
                 <svg
