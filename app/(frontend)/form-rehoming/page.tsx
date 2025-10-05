@@ -6,7 +6,10 @@ import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
 import { HiPhoto, HiHeart, HiSparkles } from "react-icons/hi2";
 import { FaPaw, FaCheck } from "react-icons/fa";
-import { url } from "inspector";
+type ExistingImage = {
+  id: number;
+  image_url: string;
+};
 
 const initialForm = {
   pet_name: "",
@@ -29,19 +32,40 @@ export default function FormRehomingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({ dateTime: "" });
+  const [formData, setFormData] = useState<{
+    dateTime: string;
+    images: File[];
+  }>({ dateTime: "", images: [] });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [fileName, setFileName] = useState<string>("");
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
 
+  // ✅ เพิ่ม / ลบ รูปภาพแบบไม่แทนที่ของเดิม และจำกัด 5 รูป
+  // ✅ เพิ่มรูปใหม่โดยไม่แทนรูปเดิม และจำกัด 5
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).slice(0, 5); // จำกัด 5 รูป
-      setForm((prev) => ({ ...prev, images: files }));
+      const newFiles = Array.from(e.target.files);
+      const combinedFiles = [...form.images, ...newFiles].slice(0, 5);
+      setForm((prev) => ({ ...prev, images: combinedFiles }));
 
-      // สร้าง preview url
-      const urls = files.map((file) => URL.createObjectURL(file));
-      setPreviewUrls(urls);
+      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+      setPreviewUrls((prev) => [...prev, ...newPreviewUrls].slice(0, 5));
     }
+    e.target.value = ""; // reset input
+  };
+
+  // ✅ ลบรูปใหม่
+  const handleRemoveNewImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ✅ ลบรูปเก่าจากฐานข้อมูล
+  const handleRemoveExistingImage = (id: number) => {
+    setExistingImages((prev) => prev.filter((img) => img.id !== id));
+    // อาจเพิ่ม logic ลบใน backend ด้วย (เช่น เรียก API DELETE)
   };
 
   useEffect(() => {
@@ -402,13 +426,36 @@ export default function FormRehomingPage() {
               <label className="block mb-3 font-medium text-gray-700">
                 อัปโหลดรูปภาพ (1-5 รูป) <span className="text-red-500">*</span>
               </label>
+
               <label
                 htmlFor="file-upload"
                 className="cursor-pointer border-2 border-dashed border-gray-300 rounded-2xl p-8 block 
-                         transition-all hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-gray-50"
+             transition-all hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-gray-50"
               >
-                {previewUrls.length > 0 ? (
+                {existingImages.length > 0 || previewUrls.length > 0 ? (
                   <div className="grid grid-cols-2 gap-4">
+                    {/* ✅ รูปเก่าที่ดึงมาจาก DB */}
+                    {existingImages.map((img) => (
+                      <div key={img.id} className="relative group">
+                        <img
+                          src={img.image_url}
+                          alt="existing"
+                          className="max-h-48 rounded-xl shadow-lg object-cover w-full"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveExistingImage(img.id);
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* ✅ รูปใหม่ที่เลือกเพิ่ม */}
                     {previewUrls.map((url, idx) => (
                       <div key={idx} className="relative group">
                         <img
@@ -416,16 +463,32 @@ export default function FormRehomingPage() {
                           alt={`Preview ${idx + 1}`}
                           className="max-h-48 rounded-xl shadow-lg object-cover w-full"
                         />
-                        <div
-                          className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 
-                        transition-opacity duration-300 flex items-center justify-center"
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveNewImage(idx);
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
                         >
-                          <span className="text-white font-medium">
-                            รูปที่ {idx + 1}
-                          </span>
-                        </div>
+                          ×
+                        </button>
                       </div>
                     ))}
+
+                    {/* ✅ ปุ่มเพิ่มรูป (หายเมื่อครบ 5) */}
+                    {existingImages.length + previewUrls.length < 5 && (
+                      <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                        <span className="text-gray-400">+ เพิ่มรูป</span>
+                      </label>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -439,6 +502,7 @@ export default function FormRehomingPage() {
                   </div>
                 )}
               </label>
+
               <input
                 id="file-upload"
                 name="images"

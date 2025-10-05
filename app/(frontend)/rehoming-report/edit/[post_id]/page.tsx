@@ -105,18 +105,31 @@ export default function EditRehomingPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle new file upload
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
-      const urls = filesArray.map((file) => URL.createObjectURL(file));
-      setPreviewFiles((prev) => [...prev, ...urls]);
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...filesArray],
-      }));
-    }
-  };
+  // ฟังก์ชันจัดการอัปโหลดไฟล์ใหม่
+const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files && e.target.files.length > 0) {
+    const newFiles = Array.from(e.target.files);
+
+    // รวมจำนวนรูปที่มีอยู่แล้ว (ทั้งเก่า + ใหม่)
+    const totalImages = existingImages.length + previewFiles.length;
+
+    // ถ้าเกิน 5 รูป ให้เหลือได้ไม่เกิน 5
+    const availableSlots = 5 - totalImages;
+    if (availableSlots <= 0) return;
+
+    const limitedFiles = newFiles.slice(0, availableSlots);
+
+    // สร้าง preview URL สำหรับรูปใหม่
+    const newPreviewUrls = limitedFiles.map((file) => URL.createObjectURL(file));
+
+    // อัปเดต state
+    setPreviewFiles((prev) => [...prev, ...newPreviewUrls]);
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...limitedFiles],
+    }));
+  }
+};
 
   // Remove existing image
   const handleRemoveExistingImage = (id: number) => {
@@ -312,21 +325,21 @@ export default function EditRehomingPage() {
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20"
               />
             </div>
-             <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    ช่องทางติดต่ออื่น
-                  </label>
-                  <input
-                    type="text"
-                    name="contact"
-                    placeholder="เช่น Line ID, Facebook"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                ช่องทางติดต่ออื่น
+              </label>
+              <input
+                type="text"
+                name="contact"
+                placeholder="เช่น Line ID, Facebook"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
                              focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
                              transition-all duration-300 bg-white"
-                    value={formData.contact}
-                    onChange={handleChange}
-                  />
-                </div>
+                value={formData.contact}
+                onChange={handleChange}
+              />
+            </div>
 
             <div>
               <label className="block font-medium text-gray-700">
@@ -385,16 +398,18 @@ export default function EditRehomingPage() {
                 ))}
 
                 {/* Upload Button */}
-                <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <span className="text-gray-400">+ เพิ่มรูป</span>
-                </label>
+                {previewFiles.length + existingImages.length < 5 && (
+                  <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <span className="text-gray-400">+ เพิ่มรูป</span>
+                  </label>
+                )}
               </div>
             </div>
 
