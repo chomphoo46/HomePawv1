@@ -79,7 +79,7 @@ export default function Header() {
         />
         <NavButton
           icon={<GoHeart size={20} />}
-          label="หาบ้านให้สัตว์เลี้ยง"
+          label="สัตว์หาบ้าน"
           active={pathname === "/rehoming-report"}
           onClick={() => router.push("/rehoming-report")}
         />

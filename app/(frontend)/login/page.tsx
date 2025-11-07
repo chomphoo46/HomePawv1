@@ -19,11 +19,18 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (session?.user?.name) {
-      localStorage.setItem("username", session.user.name);
-    }
-  }, [session]);
+    if (!session) return;
 
+    if (session.user) {
+      localStorage.setItem("username", session.user.name);
+
+      if (session.user.role === "admin") {
+        router.replace("/admin");
+      } else {
+        router.replace("/");
+      }
+    }
+  }, [session, router]);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -45,8 +52,6 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
-    router.push("/");
   };
   const handleGoogleLogin = async () => {
     // ใช้ callbackUrl เพื่อ redirect หลัง login

@@ -196,7 +196,7 @@ export default function ReportForm() {
             {/* ประเภทของสัตว์ */}
             <div className="space-y-2">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                ประเภทของสัตว์ที่พบ
+                คุณพบสัตว์อะไร
               </label>
               <select
                 name="animalType"

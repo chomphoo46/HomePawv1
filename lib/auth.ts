@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Credentials Login
+    // 🔹 Credentials Login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -38,14 +38,15 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.user_id.toString(), // ใช้ user_id จริงจาก DB และแปลงเป็น string
+          id: user.user_id.toString(),
           name: user.name ?? "",
           email: user.email,
+          role: user.role, // ✅ ดึง role มาด้วย
         };
       },
     }),
 
-    // Google Login
+    // 🔹 Google Login
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -57,7 +58,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    // signIn ใช้สร้าง/อัปเดต user และ map user_id จริง
+    // ✅ สร้าง/อัปเดต user ในฐานข้อมูลเมื่อ login ผ่าน Google
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         let dbUser = await prisma.user.findUnique({
@@ -65,44 +66,45 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!dbUser) {
-          // สร้าง user ใหม่
           dbUser = await prisma.user.create({
             data: {
               email: user.email!,
               name: user.name ?? "",
               googleId: account.providerAccountId,
-              // password: ไม่ต้องใส่สำหรับ Google login
+              role: "user", // 🔹 ค่าเริ่มต้นให้เป็น user
             },
           });
         } else if (!dbUser.googleId) {
-          // ผูก GoogleId ถ้ายังไม่เคยผูก
           dbUser = await prisma.user.update({
             where: { user_id: dbUser.user_id },
             data: { googleId: account.providerAccountId },
           });
         }
 
-        // ✅ map user_id จริงจาก DB
         user.id = dbUser.user_id.toString();
+        user.role = dbUser.role; // ✅ map role ของ user จากฐานข้อมูล
       }
+
       return true;
     },
 
-    // jwt callback map token.id เป็น user_id จริง
+    // ✅ เพิ่ม role เข้าใน token
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
+        token.role = user.role; // ✅ บันทึก role ลง token
       }
       return token;
     },
 
-    // session callback map session.user.id เป็น user_id จริง
+    // ✅ เพิ่ม role เข้าใน session.user
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
-        session.user.email = session.user.email; // ยังคงมีอีเมล
+        session.user.email = session.user.email;
+        session.user.role = token.role as string; // ✅ เพิ่ม role เข้า session
       }
       return session;
     },

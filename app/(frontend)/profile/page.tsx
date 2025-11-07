@@ -162,7 +162,7 @@ export default function ProfilePage() {
             โพสต์ของฉัน
           </h1>
           <p className="text-gray-600">
-            จัดการโพสต์หาบ้านและแจ้งพบสัตว์เลี้ยงของคุณ
+            จัดการโพสต์หาบ้านและแจ้งพบสัตว์ไร้บ้านของคุณ
           </p>
         </div>
 
@@ -220,7 +220,7 @@ export default function ProfilePage() {
                       d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  แจ้งพบสัตว์
+                  แจ้งพบสัตว์ไร้บ้าน
                   <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
                     {foundPosts.length}
                   </span>

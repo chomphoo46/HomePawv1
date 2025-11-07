@@ -171,7 +171,7 @@ export default function RehomingReportPage() {
                         translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
 
                 <span className="relative z-10 flex items-center gap-3">
-                  <span>🏠 หาบ้านให้สัตว์เลี้ยงของคุณ</span>
+                  <span>🏠 หาบ้านใหม่ให้สัตว์เลี้ยงของคุณ</span>
                   <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-1 transition-transform duration-300"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />

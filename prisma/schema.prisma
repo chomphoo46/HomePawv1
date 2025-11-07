@@ -14,6 +14,7 @@ model User {
   googleId  String?  @unique
   password String?
   role      Role     @default(user)
+  created_at DateTime @default(now())
 
   // Relations
   helpActions      HelpAction[]
