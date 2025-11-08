@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NeuteredStatus, PrismaClient, VaccinationStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -30,17 +30,21 @@ export async function GET() {
 
     // แปลง (Normalize) ข้อมูลโพสต์หาบ้านให้เป็นโครงสร้างเดียวกับที่ client ต้องการ
     const normalizedPetPosts = petPosts.map((p) => ({
-      // แมพ primary key ไปเป็น id
       id: p.post_id,
-      // แมพฟิลด์โพสต์
       title: p.reason,
-      type: "pet",
+      phone: p.phone,
+      pet_name: p.pet_name,
+      type: "pet", // กำหนดประเภทเป็น "pet"
+      gene: p.type,
+      age: p.age,
+      VaccinationStatus: p.vaccination_status as VaccinationStatus,
+      sex: p.sex,
+      address: p.address,
+      contact: p.contact,
+      NeuteredStatus: p.neutered_status as NeuteredStatus,
       status: p.status,
-      // แมพผู้ใช้ (ใช้ name หรือ username)
       user: p.user ? { id: p.user.user_id, name: p.user.name ?? p.user.name } : null,
-      // แมพวันที่ และแปลงเป็น ISO string
       createdAt: p.created_at.toISOString(),
-      // แมพรูปภาพ
       images: mapImages(p.images),
     }));
 
