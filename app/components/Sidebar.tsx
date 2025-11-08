@@ -11,7 +11,7 @@ import { useSession, signOut } from "next-auth/react";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/admin" },
-  { name: "จัดการสัตว์", icon: FaPaw, href: "/admin/animals" },
+  { name: "จัดการโพสต์", icon: FaPaw, href: "/admin/posts" },
   { name: "จัดการสมาชิก", icon: BiUser, href: "/admin/users" },
   { name: "การตั้งค่า", icon: Settings, href: "/admin/settings" },
 ];
