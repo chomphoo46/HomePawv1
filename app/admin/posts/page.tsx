@@ -1,9 +1,21 @@
 "use client";
 
+import { JSX } from "react";
 import { useEffect, useState } from "react";
 import { FaPaw, FaTrash } from "react-icons/fa";
 import { MdModeEdit } from "react-icons/md";
 import { Eye } from "lucide-react";
+import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
+import {
+  HiOutlineTag,
+  HiOutlineCalendar,
+  HiOutlinePhone,
+} from "react-icons/hi";
+import { RiContactsBook3Line } from "react-icons/ri";
+import { BiUser } from "react-icons/bi";
+import { MdOutlineQuestionAnswer } from "react-icons/md";
+import { FiMapPin } from "react-icons/fi";
+import { FaCircleCheck } from "react-icons/fa6";
 
 interface Image {
   id: number;
@@ -38,6 +50,31 @@ export default function ManagePostsPage() {
   const [posts, setPosts] = useState<Post[]>([]); // สถานะสำหรับเก็บโพสต์
   const [loading, setLoading] = useState(true); // สถานะกำลังโหลด
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // แปลงเพศเป็นภาษาไทย
+  const getSexLabel = (sex: string) => {
+    switch (sex) {
+      case "MALE":
+        return "ผู้";
+      case "FEMALE":
+        return "เมีย";
+      default:
+        return "ไม่ระบุ";
+    }
+  };
+
+  // Mapping สถานะสุขภาพ
+  const healthStatusIcons: Record<string, { label: string; icon: JSX.Element }> = {
+  VACCINATED: { label: "ฉีดวัคซีนแล้ว", icon: <FaCircleCheck size={24} color="green" /> },
+  NOT_VACCINATED: { label: "ยังไม่ได้ฉีดวัคซีน", icon: <FaTimesCircle size={24} color="red" /> },
+};
+
+const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> = {
+  NEUTERED: { label: "ทำหมันแล้ว", icon: <FaCircleCheck size={24} color="green" /> },
+  NOT_NEUTERED: { label: "ยังไม่ได้ทำหมัน", icon: <FaTimesCircle size={24} color="red" /> },
+};
+
 
   // ฟังก์ชันช่วย: เลือกรูปภาพแรกของโพสต์
   const getPostImageUrl = (post: Post) => {
@@ -60,6 +97,19 @@ export default function ManagePostsPage() {
       console.error("Error fetching posts:", err); // ข้อผิดพลาดในการดึงโพสต์
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔹 ดูรายละเอียดโพสต์
+  const viewPostDetail = async (id: number, type: string) => {
+    const res = await fetch(`/api/admin/posts/${id}?type=${type}`);
+    const data = await res.json();
+
+    if (res.ok) {
+      setSelectedPost(data);
+      setShowModal(true);
+    } else {
+      alert(data.error || "ไม่สามารถโหลดข้อมูลได้");
     }
   };
 
@@ -166,7 +216,7 @@ export default function ManagePostsPage() {
                 <td className="p-4 flex items-center justify-center gap-3">
                   {/* ✅ ปุ่มดูรายละเอียด */}
                   <button
-                    onClick={() => setSelectedPost(post)}
+                    onClick={() => viewPostDetail(post.id, post.type)}
                     className="p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition bg-white"
                   >
                     <Eye size={18} />
@@ -191,10 +241,11 @@ export default function ManagePostsPage() {
           <p className="text-center py-10 text-gray-500">ไม่พบโพสต์ในระบบ</p>
         )}
       </div>
+
       {/* ✅ Modal แสดงรายละเอียดโพสต์ */}
-      {selectedPost && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg relative overflow-hidden max-h-[90vh] overflow-y-auto">
+      {showModal && selectedPost && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Header with gradient */}
             <div className="relative h-32 w-full overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
@@ -227,7 +278,7 @@ export default function ManagePostsPage() {
                     <img
                       src={getPostImageUrl(selectedPost)!}
                       alt="animal"
-                      className="w-36 h-36 object-cover rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105"
+                      className="w-40 h-40 object-cover rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105"
                     />
                     <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
                       <FaPaw className="text-orange-400 text-xl" />
@@ -245,112 +296,110 @@ export default function ManagePostsPage() {
                 )}
               </div>
 
-              {/* Pet Name */}
+              {/* Pet Name & Status */}
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
                   {selectedPost.pet_name}
                 </h2>
-                <span className="inline-block px-5 py-1.5 rounded-full text-sm font-medium bg-amber-100 text-amber-700 border border-amber-300 shadow-sm">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 border-1 rounded-full text-sm font-medium ${
+                    selectedPost.status === "Adopted" ||
+                    selectedPost.status === "ADOPTED"
+                      ? "bg-green-100 text-green-700"
+                      : selectedPost.status === "AVAILABLE" ||
+                        selectedPost.status === "PENDING"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {(selectedPost.status === "Adopted" ||
+                    selectedPost.status === "ADOPTED") && (
+                    <FaCircleCheck className="text-green-700" />
+                  )}
                   {selectedPost.status}
                 </span>
               </div>
 
-              {/* Details Grid */}
+              {/* Description */}
+              {selectedPost.title && (
+                <div className="bg-[#FEFAE0] rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2 ">
+                    <MdOutlineQuestionAnswer />
+                    <p className="text-xs text-gray-500 font-medium">
+                      รายละเอียด
+                    </p>
+                  </div>
+                  <p className="text-sm pl-6">{selectedPost.title}</p>
+                </div>
+              )}
+              
+              {/* Details */}
               <div className="space-y-3 mb-6">
                 {[
                   {
-                    icon: "📍",
+                    icon: <FiMapPin />,
                     label: "ที่อยู่",
                     value: selectedPost.address,
-                    bg: "bg-red-50",
-                    color: "text-red-600",
                   },
                   {
-                    icon: "🧬",
+                    icon: <HiOutlineTag />,
                     label: "สายพันธุ์",
                     value: selectedPost.gene,
-                    bg: "bg-purple-50",
-                    color: "text-purple-600",
                   },
                   {
-                    icon: "⚥",
+                    icon:
+                      selectedPost.sex === "MALE" ? (
+                        <FaMars className="text-blue-500" />
+                      ) : selectedPost.sex === "FEMALE" ? (
+                        <FaVenus className="text-pink-500" />
+                      ) : (
+                        <FaGenderless className="text-gray-500" />
+                      ),
                     label: "เพศ",
-                    value: selectedPost.sex,
-                    bg: "bg-pink-50",
-                    color: "text-pink-600",
+                    value: getSexLabel(selectedPost.sex),
                   },
                   {
-                    icon: "🎂",
+                    icon: <HiOutlineCalendar />,
                     label: "อายุ",
                     value: selectedPost.age,
-                    bg: "bg-yellow-50",
-                    color: "text-yellow-600",
                   },
                   {
-                    icon: "📞",
+                    icon: <HiOutlinePhone />,
                     label: "เบอร์โทร",
                     value: selectedPost.phone,
-                    bg: "bg-green-50",
-                    color: "text-green-600",
                   },
                   {
-                    icon: "💬",
+                    icon: <RiContactsBook3Line />,
                     label: "ช่องทางติดต่ออื่นๆ",
-                    value: selectedPost.contact,
-                    bg: "bg-indigo-50",
-                    color: "text-indigo-600",
+                    value: selectedPost.contact || "-",
                   },
                   {
-                    icon: "👤",
+                    icon: <BiUser />,
                     label: "ผู้โพสต์",
                     value: selectedPost.user?.name || "ไม่ทราบชื่อ",
-                    bg: "bg-blue-50",
-                    color: "text-blue-600",
                   },
                   {
-                    icon: "📅",
+                    icon: <HiOutlineCalendar />,
                     label: "วันที่โพสต์",
                     value: new Date(selectedPost.createdAt).toLocaleDateString(
                       "th-TH"
                     ),
-                    bg: "bg-teal-50",
-                    color: "text-teal-600",
                   },
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className={`flex items-start gap-3 p-3 ${item.bg} rounded-xl hover:bg-opacity-80 transition`}
+                    className="flex items-start gap-3 p-3 bg-[#FEFAE0] rounded-lg"
                   >
-                    <div
-                      className={`w-10 h-10 ${item.bg} rounded-full flex items-center justify-center flex-shrink-0`}
-                    >
-                      <span className={`${item.color} text-sm`}>
-                        {item.icon}
-                      </span>
-                    </div>
+                    <span className="text-xl mt-0.5">{item.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-500 font-medium mb-1">
+                      <p className="text-xs text-gray-500 mb-0.5">
                         {item.label}
                       </p>
-                      <p className="text-sm text-gray-800 font-medium">
-                        {item.value}
-                      </p>
+                      <p className="text-sm text-gray-800">{item.value}</p>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Description */}
-              {selectedPost.title && (
-                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100 shadow-inner">
-                  <p className="text-xs text-orange-600 font-semibold mb-2 uppercase tracking-wide">
-                    รายละเอียด
-                  </p>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {selectedPost.title}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
