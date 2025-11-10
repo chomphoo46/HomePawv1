@@ -126,3 +126,41 @@ export async function GET(
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+// ✅ PATCH: แก้ไขโพสต์
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = Number(params.id);
+    const { payload } = await req.json();
+
+    if (!id || !payload) {
+      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    }
+
+    // อัปเดตได้ทั้งสองตาราง
+    const post =
+      (await prisma.petRehomePost.update({
+        where: { post_id: Number(id) },
+        data: {
+          reason: payload.title,
+          status: payload.status,
+          contact: payload.contact,
+        },
+      })) ||
+      (await prisma.animalReports.update({
+        where: { report_id: Number(id) },
+        data: {
+          description: payload.title,
+          status: payload.status,
+        },
+      }));
+
+    return NextResponse.json({ success: true, post });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}

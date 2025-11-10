@@ -79,6 +79,7 @@ export default function ManagePostsPage() {
   const [loading, setLoading] = useState(true); // สถานะกำลังโหลด
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
 
   // แปลงเพศเป็นภาษาไทย
   const getSexLabel = (sex: string) => {
@@ -116,7 +117,7 @@ export default function ManagePostsPage() {
     }
   };
 
-  // 🔹 ดูรายละเอียดโพสต์
+  // ดูรายละเอียดโพสต์
   const viewPostDetail = async (id: number, type: string) => {
     const res = await fetch(`/api/admin/posts/${id}?type=${type}`);
     const data = await res.json();
@@ -230,7 +231,7 @@ export default function ManagePostsPage() {
                 </td>
 
                 <td className="p-4 flex items-center justify-center gap-3">
-                  {/* ✅ ปุ่มดูรายละเอียด */}
+                  {/* ปุ่มดูรายละเอียด */}
                   <button
                     onClick={() => viewPostDetail(post.id, post.type)}
                     className="p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition bg-white"
@@ -238,9 +239,15 @@ export default function ManagePostsPage() {
                     <Eye size={18} />
                   </button>
 
-                  <button className="bg-white p-2 rounded-full shadow  hover:bg-green-50 hover:text-green-600 transition">
+                  {/* ปุ่มแก้ไขโพสต์*/}
+                  <button
+                    onClick={() => setEditingPost(post)}
+                    className="bg-white p-2 rounded-full shadow  hover:bg-green-50 hover:text-green-600 transition"
+                  >
                     <MdModeEdit size={18} />
                   </button>
+
+                  {/* ปุ่มลบโพสต์ */}
                   <button
                     onClick={() => handleDelete(post.id, post.type)}
                     className="bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
@@ -257,6 +264,86 @@ export default function ManagePostsPage() {
           <p className="text-center py-10 text-gray-500">ไม่พบโพสต์ในระบบ</p>
         )}
       </div>
+
+      {/* ✅ Modal แก้ไขโพสต์ */}
+      {editingPost && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">แก้ไขโพสต์</h2>
+
+            <label className="block mb-2 text-sm font-medium">รายละเอียด</label>
+            <textarea
+              className="w-full border rounded p-2 mb-4"
+              value={editingPost.title}
+              onChange={(e) =>
+                setEditingPost({ ...editingPost, title: e.target.value })
+              }
+            />
+            <label className="block mb-2 text-sm font-medium">ช่องทางติดต่ออื่นๆ</label>
+            <textarea
+              className="w-full border rounded p-2 mb-4"
+              value={editingPost.contact}
+              onChange={(e) =>
+                setEditingPost({ ...editingPost, title: e.target.value })
+              }
+            />
+
+            <label className="block mb-2 text-sm font-medium">สถานะ</label>
+            <select
+              className="w-full border rounded p-2 mb-4"
+              value={editingPost.status}
+              onChange={(e) =>
+                setEditingPost({ ...editingPost, status: e.target.value })
+              }
+            >
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="ADOPTED">ADOPTED</option>
+            </select>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setEditingPost(null)}
+                className="px-4 py-2 bg-gray-200 rounded"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(
+                      `/api/admin/posts/${editingPost.id}`,
+                      {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          payload: {
+                            title: editingPost.title,
+                            status: editingPost.status,
+                          },
+                        }),
+                      }
+                    );
+                    const result = await res.json();
+                    if (res.ok || result.success) {
+                      alert("แก้ไขสำเร็จ");
+                      setEditingPost(null);
+                      fetchPosts();
+                    } else {
+                      alert(result.error || "แก้ไขไม่สำเร็จ");
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    alert("เกิดข้อผิดพลาด");
+                  }
+                }}
+                className="px-4 py-2 bg-green-500 text-white rounded"
+              >
+                บันทึก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ Modal แสดงรายละเอียดโพสต์ */}
       {showModal && selectedPost && (
@@ -422,7 +509,8 @@ export default function ManagePostsPage() {
                   {/* ฉีดวัคซีน */}
                   <div className="flex items-center gap-2 text-sm md:text-base px-3 py-2 rounded-2xl shadow-sm">
                     {
-                      healthStatusIcons[selectedPost.vaccinationStatus.code]?.icon
+                      healthStatusIcons[selectedPost.vaccinationStatus.code]
+                        ?.icon
                     }
                     <span>
                       {selectedPost.vaccinationStatus.label || "ไม่ระบุ"}
@@ -432,7 +520,8 @@ export default function ManagePostsPage() {
                   {/* ทำหมัน */}
                   <div className="flex items-center gap-2 text-sm md:text-base px-3 py-2 rounded-2xl shadow-sm">
                     {
-                      neuteredStatusIcons[selectedPost.neuteredStatus.code]?.icon
+                      neuteredStatusIcons[selectedPost.neuteredStatus.code]
+                        ?.icon
                     }
                     <span>
                       {selectedPost.neuteredStatus.label || "ไม่ระบุ"}

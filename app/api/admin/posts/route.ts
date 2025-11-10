@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
-import { NeuteredStatus, PrismaClient, VaccinationStatus } from "@prisma/client";
+import {
+  NeuteredStatus,
+  PrismaClient,
+  VaccinationStatus,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 // ฟังก์ชันช่วย: จัดการ URL รูปภาพให้เป็น URL เต็ม (Normalized)
-const mapImages = (images: { id: number; url?: string; image_url?: string }[]) =>
+const mapImages = (
+  images: { id: number; url?: string; image_url?: string }[]
+) =>
   images.map((img) => {
     const raw = img.url ?? img.image_url ?? "";
     // ถ้าเป็น relative path ให้เติม BASE_URL
@@ -43,7 +49,9 @@ export async function GET() {
       contact: p.contact,
       NeuteredStatus: p.neutered_status as NeuteredStatus,
       status: p.status,
-      user: p.user ? { id: p.user.user_id, name: p.user.name ?? p.user.name } : null,
+      user: p.user
+        ? { id: p.user.user_id, name: p.user.name ?? p.user.name }
+        : null,
       createdAt: p.created_at.toISOString(),
       images: mapImages(p.images),
     }));
@@ -54,7 +62,9 @@ export async function GET() {
       title: r.description,
       type: "report",
       status: r.status,
-      user: r.user ? { id: r.user.user_id, name: r.user.name ?? r.user.name } : null,
+      user: r.user
+        ? { id: r.user.user_id, name: r.user.name ?? r.user.name }
+        : null,
       createdAt: r.created_at.toISOString(),
       images: mapImages(r.images),
     }));
