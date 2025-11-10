@@ -17,6 +17,34 @@ import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { FaCircleCheck } from "react-icons/fa6";
 
+// Map สถานะวัคซีน
+const healthStatusIcons: Record<string, { label: string; icon: JSX.Element }> =
+  {
+    VACCINATED: {
+      label: "ฉีดวัคซีนแล้ว",
+      icon: <FaCircleCheck className="text-green-500 text-xl" />,
+    },
+    NOT_VACCINATED: {
+      label: "ยังไม่ได้ฉีดวัคซีน",
+      icon: <FaTimesCircle className="text-red-500 text-xl" />,
+    },
+  };
+
+// Map สถานะทำหมัน
+const neuteredStatusIcons: Record<
+  string,
+  { label: string; icon: JSX.Element }
+> = {
+  NEUTERED: {
+    label: "ทำหมันแล้ว",
+    icon: <FaCircleCheck className="text-green-500 text-xl" />,
+  },
+  NOT_NEUTERED: {
+    label: "ยังไม่ได้ทำหมัน",
+    icon: <FaTimesCircle className="text-red-500 text-xl" />,
+  },
+};
+
 interface Image {
   id: number;
   url: string;
@@ -34,8 +62,8 @@ interface Post {
   gene: string;
   age: string;
   sex: string;
-  VaccinationStatus: string;
-  NeuteredStatus: string;
+  vaccinationStatus: { code: string; label?: string };
+  neuteredStatus: { code: string; label?: string };
   address: string;
   contact: string;
   title: string; // หัวข้อ/รายละเอียด
@@ -63,18 +91,6 @@ export default function ManagePostsPage() {
         return "ไม่ระบุ";
     }
   };
-
-  // Mapping สถานะสุขภาพ
-  const healthStatusIcons: Record<string, { label: string; icon: JSX.Element }> = {
-  VACCINATED: { label: "ฉีดวัคซีนแล้ว", icon: <FaCircleCheck size={24} color="green" /> },
-  NOT_VACCINATED: { label: "ยังไม่ได้ฉีดวัคซีน", icon: <FaTimesCircle size={24} color="red" /> },
-};
-
-const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> = {
-  NEUTERED: { label: "ทำหมันแล้ว", icon: <FaCircleCheck size={24} color="green" /> },
-  NOT_NEUTERED: { label: "ยังไม่ได้ทำหมัน", icon: <FaTimesCircle size={24} color="red" /> },
-};
-
 
   // ฟังก์ชันช่วย: เลือกรูปภาพแรกของโพสต์
   const getPostImageUrl = (post: Post) => {
@@ -248,7 +264,7 @@ const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> 
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Header with gradient */}
             <div className="relative h-32 w-full overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent"></div>
               <button
                 onClick={() => setSelectedPost(null)}
                 className="absolute top-4 right-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
@@ -286,7 +302,7 @@ const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> 
                   </div>
                 ) : (
                   <div className="relative">
-                    <div className="w-36 h-36 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105">
+                    <div className="w-36 h-36 bg-linear-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105">
                       <FaPaw className="text-orange-400 text-6xl" />
                     </div>
                     <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
@@ -302,7 +318,7 @@ const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> 
                   {selectedPost.pet_name}
                 </h2>
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 border-1 rounded-full text-sm font-medium ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 border rounded-full text-sm font-medium ${
                     selectedPost.status === "Adopted" ||
                     selectedPost.status === "ADOPTED"
                       ? "bg-green-100 text-green-700"
@@ -332,7 +348,7 @@ const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> 
                   <p className="text-sm pl-6">{selectedPost.title}</p>
                 </div>
               )}
-              
+
               {/* Details */}
               <div className="space-y-3 mb-6">
                 {[
@@ -399,6 +415,30 @@ const neuteredStatusIcons: Record<string, { label: string; icon: JSX.Element }> 
                     </div>
                   </div>
                 ))}
+              </div>
+              {/* 🩺 สถานะสุขภาพ */}
+              <div className="rounded-lg">
+                <div className="flex flex-wrap gap-4">
+                  {/* ฉีดวัคซีน */}
+                  <div className="flex items-center gap-2 text-sm md:text-base px-3 py-2 rounded-2xl shadow-sm">
+                    {
+                      healthStatusIcons[selectedPost.vaccinationStatus.code]?.icon
+                    }
+                    <span>
+                      {selectedPost.vaccinationStatus.label || "ไม่ระบุ"}
+                    </span>
+                  </div>
+
+                  {/* ทำหมัน */}
+                  <div className="flex items-center gap-2 text-sm md:text-base px-3 py-2 rounded-2xl shadow-sm">
+                    {
+                      neuteredStatusIcons[selectedPost.neuteredStatus.code]?.icon
+                    }
+                    <span>
+                      {selectedPost.neuteredStatus.label || "ไม่ระบุ"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

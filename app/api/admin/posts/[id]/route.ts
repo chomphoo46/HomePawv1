@@ -5,7 +5,9 @@ const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 // ฟังก์ชันช่วย: จัดการ URL รูปภาพให้เป็น URL เต็ม (Normalized)
-const mapImages = (images: { id: number; url?: string; image_url?: string }[]) =>
+const mapImages = (
+  images: { id: number; url?: string; image_url?: string }[]
+) =>
   images.map((img) => {
     const raw = img.url ?? img.image_url ?? "";
     // ถ้าเป็น relative path ให้เติม BASE_URL
@@ -17,14 +19,13 @@ const mapImages = (images: { id: number; url?: string; image_url?: string }[]) =
 // 📍 GET /api/admin/posts/[id]?type=pet หรือ type=report
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params; // ✅ ต้อง await ก่อนใช้
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
-  
 
-   try {
+  try {
     if (type === "pet") {
       const post = await prisma.petRehomePost.findUnique({
         where: { post_id: Number(id) },
@@ -39,8 +40,18 @@ export async function GET(
       if (!post) {
         return Response.json({ error: "Post not found" }, { status: 404 });
       }
+      // ✅ Map enum -> ข้อความภาษาไทย
+      const vaccinationMap: Record<string, string> = {
+        VACCINATED: "ฉีดวัคซีนแล้ว",
+        NOT_VACCINATED: "ยังไม่ได้ฉีดวัคซีน",
+      };
 
-      // ✅ จัดรูปแบบข้อมูลให้ standardized สำหรับ frontend
+      const neuteredMap: Record<string, string> = {
+        NEUTERED: "ทำหมันแล้ว",
+        NOT_NEUTERED: "ยังไม่ได้ทำหมัน",
+      };
+
+      //จัดรูปแบบข้อมูลให้ standardized สำหรับ frontend
       const formatted = {
         id: post.post_id,
         type: "pet",
@@ -50,12 +61,21 @@ export async function GET(
         phone: post.phone,
         contact: post.contact,
         gene: post.type,
-        vaccinationStatus: post.vaccination_status,
-        neuteredStatus: post.neutered_status,
+        //ส่งออกทั้ง enum + label ไทย
+        vaccinationStatus: {
+          code: post.vaccination_status,
+          label: vaccinationMap[post.vaccination_status] || "ไม่ระบุ",
+        },
+        neuteredStatus: {
+          code: post.neutered_status,
+          label: neuteredMap[post.neutered_status] || "ไม่ระบุ",
+        },
         sex: post.sex,
         age: post.age,
         status: post.status,
-        user: post.user ? { id: post.user_id, name: post.user.name ?? post.user.name } : null,
+        user: post.user
+          ? { id: post.user_id, name: post.user.name ?? post.user.name }
+          : null,
         createdAt: post.created_at,
         images: mapImages(post.images),
       };
@@ -90,7 +110,9 @@ export async function GET(
         sex: "-",
         age: "-",
         status: post.status,
-        user: post.user ? { id: post.user_id, name: post.user.name ?? post.user.name } : null,
+        user: post.user
+          ? { id: post.user_id, name: post.user.name ?? post.user.name }
+          : null,
         createdAt: post.created_at,
         images: post.images,
       };
@@ -104,4 +126,3 @@ export async function GET(
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-

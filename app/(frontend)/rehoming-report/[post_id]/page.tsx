@@ -247,7 +247,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                         <img
                           src={imgs[0].image_url}
                           alt={`${animal.pet_name}-1`}
-                          className="w-full h-full object-cover aspect-[4/3]  transition-transform duration-500"
+                          className="w-full h-full object-cover aspect-4/3  transition-transform duration-500"
                         />
                       </div>
 
@@ -263,7 +263,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                               alt={`${animal.pet_name}-${i + 2}`}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300" />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300" />
                           </div>
                         ))}
                       </div>

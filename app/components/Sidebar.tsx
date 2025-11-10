@@ -24,7 +24,7 @@ export default function Sidebar() {
     session?.user?.role === "admin" ? "ผู้ดูแลระบบ (Admin)" : "ผู้ใช้งานทั่วไป";
 
   return (
-    <aside className="w-60 h-screen bg-white  flex flex-col justify-between">
+    <aside className="w-60 bg-white  flex flex-col justify-between">
       {/* ส่วนบน */}
       <div>
         <div className="p-4">
@@ -55,7 +55,7 @@ export default function Sidebar() {
       </div>
 
       {/* ส่วนล่าง */}
-      <div className="p-13 mb-4">
+      <div className="p-12">
         <button className="flex items-center gap-2 text-md text-gray-600 hover:text-red-500 w-full">
           <LogOut className="w-4 h-4" />
           ออกจากระบบ
