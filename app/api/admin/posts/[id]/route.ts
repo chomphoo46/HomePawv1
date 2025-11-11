@@ -4,6 +4,17 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
+// ✅ Map enum -> ข้อความภาษาไทย
+const vaccinationMap: Record<string, string> = {
+  VACCINATED: "ฉีดวัคซีนแล้ว",
+  NOT_VACCINATED: "ยังไม่ได้ฉีดวัคซีน",
+};
+
+const neuteredMap: Record<string, string> = {
+  NEUTERED: "ทำหมันแล้ว",
+  NOT_NEUTERED: "ยังไม่ได้ทำหมัน",
+};
+
 // ฟังก์ชันช่วย: จัดการ URL รูปภาพให้เป็น URL เต็ม (Normalized)
 const mapImages = (
   images: { id: number; url?: string; image_url?: string }[]
@@ -40,17 +51,6 @@ export async function GET(
       if (!post) {
         return Response.json({ error: "Post not found" }, { status: 404 });
       }
-      // ✅ Map enum -> ข้อความภาษาไทย
-      const vaccinationMap: Record<string, string> = {
-        VACCINATED: "ฉีดวัคซีนแล้ว",
-        NOT_VACCINATED: "ยังไม่ได้ฉีดวัคซีน",
-      };
-
-      const neuteredMap: Record<string, string> = {
-        NEUTERED: "ทำหมันแล้ว",
-        NOT_NEUTERED: "ยังไม่ได้ทำหมัน",
-      };
-
       //จัดรูปแบบข้อมูลให้ standardized สำหรับ frontend
       const formatted = {
         id: post.post_id,
@@ -114,7 +114,7 @@ export async function GET(
           ? { id: post.user_id, name: post.user.name ?? post.user.name }
           : null,
         createdAt: post.created_at,
-        images: post.images,
+        images: mapImages(post.images),
       };
 
       return Response.json(formatted);
@@ -127,40 +127,86 @@ export async function GET(
   }
 }
 
-// ✅ PATCH: แก้ไขโพสต์
+// ✅ PATCH: แก้ไขโพสต์ (ฉบับสมบูรณ์ + รองรับอัปเดตรูป)
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
-    const { payload } = await req.json();
+    const { id: paramId } = await context.params;
+    const id = Number(paramId);
+    const { payload }: { payload: { type: string; [key: string]: any } } =
+      await req.json();
 
-    if (!id || !payload) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    if (!id || !payload || !payload.type) {
+      return NextResponse.json(
+        { error: "Invalid data or type missing" },
+        { status: 400 }
+      );
     }
 
-    // อัปเดตได้ทั้งสองตาราง
-    const post =
-      (await prisma.petRehomePost.update({
-        where: { post_id: Number(id) },
+    let post;
+
+    if (payload.type === "pet") {
+      // ✅ อัปเดตข้อมูลหลัก
+      post = await prisma.petRehomePost.update({
+        where: { post_id: id },
         data: {
           reason: payload.title,
           status: payload.status,
           contact: payload.contact,
+          phone: payload.phone,
+          address: payload.address,
+          pet_name: payload.pet_name,
+          type: payload.gene,
+          sex: payload.sex,
+          age: payload.age,
+          vaccination_status: payload.vaccinationStatus.code,
+          neutered_status: payload.neuteredStatus.code,
         },
-      })) ||
-      (await prisma.animalReports.update({
-        where: { report_id: Number(id) },
+      });
+
+      // ✅ ถ้ามีรูปใหม่
+      if (payload.images && payload.images.length > 0) {
+        // 1. ลบรูปเก่าออกก่อน
+        await prisma.petRehomeImages.deleteMany({
+          where: { post_id: id },
+        });
+
+        // 2. เพิ่มรูปใหม่ (เก็บเฉพาะ string URL)
+        await prisma.petRehomeImages.createMany({
+          data: payload.images.map((img: any) => ({
+            post_id: id,
+            image_url: typeof img === "string" ? img : img.url, // 👈 แก้ตรงนี้
+          })),
+        });
+      }
+    } else if (payload.type === "stray" || payload.type === "report") {
+      post = await prisma.animalReports.update({
+        where: { report_id: id },
         data: {
           description: payload.title,
           status: payload.status,
+          animal_type: payload.pet_name,
+          behavior: payload.gene,
         },
-      }));
+      });
+    } else {
+      return NextResponse.json({ error: "Invalid post type" }, { status: 400 });
+    }
 
     return NextResponse.json({ success: true, post });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("❌ Error updating post:", error);
+
+    if (error.code === "P2025") {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: "Server error", details: error.message },
+      { status: 500 }
+    );
   }
 }
+
