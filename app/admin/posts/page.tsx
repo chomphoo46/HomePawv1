@@ -349,9 +349,6 @@ export default function ManagePostsPage() {
                 <h2 className="text-2xl font-bold drop-shadow-lg">
                   แก้ไขโพสต์
                 </h2>
-                <p className="text-sm text-gray font-light mt-3">
-                  ID: {editingPost.id}
-                </p>
               </div>
             </div>
 
@@ -593,6 +590,13 @@ export default function ManagePostsPage() {
                       onChange={async (e) => {
                         const files = e.target.files;
                         if (!files) return;
+                        const existingCount = editingPost.images?.length || 0;
+                        const selectedCount = files.length;
+
+                        if (existingCount + selectedCount > 5) {
+                          alert("คุณสามารถอัปโหลดได้สูงสุด 5 รูปภาพเท่านั้น");
+                          return;
+                        }
                         setIsLoadingEdit(true);
 
                         const uploadedImages: Image[] = [];
@@ -723,26 +727,66 @@ export default function ManagePostsPage() {
 
             {/* Content */}
             <div className="p-6 -mt-16">
-              {/* Pet Image */}
-              <div className="flex justify-center mb-6">
-                {getPostImageUrl(selectedPost) ? (
-                  <div className="relative">
-                    <img
-                      src={getPostImageUrl(selectedPost)!}
-                      alt="animal"
-                      className="w-40 h-40 object-cover rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105"
-                    />
-                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
-                      <FaPaw className="text-orange-400 text-xl" />
+              {/* 🐾 Pet Images (รองรับ 1–5 รูป) */}
+              <div className="mb-6">
+                {selectedPost.images && selectedPost.images.length > 0 ? (
+                  <>
+                    {/* ถ้ามีเกิน 5 รูป ให้แจ้งเตือน */}
+                    {selectedPost.images.length > 5 && (
+                      <div className="text-center mb-3">
+                        <p className="text-red-500 text-sm font-medium">
+                          ⚠️ อัปโหลดได้สูงสุด 5 รูป (ขณะนี้{" "}
+                          {selectedPost.images.length} รูป)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* แสดงรูปภาพ */}
+                    <div
+                      className={`flex flex-wrap justify-center gap-4 px-2 pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100`}
+                    >
+                      {selectedPost.images
+                        .slice(0, 5)
+                        .map((img: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className={`relative flex-shrink-0 transition-transform hover:scale-105 ${
+                              selectedPost.images.length === 1
+                                ? "w-64 h-64"
+                                : selectedPost.images.length === 2
+                                ? "w-52 h-52"
+                                : selectedPost.images.length === 3
+                                ? "w-44 h-44"
+                                : "w-40 h-40 sm:w-44 sm:h-44"
+                            }`}
+                          >
+                            <img
+                              src={
+                                typeof img === "string"
+                                  ? img
+                                  : img.image_url ||
+                                    img.url ||
+                                    "/placeholder.jpg"
+                              }
+                              alt={`animal-${idx}`}
+                              className="w-full h-full object-cover rounded-2xl shadow-md border-2 border-white"
+                            />
+                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">
+                              <FaPaw className="text-orange-400 text-lg" />
+                            </div>
+                          </div>
+                        ))}
                     </div>
-                  </div>
+                  </>
                 ) : (
-                  <div className="relative">
-                    <div className="w-36 h-36 bg-linear-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-2xl shadow-2xl border-4 border-white transition-transform hover:scale-105">
-                      <FaPaw className="text-orange-400 text-6xl" />
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-xl">🐾</span>
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <div className="w-36 h-36 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-2xl shadow-2xl border-4 border-white">
+                        <FaPaw className="text-orange-400 text-6xl" />
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+                        <span className="text-xl">🐾</span>
+                      </div>
                     </div>
                   </div>
                 )}

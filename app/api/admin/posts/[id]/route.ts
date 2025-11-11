@@ -148,6 +148,14 @@ export async function PATCH(
     let post;
 
     if (payload.type === "pet") {
+      // ✅ ตรวจสอบจำนวนรูป
+      if (payload.images && payload.images.length > 5) {
+        return NextResponse.json(
+          { error: "You can upload up to 5 images only" },
+          { status: 400 }
+        );
+      }
+
       // ✅ อัปเดตข้อมูลหลัก
       post = await prisma.petRehomePost.update({
         where: { post_id: id },
@@ -168,20 +176,23 @@ export async function PATCH(
 
       // ✅ ถ้ามีรูปใหม่
       if (payload.images && payload.images.length > 0) {
-        // 1. ลบรูปเก่าออกก่อน
+        // 1. ลบรูปเก่าก่อน
         await prisma.petRehomeImages.deleteMany({
           where: { post_id: id },
         });
 
-        // 2. เพิ่มรูปใหม่ (เก็บเฉพาะ string URL)
+        // 2. เพิ่มรูปใหม่ (เก็บเฉพาะ URL string)
         await prisma.petRehomeImages.createMany({
           data: payload.images.map((img: any) => ({
             post_id: id,
-            image_url: typeof img === "string" ? img : img.url, // 👈 แก้ตรงนี้
+            image_url: typeof img === "string" ? img : img.url,
           })),
         });
       }
-    } else if (payload.type === "stray" || payload.type === "report") {
+    }
+
+    // ✅ เคสโพสต์ประเภท "stray" หรือ "report"
+    else if (payload.type === "stray" || payload.type === "report") {
       post = await prisma.animalReports.update({
         where: { report_id: id },
         data: {
@@ -191,7 +202,10 @@ export async function PATCH(
           behavior: payload.gene,
         },
       });
-    } else {
+    }
+
+    // ❌ ประเภทไม่ถูกต้อง
+    else {
       return NextResponse.json({ error: "Invalid post type" }, { status: 400 });
     }
 
@@ -209,4 +223,3 @@ export async function PATCH(
     );
   }
 }
-
