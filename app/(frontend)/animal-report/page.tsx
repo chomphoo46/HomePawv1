@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import Header from "@/app/components/Header";
 import { HiPhoto, HiMapPin, HiClock, HiHeart, HiXMark } from "react-icons/hi2";
 import { MdOutlinePets } from "react-icons/md";
+import { useRouter } from "next/navigation";
+import { useSession, signIn } from "next-auth/react";
+import { FaPaw } from "react-icons/fa";
 export default function ReportForm() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [showMap, setShowMap] = useState(false);
@@ -13,43 +19,92 @@ export default function ReportForm() {
     lng: number;
     address: string;
   } | null>(null);
-  const mapRef = useRef<any>(null);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const geocoderRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
     animalType: "",
     description: "",
     behavior: "",
     location: "",
-    status: "",
     dateTime: "",
     moreInfo: "",
     image: null as File | null,
   });
 
+  // ตั้งค่าวันที่ปัจจุบัน
   useEffect(() => {
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     const bangkokTime = new Date(now.getTime() - tzOffset);
-    const formattedDate = bangkokTime.toISOString().slice(0, 16);
-
-    setFormData((prev) => ({ ...prev, dateTime: formattedDate }));
-
-    // Load Leaflet CSS and JS
-    if (typeof window !== "undefined") {
-      const leafletCSS = document.createElement("link");
-      leafletCSS.rel = "stylesheet";
-      leafletCSS.href =
-        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css";
-      document.head.appendChild(leafletCSS);
-
-      const leafletJS = document.createElement("script");
-      leafletJS.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js";
-      document.head.appendChild(leafletJS);
-    }
+    setFormData((prev) => ({
+      ...prev,
+      dateTime: bangkokTime.toISOString().slice(0, 16),
+    }));
   }, []);
+
+  // เมื่อ showMap เป็น true และ container พร้อม ให้ init map
+  useEffect(() => {
+    if (!showMap) return; // ถ้า modal ปิด ไม่ต้องทำงาน
+    if (!mapContainerRef.current) return; // ตรวจสอบ container
+
+    const google = (window as any).google;
+    if (!google || mapRef.current) return; // ถ้า google ยังไม่โหลด หรือ map สร้างแล้ว return
+
+    geocoderRef.current = new google.maps.Geocoder();
+    mapRef.current = new google.maps.Map(mapContainerRef.current, {
+      center: { lat: 13.7563, lng: 100.5018 },
+      zoom: 14,
+    });
+
+    // เพิ่ม listener สำหรับ click บน map
+    mapRef.current.addListener("click", (e: any) => {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+
+      if (!markerRef.current) {
+        markerRef.current = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapRef.current,
+          draggable: true,
+        });
+        markerRef.current.addListener("dragend", (event: any) => {
+          updateLocation(event.latLng.lat(), event.latLng.lng());
+        });
+      } else {
+        markerRef.current.setPosition({ lat, lng });
+      }
+
+      updateLocation(lat, lng);
+    });
+  }, [showMap]); // watch showMap
+
+  const updateLocation = (lat: number, lng: number) => {
+    if (!geocoderRef.current) return;
+    geocoderRef.current.geocode(
+      { location: { lat, lng } },
+      (results: any, status: any) => {
+        if (status === "OK" && results[0]) {
+          setSelectedLocation({
+            lat,
+            lng,
+            address: results[0].formatted_address,
+          });
+        }
+      }
+    );
+  };
+
+  const handleMapToggle = () => setShowMap((prev) => !prev);
+
+  const handleSelectLocation = () => {
+    if (selectedLocation)
+      setFormData((prev) => ({ ...prev, location: selectedLocation.address }));
+    setShowMap(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -57,120 +112,72 @@ export default function ReportForm() {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setFormData({ ...formData, image: file });
-      setPreviewUrl(URL.createObjectURL(file));
-      setFileName(file.name);
-    }
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    setFormData((prev) => ({ ...prev, image: file })); // <-- จุดที่ 1 (ของเดิมไม่มี)
+    setPreviewUrl(URL.createObjectURL(file));
+    setFileName(file.name);
   };
 
-  const initializeMap = () => {
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    // Default to Bangkok coordinates
-    const defaultLat = 13.7563;
-    const defaultLng = 100.5018;
-
-    const L = (window as any).L;
-    if (!L) return;
-
-    mapRef.current = L.map(mapContainerRef.current).setView(
-      [defaultLat, defaultLng],
-      13
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      signIn(undefined, { callbackUrl: "/animal-report" });
+    }
+  }, [status]); // เอา router ออก
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FEFAE0] to-[#F4F3EE]">
+        <div className="text-center">
+          <FaPaw className="animate-bounce text-4xl text-[#D4A373] mx-auto mb-4" />
+          <div className="text-lg text-gray-600">กำลังตรวจสอบสิทธิ์...</div>
+        </div>
+      </div>
     );
+  }
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(mapRef.current);
+  if (status === "unauthenticated") return null;
 
-    // Try to get user's current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          mapRef.current.setView([latitude, longitude], 15);
-
-          // Add marker at current location
-          if (markerRef.current) {
-            mapRef.current.removeLayer(markerRef.current);
-          }
-          markerRef.current = L.marker([latitude, longitude]).addTo(
-            mapRef.current
-          );
-
-          // Reverse geocoding (simple approach)
-          setSelectedLocation({
-            lat: latitude,
-            lng: longitude,
-            address: `ละติจูด: ${latitude.toFixed(
-              6
-            )}, ลองจิจูด: ${longitude.toFixed(6)}`,
-          });
-        },
-        (error) => {
-          console.log("Geolocation error:", error);
-        }
-      );
-    }
-
-    // Add click event to map
-    mapRef.current.on("click", (e: any) => {
-      const { lat, lng } = e.latlng;
-
-      // Remove existing marker
-      if (markerRef.current) {
-        mapRef.current.removeLayer(markerRef.current);
-      }
-
-      // Add new marker
-      markerRef.current = L.marker([lat, lng]).addTo(mapRef.current);
-
-      // Update selected location
-      setSelectedLocation({
-        lat: lat,
-        lng: lng,
-        address: `ละติจูด: ${lat.toFixed(6)}, ลองจิจูด: ${lng.toFixed(6)}`,
-      });
-    });
-  };
-
-  const handleMapToggle = () => {
-    setShowMap(!showMap);
-    if (!showMap) {
-      // Delay initialization to ensure DOM is ready
-      setTimeout(() => {
-        initializeMap();
-      }, 100);
-    }
-  };
-
-  const handleSelectLocation = () => {
-    if (selectedLocation) {
-      setFormData({
-        ...formData,
-        location: selectedLocation.address,
-      });
-    }
-    setShowMap(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.user?.id) {
+      alert("Unauthorized");
+      return;
+    }
 
     const data = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null) {
-        data.append(key, value as any);
-      }
-    });
+    data.append("animalType", formData.animalType);
+    data.append("description", formData.description);
+    data.append("behavior", formData.behavior);
+    data.append("location", formData.location);
+    data.append("dateTime", formData.dateTime);
+    data.append("moreInfo", formData.moreInfo);
+    data.append("lat", selectedLocation?.lat.toString() || "");
+    data.append("lng", selectedLocation?.lng.toString() || "");
 
-    console.log("Form submitted:", formData);
-    // fetch("/api/report", { method: "POST", body: data });
+    if (formData.image) data.append("images", formData.image);
+    try {
+      const res = await fetch("/api/animal-report", {
+        method: "POST",
+        body: data,
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`เกิดข้อผิดพลาด: ${err.error || "ไม่ทราบสาเหตุ"}`);
+        return;
+      }
+
+      alert("ส่งรายงานสำเร็จ!");
+      router.push("/"); // กลับหน้าหลัก
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการส่งรายงาน");
+    }
   };
 
   return (
@@ -182,7 +189,7 @@ export default function ReportForm() {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-[#D4A373] rounded-full mb-4 shadow-lg">
           <MdOutlinePets className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font.bold text-gray-800 mb-2">
           แจ้งพบสัตว์ไร้บ้าน
         </h1>
         <p className="text-gray-600 max-w-md mx-auto px-4">
@@ -247,26 +254,6 @@ export default function ReportForm() {
                 <option value="friendly">เชื่อง เข้าหาคนได้</option>
                 <option value="aggressive">ดุร้าย หลบหนี</option>
                 <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
-                <option value="other">อื่น ๆ</option>
-              </select>
-            </div>
-
-            {/* สถานะ */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                สถานะปัจจุบันของสัตว์
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-              >
-                <option value="">-- เลือกสถานะ --</option>
-                <option value="still_there">ยังอยู่ที่เดิม</option>
-                <option value="rescued">ได้รับการช่วยเหลือแล้ว</option>
                 <option value="other">อื่น ๆ</option>
               </select>
             </div>
@@ -427,13 +414,14 @@ export default function ReportForm() {
                 name="file-upload"
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setPreviewUrl(URL.createObjectURL(file));
-                    setFileName(file.name);
-                  }
-                }}
+                //
+                // ▼▼▼▼▼▼▼▼▼▼▼▼▼ [แก้ไขจุดที่ 1] ▼▼▼▼▼▼▼▼▼▼▼▼▼
+                //
+                // ใช้ handleImageChange ที่เราแก้ไขแล้ว
+                onChange={handleImageChange}
+                //
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲ [แก้ไขจุดที่ 1] ▲▲▲▲▲▲▲▲▲▲▲▲▲
+                //
                 className="sr-only"
               />
             </div>
@@ -441,10 +429,10 @@ export default function ReportForm() {
             {/* ปุ่มส่ง */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r fbg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
-                       text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
-                       transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
-                       disabled:cursor-not-allowed disabled:transform-none text-lg"
+              className="w-full bg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
+             text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
+             transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
+             disabled:cursor-not-allowed disabled:transform-none text-lg"
             >
               ส่งรายงาน
             </button>

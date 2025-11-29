@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Mali } from "next/font/google";
 import "./globals.css";
 import SessionProviderWrapper from "./(frontend)/SessionProviderWrapper";
+import Script from "next/script";
 
 const mali = Mali({
   variable: "--font-mali",
@@ -20,9 +21,12 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className={`${mali.variable} font-mali antialiased`}>
-        <SessionProviderWrapper>
-          {children}
-        </SessionProviderWrapper>
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=AIzaSyD4NGprhh-iNZ63X0Em6rwH2HhIKDZ5cdk&libraries=places`}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

@@ -30,6 +30,7 @@ model AnimalReports {
   behavior    String   @db.VarChar(100)
   latitude    Decimal  @db.Decimal(10, 6)
   longitude   Decimal  @db.Decimal(10, 6)
+  location    String?
   status      AnimalReportStatus
   created_at  DateTime @default(now())
 
@@ -91,8 +92,10 @@ model PetRehomeImages {
 }
 
 enum AnimalReportStatus {
-  MOVED    
-  RESCUED   
+  STILL_THERE  // สำหรับตอนแจ้งเหตุ (ยังอยู่ที่เดิม)
+  RESCUED      // สำหรับตอนแจ้งเหตุ (ช่วยเหลือแล้ว) หรือมาอัปเดต
+  MOVED        // สำหรับมาอัปเดต (ย้ายที่แล้ว)
+  OTHER        // อื่นๆ  
 }
 
 enum HelpActionType {

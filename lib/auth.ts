@@ -1,4 +1,4 @@
-import type { NextAuthOptions } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaClient } from "@prisma/client";
@@ -16,32 +16,25 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email || !credentials?.password)
           throw new Error("กรุณากรอกอีเมลและรหัสผ่าน");
-        }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
-        if (!user || !user.password) {
-          throw new Error("ไม่พบบัญชีผู้ใช้นี้ กรุณาสมัครสมาชิก");
-        }
+        if (!user || !user.password)
+          throw new Error("ไม่พบบัญชีผู้ใช้นี้");
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isPasswordValid)
           throw new Error("รหัสผ่านไม่ถูกต้อง");
-        }
 
         return {
-          id: user.user_id.toString(),
+          id: user.user_id,
           name: user.name ?? "",
           email: user.email,
-          role: user.role, // ✅ ดึง role มาด้วย
+          role: user.role, // ✅ เพิ่ม role
         };
       },
     }),
@@ -53,25 +46,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   callbacks: {
-    // ✅ สร้าง/อัปเดต user ในฐานข้อมูลเมื่อ login ผ่าน Google
+    // Sign in ผ่าน Google
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        let dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-        });
-
+        let dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
         if (!dbUser) {
           dbUser = await prisma.user.create({
             data: {
               email: user.email!,
               name: user.name ?? "",
               googleId: account.providerAccountId,
-              role: "user", // 🔹 ค่าเริ่มต้นให้เป็น user
+              role: "user",
             },
           });
         } else if (!dbUser.googleId) {
@@ -81,30 +69,29 @@ export const authOptions: NextAuthOptions = {
           });
         }
 
-        user.id = dbUser.user_id.toString();
-        user.role = dbUser.role; // ✅ map role ของ user จากฐานข้อมูล
+        user.id = dbUser.user_id;
+        user.role = dbUser.role; // ✅ map role
       }
 
       return true;
     },
 
-    // ✅ เพิ่ม role เข้าใน token
+    // JWT callback
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
-        token.role = user.role; // ✅ บันทึก role ลง token
+        token.role = user.role; // ✅ เพิ่ม role ใน token
       }
       return token;
     },
 
-    // ✅ เพิ่ม role เข้าใน session.user
+    // Session callback
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
-        session.user.email = session.user.email;
-        session.user.role = token.role as string; // ✅ เพิ่ม role เข้า session
+        session.user.role = token.role as string; // ✅ เพิ่ม role ใน session
       }
       return session;
     },
@@ -116,3 +103,6 @@ export const authOptions: NextAuthOptions = {
 
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
