@@ -414,14 +414,7 @@ export default function ReportForm() {
                 name="file-upload"
                 type="file"
                 accept="image/*"
-                //
-                // ▼▼▼▼▼▼▼▼▼▼▼▼▼ [แก้ไขจุดที่ 1] ▼▼▼▼▼▼▼▼▼▼▼▼▼
-                //
-                // ใช้ handleImageChange ที่เราแก้ไขแล้ว
                 onChange={handleImageChange}
-                //
-                // ▲▲▲▲▲▲▲▲▲▲▲▲▲ [แก้ไขจุดที่ 1] ▲▲▲▲▲▲▲▲▲▲▲▲▲
-                //
                 className="sr-only"
               />
             </div>

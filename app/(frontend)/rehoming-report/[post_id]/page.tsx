@@ -145,7 +145,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                   href="/rehoming-report"
                   className="hover:text-[#D4A373] transition-colors"
                 >
-                  รายการสัตว์เลี้ยง
+                  รายการสัตว์หาบ้าน
                 </Link>
               </li>
               <li className="flex items-center">
