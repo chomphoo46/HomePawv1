@@ -8,15 +8,13 @@ import {
 const prisma = new PrismaClient();
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-// ฟังก์ชันช่วย: จัดการ URL รูปภาพให้เป็น URL เต็ม (Normalized)
+// ฟังก์ชันช่วย: จัดการ URL รูปภาพ
 const mapImages = (
   images: { id: number; url?: string; image_url?: string }[]
 ) =>
   images.map((img) => {
     const raw = img.url ?? img.image_url ?? "";
-    // ถ้าเป็น relative path ให้เติม BASE_URL
     const normalized = raw.startsWith("http") ? raw : `${BASE_URL}/${raw}`;
-    // ส่งกลับเป็น { id, url } เพื่อให้สอดคล้องกับ client interface
     return { id: img.id, url: normalized };
   });
 
@@ -34,13 +32,13 @@ export async function GET() {
       orderBy: { created_at: "desc" },
     });
 
-    // แปลง (Normalize) ข้อมูลโพสต์หาบ้านให้เป็นโครงสร้างเดียวกับที่ client ต้องการ
+    // Normalize Data... (เหมือนเดิม)
     const normalizedPetPosts = petPosts.map((p) => ({
       id: p.post_id,
       title: p.reason,
       phone: p.phone,
       pet_name: p.pet_name,
-      type: "pet", // กำหนดประเภทเป็น "pet"
+      type: "pet",
       gene: p.type,
       age: p.age,
       VaccinationStatus: p.vaccination_status as VaccinationStatus,
@@ -56,7 +54,6 @@ export async function GET() {
       images: mapImages(p.images),
     }));
 
-    // แปลง (Normalize) ข้อมูลโพสต์แจ้งพบสัตว์ให้เป็นโครงสร้างเดียวกับที่ client ต้องการ
     const normalizedReportPosts = reportPosts.map((r) => ({
       id: r.report_id,
       title: r.description,
@@ -69,7 +66,12 @@ export async function GET() {
       images: mapImages(r.images),
     }));
 
+    // รวม 2 ประเภทเข้าด้วยกัน
     const allPosts = [...normalizedPetPosts, ...normalizedReportPosts];
+
+    // ✅ เพิ่ม: เรียงลำดับรวมกันตามวันที่ (ล่าสุดขึ้นก่อน) 
+    // ไม่งั้นมันจะโชว์ Pet หมดก่อน แล้วค่อยขึ้น Report
+    allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json(allPosts);
   } catch (error) {
@@ -92,7 +94,7 @@ export async function DELETE(req: Request) {
       );
 
     if (type === "pet") {
-      // ใช้ post_id สำหรับโพสต์หาบ้าน
+      // --- ลบโพสต์หาบ้าน ---
       await prisma.petRehomeImages.deleteMany({
         where: { post_id: id },
       });
@@ -100,10 +102,19 @@ export async function DELETE(req: Request) {
         where: { post_id: id },
       });
     } else if (type === "report") {
-      // ใช้ report_id สำหรับโพสต์แจ้งพบสัตว์
+      // --- ลบโพสต์แจ้งพบสัตว์ ---
+      
+      // 1. ลบรูป
       await prisma.animalImage.deleteMany({
         where: { report_id: id },
       });
+
+      // 2. ✅ เพิ่ม: ลบ HelpAction ที่ผูกกับ Report นี้ออกก่อน (สำคัญ!)
+      await prisma.helpAction.deleteMany({
+        where: { report_id: id },
+      });
+
+      // 3. ลบตัว Report
       await prisma.animalReports.delete({
         where: { report_id: id },
       });
@@ -112,8 +123,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true, message: "ลบสำเร็จ" });
   } catch (error) {
     console.error("❌ Error deleting post:", error);
+    // ส่งรายละเอียด error กลับไปเพื่อ debug ง่ายขึ้น
     return NextResponse.json(
-      { error: "Failed to delete post" },
+      { error: "Failed to delete post", details: String(error) },
       { status: 500 }
     );
   }

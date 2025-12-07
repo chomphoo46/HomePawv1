@@ -15,35 +15,32 @@ const neuteredMap: Record<string, string> = {
   NOT_NEUTERED: "ยังไม่ได้ทำหมัน",
 };
 
-// ฟังก์ชันช่วย: จัดการ URL รูปภาพให้เป็น URL เต็ม (Normalized)
+// ฟังก์ชันช่วย: จัดการ URL รูปภาพ
 const mapImages = (
   images: { id: number; url?: string; image_url?: string }[]
 ) =>
   images.map((img) => {
     const raw = img.url ?? img.image_url ?? "";
-    // ถ้าเป็น relative path ให้เติม BASE_URL
     const normalized = raw.startsWith("http") ? raw : `${BASE_URL}/${raw}`;
-    // ส่งกลับเป็น { id, url } เพื่อให้สอดคล้องกับ client interface
     return { id: img.id, url: normalized };
   });
 
-// 📍 GET /api/admin/posts/[id]?type=pet หรือ type=report
+// 📍 GET /api/admin/posts/[id]
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params; // ✅ ต้อง await ก่อนใช้
+  const { id } = await context.params;
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
 
   try {
+    // --- กรณีโพสต์หาบ้าน (Pet) ---
     if (type === "pet") {
       const post = await prisma.petRehomePost.findUnique({
         where: { post_id: Number(id) },
         include: {
-          user: {
-            select: { name: true, email: true },
-          },
+          user: { select: { name: true, email: true } },
           images: true,
         },
       });
@@ -51,7 +48,7 @@ export async function GET(
       if (!post) {
         return Response.json({ error: "Post not found" }, { status: 404 });
       }
-      //จัดรูปแบบข้อมูลให้ standardized สำหรับ frontend
+
       const formatted = {
         id: post.post_id,
         type: "pet",
@@ -61,7 +58,6 @@ export async function GET(
         phone: post.phone,
         contact: post.contact,
         gene: post.type,
-        //ส่งออกทั้ง enum + label ไทย
         vaccinationStatus: {
           code: post.vaccination_status,
           label: vaccinationMap[post.vaccination_status] || "ไม่ระบุ",
@@ -83,13 +79,13 @@ export async function GET(
       return Response.json(formatted);
     }
 
-    if (type === "stray") {
+    // --- กรณีแจ้งพบสัตว์ (Report/Stray) ---
+    // ✅ แก้ไข: เพิ่มเงื่อนไข || type === "report" เพื่อรองรับ URL ที่ส่งมา
+    if (type === "stray" || type === "report") {
       const post = await prisma.animalReports.findUnique({
         where: { report_id: Number(id) },
         include: {
-          user: {
-            select: { name: true, email: true },
-          },
+          user: { select: { name: true, email: true } },
           images: true,
         },
       });
@@ -98,15 +94,17 @@ export async function GET(
         return Response.json({ error: "Report not found" }, { status: 404 });
       }
 
-      // ✅ จัดรูปแบบข้อมูลให้ standardized
+      // ✅ Map ข้อมูลให้ตรงกับฟอร์มหน้าบ้าน
+      // หน้าบ้านใช้ key: title, pet_name, gene เพื่อแสดงผล เราต้อง map field จาก DB ให้ตรง
       const formatted = {
         id: post.report_id,
-        type: "stray",
-        pet_name: post.animal_type,
-        address: `${post.latitude}, ${post.longitude}`,
+        type: "report", // ส่งกลับเป็น report ให้ตรงกัน
+        title: post.description, // description -> title
+        pet_name: post.animal_type, // animal_type -> pet_name
+        gene: post.behavior, // behavior -> gene
+        address: post.location || `${post.latitude}, ${post.longitude}`,
         phone: "-",
         contact: "-",
-        gene: post.behavior,
         sex: "-",
         age: "-",
         status: post.status,
@@ -127,7 +125,7 @@ export async function GET(
   }
 }
 
-// ✅ PATCH: แก้ไขโพสต์ (ฉบับสมบูรณ์ + รองรับอัปเดตรูป)
+// 📍 PATCH: แก้ไขโพสต์
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -147,8 +145,8 @@ export async function PATCH(
 
     let post;
 
+    // --- แก้ไขโพสต์หาบ้าน (Pet) ---
     if (payload.type === "pet") {
-      // ✅ ตรวจสอบจำนวนรูป
       if (payload.images && payload.images.length > 5) {
         return NextResponse.json(
           { error: "You can upload up to 5 images only" },
@@ -156,7 +154,6 @@ export async function PATCH(
         );
       }
 
-      // ✅ อัปเดตข้อมูลหลัก
       post = await prisma.petRehomePost.update({
         where: { post_id: id },
         data: {
@@ -169,19 +166,14 @@ export async function PATCH(
           type: payload.gene,
           sex: payload.sex,
           age: payload.age,
-          vaccination_status: payload.vaccinationStatus.code,
-          neutered_status: payload.neuteredStatus.code,
+          vaccination_status: payload.vaccinationStatus?.code || "UNKNOWN",
+          neutered_status: payload.neuteredStatus?.code || "UNKNOWN",
         },
       });
 
-      // ✅ ถ้ามีรูปใหม่
+      // อัปเดตรูปภาพ Pet
       if (payload.images && payload.images.length > 0) {
-        // 1. ลบรูปเก่าก่อน
-        await prisma.petRehomeImages.deleteMany({
-          where: { post_id: id },
-        });
-
-        // 2. เพิ่มรูปใหม่ (เก็บเฉพาะ URL string)
+        await prisma.petRehomeImages.deleteMany({ where: { post_id: id } });
         await prisma.petRehomeImages.createMany({
           data: payload.images.map((img: any) => ({
             post_id: id,
@@ -191,32 +183,46 @@ export async function PATCH(
       }
     }
 
-    // ✅ เคสโพสต์ประเภท "stray" หรือ "report"
+    // --- แก้ไขโพสต์แจ้งพบสัตว์ (Report/Stray) ---
     else if (payload.type === "stray" || payload.type === "report") {
+      
+      // 1. อัปเดตข้อมูล Text
       post = await prisma.animalReports.update({
         where: { report_id: id },
         data: {
-          description: payload.title,
+          description: payload.title, // รับค่า title มาใส่ description
           status: payload.status,
-          animal_type: payload.pet_name,
-          behavior: payload.gene,
+          animal_type: payload.pet_name, // รับค่า pet_name มาใส่ animal_type
+          behavior: payload.gene, // รับค่า gene มาใส่ behavior
+          // location: payload.address // ถ้าอยากแก้ที่อยู่ด้วยให้เปิดบรรทัดนี้ (ต้องแน่ใจว่า Frontend ส่งมา)
         },
       });
-    }
 
-    // ❌ ประเภทไม่ถูกต้อง
-    else {
+      // 2. ✅ เพิ่ม: Logic อัปเดตรูปภาพสำหรับ Report
+      if (payload.images && payload.images.length > 0) {
+        // ลบรูปเก่า
+        await prisma.animalImage.deleteMany({
+          where: { report_id: id },
+        });
+
+        // เพิ่มรูปใหม่
+        await prisma.animalImage.createMany({
+          data: payload.images.map((img: any) => ({
+            report_id: id,
+            image_url: typeof img === "string" ? img : img.url,
+          })),
+        });
+      }
+    } else {
       return NextResponse.json({ error: "Invalid post type" }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, post });
   } catch (error: any) {
     console.error("❌ Error updating post:", error);
-
     if (error.code === "P2025") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
-
     return NextResponse.json(
       { error: "Server error", details: error.message },
       { status: 500 }

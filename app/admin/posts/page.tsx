@@ -82,6 +82,7 @@ export default function ManagePostsPage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
   // แปลงเพศเป็นภาษาไทย
   const getSexLabel = (sex: string) => {
     switch (sex) {
@@ -117,6 +118,11 @@ export default function ManagePostsPage() {
       setLoading(false);
     }
   };
+
+  const filteredPosts = posts.filter((post) => {
+    if (filter === "all") return true;
+    return post.type === filter;
+  });
 
   // ดูรายละเอียดโพสต์
   const viewPostDetail = async (id: number, type: string) => {
@@ -219,6 +225,42 @@ export default function ManagePostsPage() {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-semibold mb-6">จัดการโพสต์</h1>
+
+      {/* ปุ่มตัวเลือก Filter */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filter === "all"
+              ? "bg-[#D4A373] text-white shadow-md"
+              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+          }`}
+        >
+          ทั้งหมด
+        </button>
+        <button
+          onClick={() => setFilter("report")}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filter === "report"
+              ? "bg-green-600 text-white shadow-md"
+              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+          }`}
+        >
+          แจ้งพบสัตว์
+        </button>
+
+        <button
+          onClick={() => setFilter("pet")}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filter === "pet"
+              ? "bg-orange-500 text-white shadow-md"
+              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+          }`}
+        >
+          สัตว์หาบ้าน
+        </button>
+      </div>
+      
       <div className="bg-white rounded-2xl shadow overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-[#D4A373] text-left">
@@ -234,84 +276,92 @@ export default function ManagePostsPage() {
           </thead>
 
           <tbody>
-            {posts.map((post) => (
-              <tr
-                // ใช้ post.id ที่ normalize แล้วเป็น key
-                key={String(post.id) ?? `${post.title}-${post.createdAt}`}
-                className="hover:bg-gray-50 transition"
-              >
-                <td className="p-4">
-                  {getPostImageUrl(post) ? (
-                    <img
-                      src={getPostImageUrl(post)!}
-                      alt="animal"
-                      className="w-14 h-14 object-cover rounded-xl"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 bg-gray-100 flex items-center justify-center rounded-xl">
-                      <FaPaw className="text-gray-400 text-2xl" />
-                    </div>
-                  )}
-                </td>
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => (
+                <tr
+                  // ใช้ post.id ที่ normalize แล้วเป็น key
+                  key={`${post.type}-${post.id}`}
+                  className="hover:bg-gray-50 transition"
+                >
+                  <td className="p-4">
+                    {getPostImageUrl(post) ? (
+                      <img
+                        src={getPostImageUrl(post)!}
+                        alt="animal"
+                        className="w-14 h-14 object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 bg-gray-100 flex items-center justify-center rounded-xl">
+                        <FaPaw className="text-gray-400 text-2xl" />
+                      </div>
+                    )}
+                  </td>
 
-                <td className="p-4">
-                  {post.type === "report" ? "แจ้งพบสัตว์" : "หาบ้านให้สัตว์"}
-                </td>
-                <td className="p-4">{post.title}</td>
+                  <td className="p-4">
+                    {post.type === "report" ? "แจ้งพบสัตว์" : "สัตว์หาบ้าน"}
+                  </td>
+                  <td className="p-4">{post.title}</td>
 
-                <td className="p-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      post.status === "Adopted" || post.status === "ADOPTED"
-                        ? "bg-green-100 text-green-700"
-                        : post.status === "AVAILABLE" ||
-                          post.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {post.status}
-                  </span>
-                </td>
+                  <td className="p-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        post.status === "Adopted" || post.status === "ADOPTED"
+                          ? "bg-green-100 text-green-700"
+                          : post.status === "AVAILABLE" ||
+                            post.status === "PENDING"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {post.status}
+                    </span>
+                  </td>
 
-                {/* แสดงชื่อ หรือ username (ถ้ามี) */}
-                <td className="p-4">{post.user?.name || "ไม่ทราบชื่อ"}</td>
-                <td className="p-4">
-                  {/* แปลงวันที่ และตรวจสอบ Invalid Date */}
-                  {post.createdAt &&
-                  new Date(post.createdAt).toString() !== "Invalid Date"
-                    ? new Date(post.createdAt).toLocaleDateString("th-TH")
-                    : "ไม่ระบุวันที่"}
-                </td>
+                  {/* แสดงชื่อ หรือ username (ถ้ามี) */}
+                  <td className="p-4">{post.user?.name || "ไม่ทราบชื่อ"}</td>
+                  <td className="p-4">
+                    {/* แปลงวันที่ และตรวจสอบ Invalid Date */}
+                    {post.createdAt &&
+                    new Date(post.createdAt).toString() !== "Invalid Date"
+                      ? new Date(post.createdAt).toLocaleDateString("th-TH")
+                      : "ไม่ระบุวันที่"}
+                  </td>
 
-                <td className="p-4 flex items-center justify-center gap-3">
-                  {/* ปุ่มดูรายละเอียด */}
-                  <button
-                    onClick={() => viewPostDetail(post.id, post.type)}
-                    className="p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition bg-white"
-                  >
-                    <Eye size={18} />
-                  </button>
+                  <td className="p-4 flex items-center justify-center gap-3">
+                    {/* ปุ่มดูรายละเอียด */}
+                    <button
+                      onClick={() => viewPostDetail(post.id, post.type)}
+                      className="p-2 rounded-full shadow hover:bg-blue-50 hover:text-blue-600 transition bg-white"
+                    >
+                      <Eye size={18} />
+                    </button>
 
-                  {/* ปุ่มแก้ไขโพสต์*/}
-                  <button
-                    onClick={() => handleEditClick(post.id, post.type)} // 👈 เปลี่ยน onClick
-                    disabled={isLoadingEdit} // 👈 ปิดปุ่มระหว่างโหลด
-                    className="bg-white p-2 rounded-full shadow hover:bg-green-50 hover:text-green-600 transition disabled:opacity-50"
-                  >
-                    <MdModeEdit size={18} />
-                  </button>
+                    {/* ปุ่มแก้ไขโพสต์*/}
+                    <button
+                      onClick={() => handleEditClick(post.id, post.type)} // 👈 เปลี่ยน onClick
+                      disabled={isLoadingEdit} // 👈 ปิดปุ่มระหว่างโหลด
+                      className="bg-white p-2 rounded-full shadow hover:bg-green-50 hover:text-green-600 transition disabled:opacity-50"
+                    >
+                      <MdModeEdit size={18} />
+                    </button>
 
-                  {/* ปุ่มลบโพสต์ */}
-                  <button
-                    onClick={() => handleDelete(post.id, post.type)}
-                    className="bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
-                  >
-                    <FaTrash size={18} />
-                  </button>
+                    {/* ปุ่มลบโพสต์ */}
+                    <button
+                      onClick={() => handleDelete(post.id, post.type)}
+                      className="bg-white p-2 rounded-full shadow hover:bg-red-50 hover:text-red-600 transition"
+                    >
+                      <FaTrash size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-gray-500">
+                  ไม่มีข้อมูลในหมวดหมู่นี้
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
 
@@ -341,7 +391,7 @@ export default function ManagePostsPage() {
                 <span className="text-sm font-semibold text-gray-700">
                   {editingPost.type === "report"
                     ? "แจ้งพบสัตว์"
-                    : "หาบ้านให้สัตว์"}
+                    : "สัตว์หาบ้าน"}
                 </span>
               </div>
 
@@ -664,9 +714,10 @@ export default function ManagePostsPage() {
                       </>
                     ) : (
                       <>
-                        <option value="IN_PROGRESS">กำลังดำเนินการ</option>
-                        <option value="COMPLETED">ช่วยเหลือสำเร็จ</option>
-                        <option value="NOT_FOUND">ไม่พบเคส</option>
+                        <option value="STILL_THERE">ยังอยู่ที่เดิม</option>
+                        <option value="RESCUED">ได้รับการช่วยเหลือแล้ว</option>
+                        <option value="MOVED">ย้ายไปแล้ว</option>
+                        <option value="OTHER">อื่นๆ</option>
                       </>
                     )}
                   </select>

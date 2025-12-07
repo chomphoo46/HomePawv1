@@ -22,9 +22,9 @@ export default function AdminDashboardPage() {
     totalUsers: 0,
     totalReports: 0,
     totalHelped: 0,
-    monthlyData: [] as { month: string; reports: number }[], // ✅ กำหนด type ชัดเจน
+    monthlyData: [] as { month: string; reports: number }[],
     successRate: 0,
-    topAreas: [] as { area: string; count: number }[],
+    topAreas: [] as { location: string; count: number }[],
     newMembers: [] as { month: string; count: number }[],
   });
 
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
         const formattedMonthly =
           data.monthlyData?.map((item: any) => ({
             month: item.month,
-            reports: item.count,
+            reports: item.reports,
           })) || [];
 
         setStats({
@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, []);
 
-  const COLORS = ["#0088FE", "#00C49F"];
+  const COLORS = ["#10B981", "#E5E7EB"];
 
   return (
     <div className="p-8 space-y-8">
@@ -92,7 +92,7 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* 📈 กราฟแนวโน้มรายเดือน */}
+      {/* กราฟแนวโน้มรายเดือน */}
       <div className="bg-white rounded-2xl shadow p-6">
         <h2 className="text-lg font-semibold mb-4">
           แนวโน้มการแจ้งพบสัตว์ไร้บ้าน (รายเดือน)
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
         </ResponsiveContainer>
       </div>
 
-      {/* 🥧 อัตราความสำเร็จในการหาบ้าน */}
+      {/* อัตราความสำเร็จในการหาบ้าน */}
       <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center">
         <h2 className="text-lg font-semibold mb-4">
           อัตราความสำเร็จในการหาบ้าน
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
           <Pie
             data={[
               { name: "Adopted", value: stats.successRate },
-              { name: "Active", value: 100 - stats.successRate },
+              { name: "Available", value: 100 - stats.successRate },
             ]}
             cx="50%"
             cy="50%"
@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* 🧾 พื้นที่ + สมาชิกใหม่ */}
+      {/* พื้นที่ + สมาชิกใหม่ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-4">สมาชิกใหม่รายเดือน</h2>
@@ -163,7 +163,7 @@ export default function AdminDashboardPage() {
           <ul className="space-y-2">
             {stats.topAreas?.map((area, index) => ( // ✅ เช่นเดียวกัน
               <li key={index} className="flex justify-between">
-                <span>{area.area}</span>
+                <span>{area.location}</span>
                 <span className="font-semibold">{area.count} รายงาน</span>
               </li>
             ))}
