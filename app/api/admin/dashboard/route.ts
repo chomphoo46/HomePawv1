@@ -80,68 +80,71 @@ export async function GET() {
     });
 
     // 6. พื้นที่ที่มีรายงานมากสุด (ฉบับรวมยอดตามจังหวัด)
-    // ดึงข้อมูลดิบมาก่อน (ดึงมาเยอะหน่อย เช่น 100 จุด เพื่อเอามาจัดกลุ่มเอง)
-    const rawPoints = (await prisma.$queryRawUnsafe(`
-      SELECT 
-        COUNT(*) as count,
-        MAX(location) as location_name
-      FROM "AnimalReports"
-      WHERE location IS NOT NULL
-      GROUP BY ROUND(latitude::numeric, 3), ROUND(longitude::numeric, 3) 
-      ORDER BY count DESC
-      LIMIT 100
-    `)) as {
-      count: number | bigint | string;
-      location_name: string;
-    }[];
+    const rawReports = await prisma.animalReports.findMany({
+      where: {
+        location: { not: null },
+      },
+      select: {
+        location: true,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+      take: 1000,
+    });
 
-    // สร้างตัวแปรเก็บยอดรวมรายจังหวัด (Dictionary)
     const provinceStats: Record<string, number> = {};
 
-    // วนลูปเพื่อตัดคำหา "ชื่อจังหวัด" และรวมยอดเข้าด้วยกัน
-    rawPoints.forEach((point) => {
-      const fullLocation = point.location_name || "";
+    rawReports.forEach((report) => {
+      const fullLocation = report.location || "";
       let province = "ไม่ระบุ";
+      let cleanText = fullLocation
+        .replace(/Thailand/gi, "")
+        .replace(/ประเทศไทย/g, "")
+        .replace(/[0-9]/g, "") 
+        .trim();
 
-      if (fullLocation.includes(",")) {
-        const parts = fullLocation.split(",");
-
-        // สูตร: ที่อยู่ Google Maps มักจบด้วย "... , จังหวัด รหัสไปรษณีย์, ประเทศ"
-        // เอาส่วน "รองสุดท้าย" (index length - 2)
-        if (parts.length >= 2) {
-          let targetPart = parts[parts.length - 2].trim();
-
-          // ลบตัวเลขรหัสไปรษณีย์ออก (เช่น "Krung Thep Maha Nakhon 10700" -> "Krung Thep Maha Nakhon")
-          // ลบคำว่า Thailand ออกด้วย (กันพลาด)
-          province = targetPart
-            .replace(/[0-9]/g, "")
-            .replace("Thailand", "")
-            .trim();
+      if (cleanText.includes(",")) {
+        const parts = cleanText.split(",").map(s => s.trim()).filter(s => s !== "");
+        province = parts[parts.length - 1]; 
+      } 
+      else {
+        const words = cleanText.split(/\s+/).filter(w => w !== ""); 
+        if (words.length > 0) {
+          province = words[words.length - 1];
+        } else {
+          province = fullLocation;
         }
-      } else {
-        // ถ้าไม่มีลูกน้ำ ก็ใช้ชื่อเต็มไปก่อน
-        province = fullLocation;
+      }
+      province = province
+        .replace(/^(จ\.|จังหวัด)/, "")
+        .replace(/Province/i, "")
+        .trim();
+
+      if (province.length > 30) {
+         province = province.substring(0, 20) + "...";
       }
 
-      // รวมยอด: ถ้าจังหวัดนี้มีอยู่แล้วให้บวกเพิ่ม, ถ้ายังไม่มีให้เริ่มนับใหม่
-      const currentCount = Number(point.count);
+      if (!province) province = "ไม่ระบุ";
+
+      // รวมยอด
       if (provinceStats[province]) {
-        provinceStats[province] += currentCount;
+        provinceStats[province]++;
       } else {
-        provinceStats[province] = currentCount;
+        provinceStats[province] = 1;
       }
     });
 
-    // แปลงกลับเป็น Array, เรียงลำดับ, และตัดมาแค่ 5 อันดับแรก
+    // แปลงเป็น Array, เรียงลำดับ, และตัดมาแค่ 5 อันดับ
     const topAreas = Object.entries(provinceStats)
-      .map(([name, count]) => ({
-        location: name, // ชื่อจังหวัดที่ตัดคำแล้ว
-        count: count, // ยอดรวมที่บวกกันแล้ว
-        lat: 0, // ใส่ค่าหลอกไว้ (เพราะหน้านี้เราเน้นชื่อ ไม่เน้นพิกัดเป๊ะๆ)
+      .map(([location, count]) => ({
+        location, // ชื่อที่ Clean แล้ว
+        count,
+        lat: 0, // ค่าหลอก (Frontend หน้านี้ไม่ได้ใช้พิกัดแล้ว)
         lng: 0,
       }))
-      .sort((a, b) => b.count - a.count) // เรียงจากมากไปน้อย
-      .slice(0, 5); // เอาแค่ Top 5
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
     return NextResponse.json({
       totalPosts,

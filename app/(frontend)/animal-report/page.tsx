@@ -27,6 +27,7 @@ export default function ReportForm() {
 
   const [formData, setFormData] = useState({
     animalType: "",
+    customAnimal: "",
     description: "",
     behavior: "",
     location: "",
@@ -130,7 +131,7 @@ export default function ReportForm() {
   }, [status]); // เอา router ออก
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FEFAE0] to-[#F4F3EE]">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#FEFAE0] to-[#F4F3EE]">
         <div className="text-center">
           <FaPaw className="animate-bounce text-4xl text-[#D4A373] mx-auto mb-4" />
           <div className="text-lg text-gray-600">กำลังตรวจสอบสิทธิ์...</div>
@@ -147,18 +148,29 @@ export default function ReportForm() {
       alert("Unauthorized");
       return;
     }
-
+    // 1. ตรวจสอบว่าถ้าเลือก other แล้วลืมพิมพ์ระบุหรือไม่ (Optional - เพิ่มความชัวร์)
+    if (formData.animalType === "other" && !formData.customAnimal) {
+      alert("กรุณาระบุประเภทสัตว์");
+      return;
+    }
     const data = new FormData();
+    const finalAnimalType =
+      formData.animalType === "other"
+        ? formData.customAnimal
+        : formData.animalType;
+
+    data.append("animalType", finalAnimalType);
     data.append("animalType", formData.animalType);
     data.append("description", formData.description);
     data.append("behavior", formData.behavior);
     data.append("location", formData.location);
     data.append("dateTime", formData.dateTime);
     data.append("moreInfo", formData.moreInfo);
-    data.append("lat", selectedLocation?.lat.toString() || "");
-    data.append("lng", selectedLocation?.lng.toString() || "");
+    data.append("lat", selectedLocation?.lat?.toString() || "");
+    data.append("lng", selectedLocation?.lng?.toString() || "");
 
     if (formData.image) data.append("images", formData.image);
+    
     try {
       const res = await fetch("/api/animal-report", {
         method: "POST",
@@ -181,7 +193,7 @@ export default function ReportForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col">
       <Header />
 
       {/* Hero Section */}
@@ -205,19 +217,37 @@ export default function ReportForm() {
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
                 คุณพบสัตว์อะไร
               </label>
+
+              {/* Dropdown เลือกประเภท */}
               <select
                 name="animalType"
                 value={formData.animalType}
                 onChange={handleChange}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
+                 focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
+                 transition-all duration-300 bg-white"
               >
                 <option value="">-- เลือกประเภทสัตว์ --</option>
                 <option value="dog">สุนัข</option>
                 <option value="cat">แมว</option>
-                <option value="other">อื่น ๆ</option>
+                <option value="other">อื่น ๆ (โปรดระบุ)</option>
               </select>
+
+              {/* แสดง Input นี้เมื่อเลือก 'other' เท่านั้น */}
+              {formData.animalType === "other" && (
+                <div className="mt-3 animate-fade-in-down">
+                  <input
+                    type="text"
+                    name="customAnimal" // **ต้องเพิ่ม key นี้ใน state formData ด้วย**
+                    value={formData.customAnimal || ""}
+                    onChange={handleChange}
+                    placeholder="โปรดระบุชนิดสัตว์ (เช่น กระต่าย, นก)"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
+                   focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
+                   transition-all duration-300 bg-white placeholder-gray-400"
+                  />
+                </div>
+              )}
             </div>
 
             {/* ลักษณะของสัตว์ */}
@@ -334,7 +364,7 @@ export default function ReportForm() {
                       <button
                         onClick={handleSelectLocation}
                         disabled={!selectedLocation}
-                        className="flex-1 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+                        className="flex-1 bg-linear-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
                       >
                         ยืนยันตำแหน่ง
                       </button>
@@ -394,7 +424,7 @@ export default function ReportForm() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center transition-all duration-300">
+                    <div className="mx-auto w-16 h-16 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center transition-all duration-300">
                       <HiPhoto className="w-8 h-8 text-gray-400  transition-colors duration-300" />
                     </div>
                     <div>
@@ -422,7 +452,7 @@ export default function ReportForm() {
             {/* ปุ่มส่ง */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
+              className="w-full bg-linear-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
              text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
              transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
              disabled:cursor-not-allowed disabled:transform-none text-lg"

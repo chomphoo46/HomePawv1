@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           id: user.user_id,
           name: user.name ?? "",
           email: user.email,
-          role: user.role, // ✅ เพิ่ม role
+          role: user.role,
         };
       },
     }),
@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         user.id = dbUser.user_id;
-        user.role = dbUser.role; // ✅ map role
+        user.role = dbUser.role;
       }
 
       return true;
@@ -81,7 +81,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.name = user.name;
-        token.role = user.role; // ✅ เพิ่ม role ใน token
+        token.role = user.role;
       }
       return token;
     },
@@ -91,7 +91,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token) {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
-        session.user.role = token.role as string; // ✅ เพิ่ม role ใน session
+        session.user.role = token.role as string;
       }
       return session;
     },

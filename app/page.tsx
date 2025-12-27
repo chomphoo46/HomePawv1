@@ -334,7 +334,19 @@ export default function HomePage() {
           : "https://via.placeholder.com/300x200.png?text=No+Image";
 
       const location = post.location || "ไม่ระบุตำแหน่ง";
-      const animalType = getAnimalTypeLabel(post.animal_type);
+      const getAnimalTypeLabel = (type: string | number) => {
+        // 1. กำหนดค่ามาตรฐาน
+        const typeMap: Record<string, string> = {
+          dog: "สุนัข",
+          cat: "แมว",
+          other: "อื่นๆ", // เผื่อกรณีข้อมูลเก่าหลุดมา
+        };
+
+        // 2. คืนค่าตาม Logic:
+        // - ถ้า type ตรงกับ key ใน map (เช่น 'dog') -> คืนค่า 'สุนัข'
+        // - ถ้าไม่ตรง (เช่น 'กระต่าย' ที่ user พิมพ์มาเอง) -> คืนค่า 'กระต่าย' กลับไปเลย
+        return typeMap[String(type)] || type;
+      };
       const behavior = getBehaviorLabel(post.behavior);
       const dateTime = formatDateTime(post.created_at);
       const reporter = post.user?.name || "ไม่ระบุชื่อ";
@@ -407,7 +419,7 @@ export default function HomePage() {
             </div>
 
             <span style="position: absolute; bottom: 12px; right: 12px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; color: #D4A373; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              ${animalType}
+              ${getAnimalTypeLabel(post.animal_type)}
             </span>
           </div>
           
