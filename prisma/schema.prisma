@@ -20,6 +20,7 @@ model User {
   helpActions      HelpAction[]
   petRehomePosts   PetRehomePost[]
   animalReports    AnimalReports[]
+  adoptionRequests AdoptionRequest[]
 }
 
 model AnimalReports {
@@ -80,6 +81,23 @@ model PetRehomePost {
   // Relation
   user   User               @relation(fields: [user_id], references: [user_id])
   images PetRehomeImages[]
+  adoptionRequests AdoptionRequest[]
+}
+
+model AdoptionRequest {
+  id           Int      @id @default(autoincrement())
+  user_id      String
+  post_id      Int
+  status       AdoptionRequestStatus @default(PENDING)
+  name         String?  @db.VarChar(50) // ชื่อสำหรับคนช่วยเหลือ
+  contact_info String?  @db.VarChar(100) // เบอร์ติดต่อ หรือ Line ID ที่กรอกตอนกดปุ่ม
+  note         String?  @db.Text         // ข้อความเพิ่มเติม เช่น "บ้านมีรั้วรอบขอบชิด"
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  user User          @relation(fields: [user_id], references: [user_id])
+  post PetRehomePost @relation(fields: [post_id], references: [post_id])
 }
 
 model PetRehomeImages {
@@ -89,6 +107,13 @@ model PetRehomeImages {
 
   // Relation
   post PetRehomePost @relation(fields: [post_id], references: [post_id])
+}
+
+enum AdoptionRequestStatus {
+  PENDING   // รอตรวจสอบ
+  APPROVED  // อนุมัติแล้ว (Admin กดรับ)
+  REJECTED  // ปฏิเสธ
+  CANCELLED // ยกเลิกโดยผู้ใช้
 }
 
 enum AnimalReportStatus {

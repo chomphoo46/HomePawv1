@@ -211,7 +211,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
             throw new Error(err.error || "แก้ไขไม่สำเร็จ");
         }
 
-        alert("แก้ไขข้อมูลเรียบร้อย ✅");
+        alert("แก้ไขข้อมูลเรียบร้อย");
         router.push("/profile");
         router.refresh();
 
@@ -223,7 +223,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-yellow-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-orange-50 to-yellow-50">
         <div className="text-center">
           <FaPaw className="animate-bounce text-4xl text-[#D4A373] mx-auto mb-4" />
           <p className="text-gray-600">กำลังโหลดข้อมูล...</p>
@@ -233,7 +233,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col ${mali.className}`}>
+    <div className={`min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col ${mali.className}`}>
       <Header />
 
       {/* Hero Section */}
@@ -254,7 +254,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
           <form onSubmit={handleSubmit} className="space-y-6">
             
             {/* สถานะ (Status) */}
-            <div className="space-y-2 bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
+            <div className="space-y-2 bg-linear-to-r from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-100 shadow-sm">
               <label className="flex items-center text-base font-bold text-amber-800 mb-2">
                 สถานะปัจจุบัน <span className="text-red-500 ml-1">*</span>
               </label>
@@ -266,10 +266,10 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
                              focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
                              transition-all duration-300 bg-white text-gray-700 font-semibold cursor-pointer"
               >
-                <option value="STILL_THERE">🔴 ยังอยู่ที่เดิม (ต้องการความช่วยเหลือ)</option>
-                <option value="RESCUED">🟢 ช่วยเหลือแล้ว (จบเคส)</option>
-                <option value="MOVED">🟡 ย้ายที่แล้ว / หาไม่เจอ</option>
-                <option value="OTHER">⚪ อื่นๆ</option>
+                <option value="STILL_THERE">ยังอยู่ที่เดิม</option>
+                <option value="RESCUED">ช่วยเหลือแล้ว</option>
+                <option value="MOVED">ย้ายที่แล้ว / หาไม่เจอ</option>
+                <option value="OTHER">อื่นๆ</option>
               </select>
               <p className="text-xs text-amber-600/80 mt-1 pl-1">
                 * โปรดอัปเดตสถานะเพื่อเป็นข้อมูลให้คนอื่น ๆ ทราบ

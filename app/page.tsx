@@ -18,6 +18,7 @@ import {
 import { FaCircleCheck, FaHeart } from "react-icons/fa6";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
+import { Home, PawPrint, Heart } from "lucide-react";
 import { BiTargetLock } from "react-icons/bi";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
@@ -156,6 +157,25 @@ export default function HomePage() {
         return status;
     }
   };
+
+  // const statsIcons: Record<
+  //   string,
+  //   { label: string; icon: JSX.Element }
+  // > = {
+  //   foundAnimals: {
+  //     label: "ประกาศหาบ้าน",
+  //     icon: <RiHomeHeartFill size={22} style={{ color: "green" }} />,
+  //   },
+  //   rehomingPosts: {
+  //     label: "สัตว์ไร้บ้านที่พบ",
+  //     icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
+  //   },
+  //   urgentHelp: {
+  //     label: "คนช่วยเหลือ",
+  //     icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
+  //   },
+  // };
+
   // Mapping สถานะต่างๆ
   const neuteredstatusIcons: Record<
     string,
@@ -409,11 +429,17 @@ export default function HomePage() {
             
             <div style="position: absolute; top: 12px; left: 12px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px;">
                <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
-                 post.status === "STILL_THERE" ? "#EF4444" : "#10B981"
+                 post.status === "STILL_THERE"
+                   ? "#EF4444"
+                   : post.status === "MOVED"
+                   ? "#F59E0B"
+                   : "#10B981"
                };"></div>
                <span style="font-size: 0.75rem; font-weight: 600; color: white;">${
                  post.status === "STILL_THERE"
                    ? "ยังอยู่ที่เดิม"
+                   : post.status === "MOVED"
+                   ? "ย้ายที่แล้ว / หาไม่เจอ"
                    : "ช่วยเหลือแล้ว"
                }</span>
             </div>
@@ -657,19 +683,159 @@ export default function HomePage() {
     <div className={`min-h-screen bg-white text-gray-800 ${mali.className}`}>
       <Header />
 
-      {/* Stats Section */}
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center py-6 px-4 bg-orange-50/50">
+      <div className="w-full">
+        {/* Row 1: ข้อความ (ซ้าย) - รูปภาพ (ขวา) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px] relative">
+          {/* Text Area */}
+          <div className="flex flex-col justify-center items-center p-8 md:p-1 order-2 md:order-1 relative overflow-hidden">
+            <div className="relative z-10 max-w-lg">
+              <div className="inline-flex items-center gap-2 bg-[#FEFAE0] bg-opacity-10 px-4 py-2 rounded-full mb-6">
+                <span className="text-sm">แจ้งพบสัตว์</span>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                ช่วยเหลือสัตว์ไร้บ้าน
+              </h2>
+
+              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
+                หากคุณพบสัตว์ที่ถูกทอดทิ้ง เจ็บป่วย หรือไม่มีที่อยู่อาศัย
+                การแจ้งข้อมูลของคุณจะช่วยให้ผู้อื่นสามารถเข้ามาดูแล ให้อาหาร
+                หรือประสานการช่วยเหลือได้ตรงจุด
+                <br className="hidden md:block" /> เพราะทุกการแจ้ง
+                คือโอกาสใหม่ของหนึ่งชีวิต
+              </p>
+
+              <button
+                onClick={() => router.push("/animal-report")}
+                className="animate-bounce group relative bg-linear-to-r from-[#D4A373] to-[#c49261] hover:from-[#c49261] hover:to-[#b58350] text-white font-semibold py-4 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <span className="relative z-10">
+                  แจ้งพบสัตว์ไร้บ้าน ได้ที่นี่
+                </span>
+                <svg
+                  className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300"></div>
+              </button>
+            </div>
+          </div>
+
+          {/* Image Area */}
+          <div className="h-80 md:h-auto relative order-1 md:order-2 overflow-hidden group">
+            <div className="absolute inset-0 bg-linear-to-br from-[#D4A373] to-transparent opacity-20 z-10 group-hover:opacity-30 transition-opacity duration-500"></div>
+            <img
+              src="/Cat2.jpg"
+              alt="Stray Cat"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-black to-transparent opacity-40 z-10"></div>
+          </div>
+        </div>
+
+        {/* Row 2: รูปภาพ (ซ้าย) - ข้อความ (ขวา) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px] relative">
+          {/* Image Area */}
+          <div className="h-80 md:h-auto relative overflow-hidden group">
+            <div className="absolute inset-0 bg-linear-to-bl from-[#D4A373] to-transparent opacity-20 z-10 group-hover:opacity-30 transition-opacity duration-500"></div>
+            <img
+              src="/Dog.png"
+              alt="Smiling Dog"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-black to-transparent opacity-40 z-10"></div>
+          </div>
+
+          {/* Text Area */}
+          <div className="flex flex-col justify-center items-center p-8 md:p-16 relative overflow-hidden">
+            <div className="relative z-10 max-w-lg">
+              <div className="inline-flex items-center gap-2 bg-[#FEFAE0] bg-opacity-10 px-4 py-2 rounded-full mb-6">
+                <span className="text-sm">หาบ้านใหม่</span>
+              </div>
+
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                มอบบ้านใหม่ที่อบอุ่น
+              </h2>
+
+              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
+                เมื่อไม่สามารถดูแลเขาได้เหมือนเดิม การหาบ้านใหม่ที่อบอุ่น
+                อาจเป็นทางเลือกที่ดีที่สุด สำหรับสัตว์เลี้ยงที่คุณรัก
+                <br className="hidden md:block" />{" "}
+                เราขอช่วยเป็นสะพานให้เขาได้พบกับเจ้าของคนใหม่
+              </p>
+
+              <button
+                onClick={() => router.push("/form-rehoming")}
+                className="animate-bounce group relative bg-linear-to-r from-[#D4A373] to-[#c49261] hover:from-[#c49261] hover:to-[#b58350] text-white font-semibold py-4 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <span className="relative z-10">หาบ้านให้น้อง ได้ที่นี่</span>
+                <svg
+                  className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Statistics Section --- */}
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center py-14 px-4">
         {[
-          ["ประกาศหาบ้าน", stats.rehomingPosts, "text-purple-600"],
-          ["สัตว์ไร้บ้านที่พบ", stats.foundAnimals, "text-[#D4A373]"],
-          ["คนช่วยเหลือ", stats.urgentHelp, "text-green-600"],
-        ].map(([label, count, color], i) => (
-          <div
-            key={i}
-            className="bg-white p-4 rounded-xl shadow-sm border border-orange-100"
-          >
-            <p className={`text-3xl font-bold ${color}`}>{count}</p>
-            <p className="text-gray-600 font-medium">{label}</p>
+          {
+            label: "ประกาศหาบ้าน",
+            count: stats.rehomingPosts,
+            color: "text-purple-600",
+            bgColor: "bg-purple-100",
+            IconComponent: Home,
+          },
+          {
+            label: "สัตว์ไร้บ้านที่พบ",
+            count: stats.foundAnimals,
+            color: "text-[#D4A373]",
+            bgColor: "bg-orange-100",
+            IconComponent: PawPrint,
+          },
+          {
+            label: "คนช่วยเหลือ",
+            count: stats.urgentHelp,
+            color: "text-green-600",
+            bgColor: "bg-green-100",
+            IconComponent: Heart,
+          },
+        ].map((item, i) => (
+          <div key={i} className="flex flex-col items-center">
+            {/* ส่วนแสดงไอคอน */}
+            <div
+              className={`${item.bgColor} ${item.color} w-14 h-14 rounded-full flex items-center justify-center mb-4`}
+            >
+              {/* เรียกใช้ Icon ในรูปแบบ Component */}
+              <item.IconComponent className="w-7 h-7" strokeWidth={2} />
+            </div>
+
+            <p className={`text-3xl font-bold ${item.color} mb-1`}>
+              {item.count}
+            </p>
+            <p className="text-gray-600 font-medium">{item.label}</p>
           </div>
         ))}
       </section>
@@ -720,7 +886,7 @@ export default function HomePage() {
 
           {/* แถวที่ 2: คีย์เวิร์ด + ปุ่มค้นหา */}
           <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-[2] relative">
+            <div className="flex-2 relative">
               <input
                 type="text"
                 placeholder="ระบุลักษณะ (เช่น สีขาว, ปลอกคอ...)"
@@ -805,7 +971,7 @@ export default function HomePage() {
       </section>
 
       {/* Latest Posts Section */}
-      <section className="px-4 py-8 bg-gradient-to-b from-white to-orange-50/30">
+      <section className="px-4 py-8 bg-linear-to-b from-white to-orange-50/30">
         <div className="flex items-center gap-3 mb-6">
           <div className="bg-pink-100 p-2 rounded-full">
             <FaHeart size={24} className="text-pink-500" />
@@ -823,20 +989,36 @@ export default function HomePage() {
               className="group bg-white rounded-2xl p-3 shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-orange-200"
             >
               <div className="relative overflow-hidden rounded-xl mb-3">
+                <div className="absolute top-3 right-3 z-10">
+                  {post.status === "ADOPTED" ? (
+                    <span className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                      <FaCircleCheck className="text-white" /> ได้บ้านแล้ว
+                    </span>
+                  ) : (
+                    <span className="bg-[#D4A373]/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm animate-pulse">
+                      หาบ้านอยู่
+                    </span>
+                  )}
+                </div>
                 {post.images?.length > 0 ? (
                   <img
                     src={post.images[0].image_url}
                     alt={post.pet_name}
-                    className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-110"
+                    className={`w-full aspect-4/3 object-cover transition-transform duration-500 group-hover:scale-110 ${
+                      post.status === "ADOPTED"
+                        ? "grayscale opacity-80"
+                        : "group-hover:scale-105"
+                    }`}
                   />
                 ) : (
-                  <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400">
+                  <div className="w-full aspect-4/3 bg-gray-100 flex items-center justify-center text-gray-400">
                     ไม่มีรูปภาพ
                   </div>
                 )}
-                <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-[#D4A373] shadow-sm">
-                  {post.type}
-                </div>
+
+                {post.status === "ADOPTED" && (
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center"></div>
+                )}
               </div>
 
               <div className="px-2 pb-2">
@@ -856,26 +1038,26 @@ export default function HomePage() {
                     {getSexLabel(post.sex)}
                   </p>
                   <p className="flex items-center gap-2">
-                    <HiOutlineCalendar className="text-[#D4A373] flex-shrink-0" />
+                    <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
                     <span className="truncate">
                       อายุ: {post.age || "ไม่ระบุ"}
                     </span>
                   </p>
 
                   <p className="flex items-center gap-2">
-                    <MdOutlineQuestionAnswer className="text-[#D4A373] flex-shrink-0" />
+                    <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
                     <span className="truncate">
                       เหตุผล: {post.reason || "ไม่ระบุ"}
                     </span>
                   </p>
 
                   <p className="flex items-center gap-2">
-                    <HiOutlinePhone className="text-[#D4A373] flex-shrink-0" />
+                    <HiOutlinePhone className="text-[#D4A373] shrink-0" />
                     <span className="truncate">{post.phone || "ไม่ระบุ"}</span>
                   </p>
 
                   <p className="flex items-center gap-2">
-                    <FiMapPin className="text-red-500 flex-shrink-0" />
+                    <FiMapPin className="text-red-500 shrink-0" />
                     <span className="truncate">
                       {post.address || "ไม่ระบุ"}
                     </span>
@@ -885,7 +1067,7 @@ export default function HomePage() {
                   <div className="px-4 pb-4 pt-2 mt-auto">
                     <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
                       <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="flex-shrink-0">
+                        <span className="shrink-0">
                           {healthStatusIcons[post.vaccination_status]?.icon}
                         </span>
                         <span className="truncate">
@@ -895,7 +1077,7 @@ export default function HomePage() {
                       </div>
 
                       <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="flex-shrink-0">
+                        <span className="shrink-0">
                           {neuteredstatusIcons[post.neutered_status]?.icon}
                         </span>
                         <span className="truncate">

@@ -154,24 +154,51 @@ export async function PATCH(
         );
       }
 
-      post = await prisma.petRehomePost.update({
-        where: { post_id: id },
-        data: {
-          reason: payload.title,
-          status: payload.status,
-          contact: payload.contact,
-          phone: payload.phone,
-          address: payload.address,
-          pet_name: payload.pet_name,
-          type: payload.gene,
-          sex: payload.sex,
-          age: payload.age,
-          vaccination_status: payload.vaccinationStatus?.code || "UNKNOWN",
-          neutered_status: payload.neuteredStatus?.code || "UNKNOWN",
-        },
-      });
+      // ข้อมูลที่จะใช้ update (แยกออกมาเพื่อไม่ให้โค้ดซ้ำซ้อน)
+      const updateData = {
+        reason: payload.title,
+        status: payload.status,
+        contact: payload.contact,
+        phone: payload.phone,
+        address: payload.address,
+        pet_name: payload.pet_name,
+        type: payload.gene,
+        sex: payload.sex,
+        age: payload.age,
+        vaccination_status: payload.vaccinationStatus?.code || "UNKNOWN",
+        neutered_status: payload.neuteredStatus?.code || "UNKNOWN",
+      };
 
-      // อัปเดตรูปภาพ Pet
+      // ✅ 1. เช็คว่ามีการเปลี่ยนสถานะเป็น "ADOPTED" หรือไม่?
+      if (payload.status === "ADOPTED") {
+        // ใช้ Transaction: แก้ไขโพสต์ และ ปิดคำขอที่ค้างอยู่ พร้อมกัน
+        const [updatedPost] = await prisma.$transaction([
+          // 1.1 อัปเดตโพสต์
+          prisma.petRehomePost.update({
+            where: { post_id: id },
+            data: updateData,
+          }),
+          // 1.2 อัปเดตคำขอที่ยัง PENDING ให้เป็น REJECTED
+          prisma.adoptionRequest.updateMany({
+            where: {
+              post_id: id,
+              status: "PENDING",
+            },
+            data: {
+              status: "REJECTED", // หรือเปลี่ยนเป็นสถานะอื่นที่สื่อว่า "ไม่ได้ไปต่อ"
+            },
+          }),
+        ]);
+        post = updatedPost;
+      } else {
+        // ✅ 2. ถ้าไม่ใช่ ADOPTED ก็อัปเดตแค่โพสต์ตามปกติ
+        post = await prisma.petRehomePost.update({
+          where: { post_id: id },
+          data: updateData,
+        });
+      }
+
+      // อัปเดตรูปภาพ Pet (คงเดิม)
       if (payload.images && payload.images.length > 0) {
         await prisma.petRehomeImages.deleteMany({ where: { post_id: id } });
         await prisma.petRehomeImages.createMany({
@@ -185,27 +212,24 @@ export async function PATCH(
 
     // --- แก้ไขโพสต์แจ้งพบสัตว์ (Report/Stray) ---
     else if (payload.type === "stray" || payload.type === "report") {
-      
       // 1. อัปเดตข้อมูล Text
       post = await prisma.animalReports.update({
         where: { report_id: id },
         data: {
-          description: payload.title, // รับค่า title มาใส่ description
+          description: payload.title,
           status: payload.status,
-          animal_type: payload.pet_name, // รับค่า pet_name มาใส่ animal_type
-          behavior: payload.gene, // รับค่า gene มาใส่ behavior
-          // location: payload.address // ถ้าอยากแก้ที่อยู่ด้วยให้เปิดบรรทัดนี้ (ต้องแน่ใจว่า Frontend ส่งมา)
+          animal_type: payload.pet_name,
+          behavior: payload.gene,
+          // location: payload.address
         },
       });
 
-      // 2. ✅ เพิ่ม: Logic อัปเดตรูปภาพสำหรับ Report
+      // 2. Logic อัปเดตรูปภาพสำหรับ Report
       if (payload.images && payload.images.length > 0) {
-        // ลบรูปเก่า
         await prisma.animalImage.deleteMany({
           where: { report_id: id },
         });
 
-        // เพิ่มรูปใหม่
         await prisma.animalImage.createMany({
           data: payload.images.map((img: any) => ({
             report_id: id,

@@ -58,7 +58,7 @@ export default function Header() {
 
   return (
     <header
-      className={`flex items-center justify-between px-6 py-4 shadow bg-[#FEFAE0] ${mali.className}`}
+      className={`flex items-center justify-between px-6 py-4 shadow bg-[#FEFAE0] relative z-50 ${mali.className}`}
     >
       {/* Logo */}
       <h1 className="text-xl md:text-2xl font-semibold">HomePaw</h1>

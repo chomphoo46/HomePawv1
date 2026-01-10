@@ -84,7 +84,7 @@ export default function FormRehomingPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FEFAE0] to-[#F4F3EE]">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#FEFAE0] to-[#F4F3EE]">
         <div className="text-center">
           <FaPaw className="animate-bounce text-4xl text-[#D4A373] mx-auto mb-4" />
           <div className="text-lg text-gray-600">กำลังตรวจสอบสิทธิ์...</div>
@@ -158,11 +158,11 @@ export default function FormRehomingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
+    <div className="min-h-screen bg-linear-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
       <Header />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#D4A373] to-[#f1e8ad] text-white py-12 mb-8">
+      <div className="bg-linear-to-r from-[#D4A373] to-[#f1e8ad] text-white py-12 mb-8">
         <div className="max-w-4xl mx-auto text-center px-4">
           <div className="flex items-center justify-center gap-3 mb-4">
             <HiHeart className="text-4xl animate-pulse" />
@@ -181,7 +181,7 @@ export default function FormRehomingPage() {
       <div className="max-w-2xl mx-auto px-4 pb-12">
         {/* Form */}
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#FEFAE0] to-[#FAEDCD] px-6 py-4 border-b">
+          <div className="bg-linear-to-r from-[#FEFAE0] to-[#FAEDCD] px-6 py-4 border-b">
             <div className="flex items-center gap-2">
               <FaPaw className="text-[#D4A373]" />
               <span className="font-medium text-gray-700">

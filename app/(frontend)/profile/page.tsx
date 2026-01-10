@@ -187,7 +187,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab("rehoming")}
                 className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
                   activeTab === "rehoming"
-                    ? "bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE] text-[#D4A373] shadow-lg border-t-2 border-[#D4A373]"
+                    ? "bg-linear-to-br from-[#FEFAE0] via-white to-[#F4F3EE] text-[#D4A373] shadow-lg border-t-2 border-[#D4A373]"
                     : "text-gray-500 hover:text-[#D4A373] hover:bg-orange-50"
                 }`}
               >
@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab("found")}
                 className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
                   activeTab === "found"
-                    ? "bg-gradient-to-r from-green-50 to-emerald-50 text-emerald-600 shadow-lg border-t-2 border-emerald-500"
+                    ? "bg-linear-to-r from-green-50 to-emerald-50 text-emerald-600 shadow-lg border-t-2 border-emerald-500"
                     : "text-gray-500 hover:text-emerald-500 hover:bg-green-50"
                 }`}
               >
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                     className="flex flex-col h-full"
                   >
                     {/* Image Area */}
-                    <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                    <div className="relative aspect-4/3 bg-gray-100 overflow-hidden">
                       {image ? (
                         <img
                           src={image}
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Content Area */}
-                    <div className="p-5 flex flex-col flex-grow gap-3">
+                    <div className="p-5 flex flex-col grow gap-3">
                       {/* Header with Badge */}
                       <div className="flex items-start justify-between gap-2">
                         <h2
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                       <div className="space-y-2.5">
                         {/* Location */}
                         <div className="flex items-start gap-2.5">
-                          <FiMapPin className="text-[#D4A373] flex-shrink-0" />
+                          <FiMapPin className="text-[#D4A373] shrink-0" />
                           <span className="text-sm text-gray-700 line-clamp-1 flex-1">
                             {location || "ไม่ระบุพิกัด"}
                           </span>
@@ -293,7 +293,7 @@ export default function ProfilePage() {
                         {isRehome ? (
                           <>
                             <div className="flex items-center gap-2.5">
-                              <HiOutlineTag className="text-[#D4A373] flex-shrink-0" />
+                              <HiOutlineTag className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
                                 {post.type}
                               </span>
@@ -302,21 +302,21 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-2.5">
                               {post.sex === "MALE" ? (
                                 <>
-                                  <FaMars className="text-blue-500 flex-shrink-0" />
+                                  <FaMars className="text-blue-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
                                     ผู้
                                   </span>
                                 </>
                               ) : post.sex === "FEMALE" ? (
                                 <>
-                                  <FaVenus className="text-pink-500 flex-shrink-0" />
+                                  <FaVenus className="text-pink-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
                                     เมีย
                                   </span>
                                 </>
                               ) : (
                                 <>
-                                  <FaGenderless className="text-gray-400 flex-shrink-0" />
+                                  <FaGenderless className="text-gray-400 shrink-0" />
                                   <span className="text-sm text-gray-700">
                                     ไม่ระบุเพศ
                                   </span>
@@ -325,21 +325,21 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex items-center gap-2.5">
-                              <HiOutlineCalendar className="text-[#D4A373] flex-shrink-0" />
+                              <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
                                 อายุ: {post.age || "ไม่ระบุ"}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2.5">
-                              <MdOutlineQuestionAnswer className="text-[#D4A373] flex-shrink-0" />
+                              <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
                                 เหตุผล: {post.reason || "ไม่ระบุ"}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2.5">
-                              <HiOutlinePhone className="text-[#D4A373] flex-shrink-0" />
+                              <HiOutlinePhone className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
                                 {post.phone}
                               </span>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                         ) : (
                           <>
                             <div className="flex items-start gap-2.5">
-                              <HiOutlineTag className="text-[#D4A373] flex-shrink-0" />
+                              <HiOutlineTag className="text-[#D4A373] shrink-0" />
                               <p className="text-sm text-gray-700">
                                 ลักษณะ:{" "}
                                 {post.description || "ไม่มีรายละเอียดเพิ่มเติม"}
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex items-start gap-2.5">
-                              <MdPets className="text-[#D4A373] flex-shrink-0" />
+                              <MdPets className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
                                 พฤติกรรม: {getBehaviorLabel(post.behavior)}
                               </span>
@@ -370,7 +370,7 @@ export default function ProfilePage() {
                         <div className="px-4 pb-4 pt-2 mt-auto">
                           <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
                             <div className="flex items-center gap-1.5 truncate min-w-0">
-                              <span className="flex-shrink-0">
+                              <span className="shrink-0">
                                 {
                                   healthStatusIcons[post.vaccination_status]
                                     ?.icon
@@ -383,7 +383,7 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex items-center gap-1.5 truncate min-w-0">
-                              <span className="flex-shrink-0">
+                              <span className="shrink-0">
                                 {
                                   neuteredstatusIcons[post.neutered_status]
                                     ?.icon
@@ -398,7 +398,7 @@ export default function ProfilePage() {
                         </div>
                       ) : (
                         <div className="flex items-start gap-2.5 border-t border-gray-100 pt-3 mt-auto">
-                          <FaExclamationCircle className="text-orange-400 mt-0.5 flex-shrink-0 text-base" />
+                          <FaExclamationCircle className="text-orange-400 mt-0.5 shrink-0 text-base" />
                           <span className="text-sm text-gray-700">
                             สถานะ: {getFoundStatusLabel(post.status)}
                           </span>

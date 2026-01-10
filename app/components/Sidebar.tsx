@@ -3,13 +3,15 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Settings, LogOut } from "lucide-react";
-import { FaPaw } from "react-icons/fa";
+import { FaPaw, FaHandHoldingHeart } from "react-icons/fa"; // 1. เพิ่ม icon FaHandHoldingHeart
 import { BiUser } from "react-icons/bi";
 import clsx from "clsx";
 import { useSession, signOut } from "next-auth/react";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  // 2. เพิ่มเมนูใหม่ตรงนี้ (ดีไซน์เดิม)
+  { name: "คำขอรับเลี้ยง", icon: FaHandHoldingHeart, href: "/admin/adoption-requests" },
   { name: "จัดการโพสต์", icon: FaPaw, href: "/admin/posts" },
   { name: "จัดการสมาชิก", icon: BiUser, href: "/admin/members" },
 ];

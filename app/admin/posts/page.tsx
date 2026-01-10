@@ -16,6 +16,7 @@ import { BiUser } from "react-icons/bi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { FaCircleCheck } from "react-icons/fa6";
+import ExportButton from "@/app/components/ExportButton-posts";
 
 // Map สถานะวัคซีน
 const healthStatusIcons: Record<string, { label: string; icon: JSX.Element }> =
@@ -259,8 +260,12 @@ export default function ManagePostsPage() {
         >
           สัตว์หาบ้าน
         </button>
+
+        <div className="ml-auto">
+          <ExportButton />
+        </div>
       </div>
-      
+
       <div className="bg-white rounded-2xl shadow overflow-hidden">
         <table className="w-full border-collapse">
           <thead className="bg-[#D4A373] text-left">

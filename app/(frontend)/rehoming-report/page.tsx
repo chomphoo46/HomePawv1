@@ -150,7 +150,7 @@ export default function RehomingReportPage() {
       <Header />
       <div className="flex flex-1 flex-col items-center justify-start w-full">
         {/* Banner */}
-        <div className="w-full h-auto shadow-lg p-6 md:p-12 mb-8 flex flex-col items-center text-center bg-gradient-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
+        <div className="w-full h-auto shadow-lg p-6 md:p-12 mb-8 flex flex-col items-center text-center bg-linear-to-br from-[#FEFAE0] via-white to-[#F4F3EE]">
           {/* Header Section */}
           <div className="mb-12">
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-6 text-gray-800 leading-tight">
@@ -160,21 +160,32 @@ export default function RehomingReportPage() {
             {/* CTA Button - ทำให้เด่นขึ้น */}
             <div className="relative">
               <button
-                className="group relative overflow-hidden bg-gradient-to-r from-[#D4A373] to-[#E76F51] hover:from-[#E76F51] hover:to-[#D4A373] 
+                className="group relative overflow-hidden bg-linear-to-r from-[#D4A373] to-[#E76F51] hover:from-[#E76F51] hover:to-[#D4A373] 
                    text-lg md:text-2xl text-white px-8 md:px-12 py-4 md:py-5 rounded-full font-bold 
                    shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 
                    cursor-pointer animate-pulse hover:animate-none border-2 border-white"
                 onClick={() => router.push("/form-rehoming")}
               >
                 {/* Shine Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <div
+                  className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent 
+                        translate-x-full group-hover:translate-x-full transition-transform duration-700"
+                ></div>
 
                 <span className="relative z-10 flex items-center gap-3">
                   <span>🏠 หาบ้านใหม่ให้สัตว์เลี้ยงของคุณ</span>
-                  <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-1 transition-transform duration-300"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg
+                    className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
                   </svg>
                 </span>
               </button>
@@ -193,7 +204,9 @@ export default function RehomingReportPage() {
           <div className="w-full max-w-4xl mx-auto mb-8">
             <div className="flex items-center">
               <div className="flex-1 border-t-2 border-[#D4A373] opacity-30"></div>
-              <span className="px-4 text-[#D4A373] font-semibold">ค้นหาสัตว์เลี้ยง</span>
+              <span className="px-4 text-[#D4A373] font-semibold">
+                ค้นหาสัตว์เลี้ยง
+              </span>
               <div className="flex-1 border-t-2 border-[#D4A373] opacity-30"></div>
             </div>
           </div>
@@ -201,7 +214,9 @@ export default function RehomingReportPage() {
           {/* Filters */}
           <div className="flex flex-wrap gap-4 w-full justify-center max-w-6xl mx-auto">
             <div className="flex flex-col group">
-              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">สายพันธุ์</span>
+              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">
+                สายพันธุ์
+              </span>
               <input
                 className="border-2 border-gray-200 rounded-xl px-4 py-3 w-40 md:w-48 outline-none 
                    focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300
@@ -215,7 +230,9 @@ export default function RehomingReportPage() {
             </div>
 
             <div className="flex flex-col group">
-              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">เพศ</span>
+              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">
+                เพศ
+              </span>
               <select
                 className="border-2 border-gray-200 rounded-xl px-4 py-3 w-40 md:w-48 outline-none 
                    focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300
@@ -232,7 +249,9 @@ export default function RehomingReportPage() {
             </div>
 
             <div className="flex flex-col group">
-              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">อายุ</span>
+              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">
+                อายุ
+              </span>
               <select
                 className="border-2 border-gray-200 rounded-xl px-4 py-3 w-40 md:w-48 outline-none 
                    focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300
@@ -251,7 +270,9 @@ export default function RehomingReportPage() {
             </div>
 
             <div className="flex flex-col group">
-              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">สถานที่</span>
+              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">
+                สถานที่
+              </span>
               <input
                 className="border-2 border-gray-200 rounded-xl px-4 py-3 w-40 md:w-48 outline-none 
                    focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300
@@ -265,7 +286,9 @@ export default function RehomingReportPage() {
             </div>
 
             <div className="flex flex-col group">
-              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">วัคซีน</span>
+              <span className="mb-2 text-left pl-1 text-sm md:text-base font-medium text-gray-700">
+                วัคซีน
+              </span>
               <select
                 className="border-2 border-gray-200 rounded-xl px-4 py-3 w-40 md:w-48 outline-none 
                    focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300
@@ -325,80 +348,115 @@ export default function RehomingReportPage() {
                   href={`/rehoming-report/${post.post_id}`}
                   className="flex flex-col h-full"
                 >
-                  {/* Image */}
-                  {post.images?.length > 0 ? (
-                    <img
-                      src={post.images[0].image_url}
-                      alt={post.pet_name}
-                      className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                      ไม่มีรูปภาพ
+                  {/* Image Container */}
+                  <div className="relative">
+                    {" "}
+                    {/* เพิ่ม div ครอบ img เพื่อวาง Badge */}
+                    {/* ✅ ส่วนที่เพิ่ม: Status Badge */}
+                    <div className="absolute top-3 right-3 z-10">
+                      {post.status === "ADOPTED" ? (
+                        <span className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                          <FaCircleCheck className="text-white" /> ได้บ้านแล้ว
+                        </span>
+                      ) : (
+                        <span className="bg-[#D4A373]/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm animate-pulse">
+                          หาบ้านอยู่
+                        </span>
+                      )}
                     </div>
-                  )}
+                    {/* Image */}
+                    {post.images?.length > 0 ? (
+                      <img
+                        src={post.images[0].image_url}
+                        alt={post.pet_name}
+                        className={`w-full aspect-4/3 object-cover transition-transform duration-300 ${
+                          post.status === "ADOPTED"
+                            ? "grayscale opacity-80"
+                            : "group-hover:scale-105"
+                        }`}
+                      />
+                    ) : (
+                      <div className="w-full aspect-4/3 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                        ไม่มีรูปภาพ
+                      </div>
+                    )}
+                    {/* Optional: Overlay "ได้บ้านแล้ว" ทับทั้งรูปให้ชัดเจนขึ้น */}
+                    {post.status === "ADOPTED" && (
+                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                        {/* ถ้าอยากได้ตัวหนังสือใหญ่ๆ ทับรูป ให้เปิด comment นี้ */}
+                        {/* <span className="bg-white/80 text-green-700 px-4 py-2 rounded-lg font-bold border-2 border-green-600 transform -rotate-12 shadow-lg">ADOPTED</span> */}
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Content - ปรับให้ grow เพื่อดันส่วน footer ลงล่าง */}
-                  <div className="p-4 text-sm md:text-base text-gray-700 space-y-2 flex-grow">
+                  {/* Content - คงเดิม */}
+                  <div className="p-4 text-sm md:text-base text-gray-700 space-y-2 grow">
+                    {/* ... (เนื้อหาเดิมของคุณ) ... */}
                     <h3 className="text-xl font-semibold text-[#D4A373] truncate mb-3">
                       {post.pet_name}
                     </h3>
-
                     <p className="flex items-center gap-2">
-                      <HiOutlineTag className="text-[#D4A373] flex-shrink-0" />{" "}
+                      <HiOutlineTag className="text-[#D4A373] shrink-0" />{" "}
                       <span className="truncate">{post.type || "ไม่ระบุ"}</span>
                     </p>
-
+                    {/* ... (รายการอื่นๆ คงเดิม) ... */}
                     <p className="flex items-center gap-2">
                       {post.sex === "MALE" ? (
-                        <FaMars className="text-blue-500 flex-shrink-0" />
+                        <FaMars className="text-blue-500 shrink-0" />
                       ) : post.sex === "FEMALE" ? (
-                        <FaVenus className="text-pink-500 flex-shrink-0" />
+                        <FaVenus className="text-pink-500 shrink-0" />
                       ) : (
-                        <FaGenderless className="text-gray-400 flex-shrink-0" />
+                        <FaGenderless className="text-gray-400 shrink-0" />
                       )}
                       <span className="truncate">{getSexLabel(post.sex)}</span>
                     </p>
-
                     <p className="flex items-center gap-2">
-                      <HiOutlineCalendar className="text-[#D4A373] flex-shrink-0" />
-                      <span className="truncate">อายุ: {post.age || "ไม่ระบุ"}</span>
+                      <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
+                      <span className="truncate">
+                        อายุ: {post.age || "ไม่ระบุ"}
+                      </span>
                     </p>
-
                     <p className="flex items-center gap-2">
-                      <MdOutlineQuestionAnswer className="text-[#D4A373] flex-shrink-0" />
-                      <span className="truncate">เหตุผล: {post.reason || "ไม่ระบุ"}</span>
+                      <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
+                      <span className="truncate">
+                        เหตุผล: {post.reason || "ไม่ระบุ"}
+                      </span>
                     </p>
-
                     <p className="flex items-center gap-2">
-                      <HiOutlinePhone className="text-[#D4A373] flex-shrink-0" />
-                      <span className="truncate">{post.phone || "ไม่ระบุ"}</span>
+                      <HiOutlinePhone className="text-[#D4A373] shrink-0" />
+                      <span className="truncate">
+                        {post.phone || "ไม่ระบุ"}
+                      </span>
                     </p>
-
                     <p className="flex items-center gap-2">
-                      <FiMapPin className="text-red-500 flex-shrink-0" />
-                      <span className="truncate">{post.address || "ไม่ระบุ"}</span>
+                      <FiMapPin className="text-red-500 shrink-0" />
+                      <span className="truncate">
+                        {post.address || "ไม่ระบุ"}
+                      </span>
                     </p>
                   </div>
 
-                  {/* Footer */}
+                  {/* Footer - คงเดิม */}
                   <div className="px-4 pb-4 pt-2 mt-auto">
+                    {/* ... (เนื้อหาเดิมของคุณ) ... */}
                     <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
                       <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="flex-shrink-0">
+                        <span className="shrink-0">
                           {healthStatusIcons[post.vaccination_status]?.icon}
                         </span>
                         <span className="truncate">
-                          {healthStatusIcons[post.vaccination_status]?.label || "ไม่ระบุ"}
+                          {healthStatusIcons[post.vaccination_status]?.label ||
+                            "ไม่ระบุ"}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="flex-shrink-0">
+                        <span className="shrink-0">
                           {neuteredstatusIcons[post.neutered_status]?.icon}
                         </span>
                         <span className="truncate">
-                          {neuteredstatusIcons[post.neutered_status]?.label || "ไม่ระบุ"}
+                          {neuteredstatusIcons[post.neutered_status]?.label ||
+                            "ไม่ระบุ"}
                         </span>
                       </div>
                     </div>

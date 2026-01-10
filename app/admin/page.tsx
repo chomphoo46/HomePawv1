@@ -15,6 +15,7 @@ import {
 import { BiUser } from "react-icons/bi";
 import { FaPaw, FaHandsHelping } from "react-icons/fa";
 import { GoHome } from "react-icons/go";
+import ExportButton from "../components/ExportButton-posts";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
@@ -63,6 +64,9 @@ export default function AdminDashboardPage() {
   return (
     <div className="p-8 space-y-8">
       <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div>
+        <ExportButton />
+      </div>
 
       {/* สรุปจำนวนรวม */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -74,7 +78,7 @@ export default function AdminDashboardPage() {
         />
         <StatCard
           icon={<FaPaw className="w-6 h-6 mb-2" />}
-          title="จำนวนการแจ้งพบสัตว์ไร้บ้าน"
+          title="แจ้งพบสัตว์ไร้บ้าน"
           value={stats.totalReports}
           color="text-green-600"
         />
@@ -86,7 +90,7 @@ export default function AdminDashboardPage() {
         />
         <StatCard
           icon={<FaHandsHelping className="w-6 h-6 mb-2" />}
-          title="สัตว์ที่ได้รับการช่วยเหลือ"
+          title="ช่วยเหลือแล้ว"
           value={stats.totalHelped}
           color="text-purple-600"
         />
@@ -147,12 +151,17 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-lg font-semibold mb-4">สมาชิกใหม่รายเดือน</h2>
           <ul className="space-y-2">
-            {stats.newMembers?.map((item, index) => ( // ✅ ใช้ ?.map ป้องกัน undefined
-              <li key={index} className="flex justify-between">
-                <span>{item.month}</span>
-                <span className="font-semibold">{item.count} คน</span>
-              </li>
-            ))}
+            {stats.newMembers?.map(
+              (
+                item,
+                index // ✅ ใช้ ?.map ป้องกัน undefined
+              ) => (
+                <li key={index} className="flex justify-between">
+                  <span>{item.month}</span>
+                  <span className="font-semibold">{item.count} คน</span>
+                </li>
+              )
+            )}
           </ul>
         </div>
 
@@ -161,12 +170,17 @@ export default function AdminDashboardPage() {
             พื้นที่ที่มีรายงานมากที่สุด
           </h2>
           <ul className="space-y-2">
-            {stats.topAreas?.map((area, index) => ( // ✅ เช่นเดียวกัน
-              <li key={index} className="flex justify-between">
-                <span>{area.location}</span>
-                <span className="font-semibold">{area.count} รายงาน</span>
-              </li>
-            ))}
+            {stats.topAreas?.map(
+              (
+                area,
+                index // ✅ เช่นเดียวกัน
+              ) => (
+                <li key={index} className="flex justify-between">
+                  <span>{area.location}</span>
+                  <span className="font-semibold">{area.count} รายงาน</span>
+                </li>
+              )
+            )}
           </ul>
         </div>
       </div>

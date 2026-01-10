@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { JSX } from "react";
-
 import Header from "@/app/components/Header";
+import AdoptButton from "@/app/components/AdoptButton";
+
 import Link from "next/link";
 import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
 import {
@@ -14,6 +15,8 @@ import { BiUser } from "react-icons/bi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { FaCircleCheck } from "react-icons/fa6";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 interface DetailAnimalProps {
   params: {
@@ -35,6 +38,13 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
       user: true,
     },
   });
+
+  // 2. ดึงข้อมูล User ปัจจุบัน (Backend Side)
+  // ** ตรงนี้คุณต้องใช้โค้ดตาม Auth Library ที่คุณใช้ครับ **
+  // ตัวอย่าง Mock up (ถ้ายังไม่ได้ทำ Auth ให้ใส่ null ไปก่อน)n
+  // ตัวอย่างถ้าใช้ NextAuth:
+  const session = await getServerSession(authOptions);
+  const currentUserId = session?.user?.id;
 
   // แปลงเพศเป็นภาษาไทย
   const getSexLabel = (sex: string) => {
@@ -430,12 +440,12 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
 
         {/* ปุ่มดำเนินการ */}
         <div className="flex gap-4 justify-center mt-8 max-w-md mx-auto">
-          <button className="flex-1 bg-[#D4A373] hover:bg-[#B8956A] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
-            สนใจรับเลี้ยง
-          </button>
-          <button className="flex-1 bg-[#E8DCC0] hover:bg-[#DDD0B0] text-gray-800 font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
-            ติดต่อ
-          </button>
+          {/* เรียกใช้ Component ปุ่ม แยกออกมา เพื่อให้ใช้ onClick ได้ */}
+          <AdoptButton
+            postId={animal.post_id}
+            petName={animal.pet_name}
+            currentUserId={currentUserId} // ส่ง ID ของ User ที่ Login อยู่ไปเช็ค
+          />
         </div>
       </div>
     </div>
