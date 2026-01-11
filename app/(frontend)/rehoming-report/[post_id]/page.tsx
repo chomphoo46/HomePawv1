@@ -445,6 +445,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
             postId={animal.post_id}
             petName={animal.pet_name}
             currentUserId={currentUserId} // ส่ง ID ของ User ที่ Login อยู่ไปเช็ค
+            status={animal.status}
           />
         </div>
       </div>

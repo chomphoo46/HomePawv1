@@ -8,24 +8,32 @@ interface AdoptButtonProps {
   postId: number;
   petName: string;
   currentUserId?: string | null; // รับ ID ของคนที่ Login อยู่
+  status: string;
 }
 
-export default function AdoptButton({ postId, petName, currentUserId }: AdoptButtonProps) {
+export default function AdoptButton({
+  postId,
+  petName,
+  currentUserId,
+  status
+}: AdoptButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const isAdopted = status === "ADOPTED";
 
   const handleAdoptClick = async () => {
+    if (isAdopted) return;
     // 1. เช็คว่า Login หรือยัง
     if (!currentUserId) {
       Swal.fire({
-        title: 'กรุณาเข้าสู่ระบบ',
-        text: 'คุณต้องเข้าสู่ระบบก่อนกดขอรับเลี้ยง',
-        icon: 'warning',
-        confirmButtonColor: '#D4A373',
-        confirmButtonText: 'ไปหน้าเข้าสู่ระบบ'
+        title: "กรุณาเข้าสู่ระบบ",
+        text: "คุณต้องเข้าสู่ระบบก่อนกดขอรับเลี้ยง",
+        icon: "warning",
+        confirmButtonColor: "#D4A373",
+        confirmButtonText: "ไปหน้าเข้าสู่ระบบ",
       }).then((result) => {
         if (result.isConfirmed) {
-          router.push('/login'); // เปลี่ยนเป็น path login ของคุณ
+          router.push("/login"); // เปลี่ยนเป็น path login ของคุณ
         }
       });
       return;
@@ -36,26 +44,34 @@ export default function AdoptButton({ postId, petName, currentUserId }: AdoptBut
       title: `สนใจรับเลี้ยงน้อง ${petName}?`,
       html:
         '<div class="text-left">' +
+        '<label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้ขอ *</label>' +
+        `<input id="swal-name" class="swal2-input m-0! w-full! mb-4!" placeholder="ชื่อของคุณ">` +
         '<label class="block text-sm font-medium text-gray-700 mb-1">เบอร์โทรศัพท์ติดต่อกลับ *</label>' +
         '<input id="swal-contact" class="swal2-input m-0! w-full! mb-4!" placeholder="08x-xxx-xxxx">' +
         '<label class="block text-sm font-medium text-gray-700 mb-1">ข้อความเพิ่มเติมถึงเจ้าของ (ถ้ามี)</label>' +
         '<textarea id="swal-note" class="swal2-textarea m-0! w-full!" placeholder="เช่น ความพร้อมในการเลี้ยง, เคยเลี้ยงสัตว์มาก่อนไหม"></textarea>' +
-        '</div>',
+        "</div>",
       focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: 'ยืนยันส่งคำขอ',
-      confirmButtonColor: '#D4A373',
-      cancelButtonText: 'ยกเลิก',
+      confirmButtonText: "ยืนยันส่งคำขอ",
+      confirmButtonColor: "#D4A373",
+      cancelButtonText: "ยกเลิก",
       preConfirm: () => {
-        const contact = (document.getElementById('swal-contact') as HTMLInputElement).value;
-        const note = (document.getElementById('swal-note') as HTMLTextAreaElement).value;
-        
+        const name = (document.getElementById("swal-name") as HTMLInputElement)
+          .value;
+        const contact = (
+          document.getElementById("swal-contact") as HTMLInputElement
+        ).value;
+        const note = (
+          document.getElementById("swal-note") as HTMLTextAreaElement
+        ).value;
+
         if (!contact) {
-          Swal.showValidationMessage('กรุณากรอกเบอร์โทรศัพท์');
+          Swal.showValidationMessage("กรุณากรอกเบอร์โทรศัพท์");
           return false;
         }
-        return { contact, note };
-      }
+        return { name, contact, note };
+      },
     });
 
     // 3. ยิง API เมื่อกดยืนยัน
@@ -63,14 +79,15 @@ export default function AdoptButton({ postId, petName, currentUserId }: AdoptBut
       try {
         setIsLoading(true);
 
-        const response = await fetch('/api/adopt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/adopt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: currentUserId,
             postId: postId,
+            name: formValues.name,
             contactInfo: formValues.contact,
-            note: formValues.note
+            note: formValues.note,
           }),
         });
 
@@ -78,24 +95,23 @@ export default function AdoptButton({ postId, petName, currentUserId }: AdoptBut
 
         if (response.ok) {
           Swal.fire({
-            title: 'ส่งคำขอสำเร็จ!',
-            text: 'เจ้าของโพสต์จะได้รับการแจ้งเตือน และจะติดต่อกลับไปหาคุณครับ',
-            icon: 'success',
-            confirmButtonColor: '#10B981'
+            title: "ส่งคำขอสำเร็จ!",
+            text: "เราได้รับการแจ้งเตือนของคุณแล้ว และจะติดต่อกลับไปหาคุณค่ะ",
+            icon: "success",
+            confirmButtonColor: "#10B981",
           });
         } else {
           // กรณี Error (เช่น เคยส่งไปแล้ว หรือ น้องได้บ้านแล้ว)
           Swal.fire({
-            title: 'แจ้งเตือน',
-            text: data.message || 'เกิดข้อผิดพลาด',
-            icon: 'warning',
-            confirmButtonColor: '#EF4444'
+            title: "แจ้งเตือน",
+            text: data.message || "เกิดข้อผิดพลาด",
+            icon: "warning",
+            confirmButtonColor: "#EF4444",
           });
         }
-
       } catch (error) {
         console.error(error);
-        Swal.fire('Error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+        Swal.fire("Error", "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้", "error");
       } finally {
         setIsLoading(false);
       }
@@ -105,14 +121,21 @@ export default function AdoptButton({ postId, petName, currentUserId }: AdoptBut
   return (
     <button
       onClick={handleAdoptClick}
-      disabled={isLoading}
+      disabled={isLoading || isAdopted} // ถ้าโหลดอยู่ หรือ ได้บ้านแล้ว ให้กดไม่ได้
       className={`flex-1 font-bold py-3 px-6 rounded-lg transition-all duration-300 shadow-md 
-        ${isLoading 
-          ? 'bg-gray-400 cursor-not-allowed' 
-          : 'bg-[#D4A373] hover:bg-[#B8956A] hover:shadow-lg text-white'
+        ${
+          isAdopted
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+            : isLoading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#D4A373] hover:bg-[#B8956A] hover:shadow-lg text-white"
         }`}
     >
-      {isLoading ? 'กำลังส่งข้อมูล...' : 'สนใจรับเลี้ยง'}
+      {isAdopted
+        ? "น้องได้บ้านแล้ว"
+        : isLoading
+        ? "กำลังส่งข้อมูล..."
+        : "สนใจรับเลี้ยง"}
     </button>
   );
 }

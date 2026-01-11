@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
-import { HiPhoto, HiHeart, HiSparkles } from "react-icons/hi2";
+import { HiPhoto, HiHeart, HiSparkles, HiXMark } from "react-icons/hi2";
 import { FaPaw, FaCheck } from "react-icons/fa";
 type ExistingImage = {
   id: number;
@@ -37,35 +37,36 @@ export default function FormRehomingPage() {
     images: File[];
   }>({ dateTime: "", images: [] });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+ 
+  // ✅ ฟังก์ชันเพิ่มรูปภาพ (รองรับการเลือกทีละหลายรูป)
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
 
-  // ✅ เพิ่ม / ลบ รูปภาพแบบไม่แทนที่ของเดิม และจำกัด 5 รูป
-  // ✅ เพิ่มรูปใหม่โดยไม่แทนรูปเดิม และจำกัด 5
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      const combinedFiles = [...form.images, ...newFiles].slice(0, 5);
-      setForm((prev) => ({ ...prev, images: combinedFiles }));
+    const newFiles = Array.from(e.target.files);
 
-      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
-      setPreviewUrls((prev) => [...prev, ...newPreviewUrls].slice(0, 5));
+    // ตรวจสอบจำนวนรูป (รวมของเก่า + ของใหม่ ต้องไม่เกิน 5)
+    if (selectedImages.length + newFiles.length > 5) {
+      alert("สามารถอัปโหลดรูปภาพได้สูงสุด 5 รูป");
+      return;
     }
-    e.target.value = ""; // reset input
+
+    const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+
+    setSelectedImages((prev) => [...prev, ...newFiles]);
+    setPreviewUrls((prev) => [...prev, ...newPreviewUrls]);
+
+    // Reset value เพื่อให้เลือกรูปเดิมซ้ำได้ถ้าต้องการ (กรณีลบแล้วเพิ่มใหม่)
+    e.target.value = "";
   };
 
-  // ✅ ลบรูปใหม่
-  const handleRemoveNewImage = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+  // ✅ ฟังก์ชันลบรูปภาพ
+  const removeImage = (index: number) => {
+    // ลบ URL ออกจาก memory
+    URL.revokeObjectURL(previewUrls[index]);
+
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // ✅ ลบรูปเก่าจากฐานข้อมูล
-  const handleRemoveExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
-    // อาจเพิ่ม logic ลบใน backend ด้วย (เช่น เรียก API DELETE)
   };
 
   useEffect(() => {
@@ -422,96 +423,94 @@ export default function FormRehomingPage() {
             </div>
 
             {/* Image Upload */}
-            <div>
-              <label className="block mb-3 font-medium text-gray-700">
-                อัปโหลดรูปภาพ (1-5 รูป) <span className="text-red-500">*</span>
-              </label>
+            {/* ✅ อัปโหลดรูปภาพ (UI แบบหน้าหาบ้าน) */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  อัปโหลดรูปภาพ (1-5 รูป)
+                </label>
+                <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
+                  {previewUrls.length} / 5 รูป
+                </span>
+              </div>
 
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer border-2 border-dashed border-gray-300 rounded-2xl p-8 block 
-             transition-all hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-gray-50"
+              {/* Container หลัก */}
+              <div
+                className={`border-2 border-dashed border-gray-300 rounded-2xl p-6 block transition-all 
+                ${
+                  previewUrls.length === 0
+                    ? "hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-gray-50 cursor-pointer"
+                    : "bg-white"
+                }`}
               >
-                {existingImages.length > 0 || previewUrls.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* ✅ รูปเก่าที่ดึงมาจาก DB */}
-                    {existingImages.map((img) => (
-                      <div key={img.id} className="relative group">
-                        <img
-                          src={img.image_url}
-                          alt="existing"
-                          className="max-h-48 rounded-xl shadow-lg object-cover w-full"
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveExistingImage(img.id);
-                          }}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* ✅ รูปใหม่ที่เลือกเพิ่ม */}
+                {previewUrls.length > 0 ? (
+                  // --- กรณีมีรูปภาพแล้ว (แสดง Grid) ---
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {/* Loop แสดงรูปที่เลือกไว้ */}
                     {previewUrls.map((url, idx) => (
-                      <div key={idx} className="relative group">
+                      <div key={idx} className="relative group aspect-square">
                         <img
                           src={url}
                           alt={`Preview ${idx + 1}`}
-                          className="max-h-48 rounded-xl shadow-lg object-cover w-full"
+                          className="w-full h-full rounded-xl shadow-md object-cover border border-gray-200"
                         />
+                        {/* ปุ่มลบรูป (กากบาทสีแดง) */}
                         <button
                           type="button"
                           onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveNewImage(idx);
+                            e.stopPropagation(); // กันไม่ให้กดไปโดน input อื่น
+                            removeImage(idx);
                           }}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs cursor-pointer"
+                          className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm transition-colors"
                         >
-                          ×
+                          <HiXMark className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
 
-                    {/* ✅ ปุ่มเพิ่มรูป (หายเมื่อครบ 5) */}
-                    {existingImages.length + previewUrls.length < 5 && (
-                      <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer">
+                    {/* ปุ่ม + เพิ่มรูป (แสดงเมื่อยังไม่ครบ 5 รูป) */}
+                    {previewUrls.length < 5 && (
+                      <label className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#D4A373] hover:bg-[#D4A373]/5 hover:text-[#D4A373] text-gray-400 transition-all bg-gray-50">
                         <input
                           type="file"
                           multiple
                           accept="image/*"
                           className="hidden"
-                          onChange={handleFileChange}
+                          onChange={handleImageChange}
                         />
-                        <span className="text-gray-400">+ เพิ่มรูป</span>
+                        <span className="text-2xl mb-1">+</span>
+                        <span className="text-xs font-medium">เพิ่มรูป</span>
                       </label>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center">
-                    <HiPhoto className="mx-auto w-16 h-16 text-gray-300 mb-4" />
+                  // --- กรณีไม่มีรูป (แสดงพื้นที่อัปโหลดใหญ่) ---
+                  <label
+                    htmlFor="file-upload"
+                    className="block w-full h-full cursor-pointer text-center py-4"
+                  >
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#D4A373]/20 transition-all">
+                      <HiPhoto className="w-8 h-8 text-gray-400 group-hover:text-[#D4A373]" />
+                    </div>
                     <div className="text-lg font-semibold text-gray-600 mb-2">
                       คลิกเพื่ออัปโหลดรูปภาพ
                     </div>
                     <p className="text-sm text-gray-500">
                       PNG, JPG, GIF สูงสุด 10MB (ไม่เกิน 5 รูป)
                     </p>
-                  </div>
+                    {/* Input หลักสำหรับตอนยังไม่มีรูป */}
+                    <input
+                      id="file-upload"
+                      name="file-upload" // ต้องตรงกับ State
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="sr-only"
+                    />
+                  </label>
                 )}
-              </label>
-
-              <input
-                id="file-upload"
-                name="images"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileChange}
-                className="sr-only"
-              />
+              </div>
             </div>
 
             {/* Error and Success Messages */}
@@ -530,7 +529,7 @@ export default function FormRehomingPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-gradient-to-r fbg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
+              className="w-full bg-linear-to-r fbg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
                        text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
                        transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
                        disabled:cursor-not-allowed disabled:transform-none text-lg"

@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, postId, contactInfo, note } = body;
+    console.log("Adoption Request Body:", body);
+    const { userId, postId, name, contactInfo, note } = body;
 
     // 1. ตรวจสอบข้อมูลเบื้องต้น
     if (!userId || !postId) {
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
       data: {
         user_id: userId,
         post_id: postId,
+        name: name,
         contact_info: contactInfo,
         note: note,
         status: "PENDING",

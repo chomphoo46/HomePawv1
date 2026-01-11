@@ -16,6 +16,7 @@ import ExportButton from "@/app/components/ExportButton-request";
 interface AdoptionRequest {
   id: number;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  name: string;
   contact_info: string;
   note: string;
   created_at: string;
@@ -65,7 +66,7 @@ export default function AdoptionRequestsPage() {
     const result = await Swal.fire({
       title: isApprove ? "ยืนยันการอนุมัติ?" : "ยืนยันการปฏิเสธ?",
       text: isApprove
-        ? `คุณต้องการอนุมัติให้คุณ ${req.user.name} รับเลี้ยงน้อง ${req.post.pet_name} ใช่ไหม?`
+        ? `คุณต้องการอนุมัติให้คุณ ${req.name} รับเลี้ยงน้อง ${req.post.pet_name} ใช่ไหม?`
         : "คุณต้องการปฏิเสธคำขอนี้ใช่ไหม?",
       icon: isApprove ? "question" : "warning",
       showCancelButton: true,
@@ -111,9 +112,7 @@ export default function AdoptionRequestsPage() {
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        คำขอรับเลี้ยง
-      </h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">คำขอรับเลี้ยง</h1>
 
       {/* Tabs Filter */}
       <div className="flex gap-4 mb-6">
@@ -157,10 +156,10 @@ export default function AdoptionRequestsPage() {
         >
           ปฏิเสธแล้ว
         </button>
-        
-        <button className="ml-auto">
+
+        <div className="ml-auto">
           <ExportButton />
-        </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -170,6 +169,7 @@ export default function AdoptionRequestsPage() {
             <tr>
               <th className="p-4">สัตว์เลี้ยง</th>
               <th className="p-4">ผู้ขอรับเลี้ยง</th>
+              <th className="p-4">ชื่อผู้ขอ</th>
               <th className="p-4">ข้อมูลติดต่อ / เหตุผล</th>
               <th className="p-4">วันที่ส่งคำขอ</th>
               <th className="p-4">สถานะ</th>
@@ -215,6 +215,15 @@ export default function AdoptionRequestsPage() {
                         <p className="text-xs text-gray-500">
                           {req.user.email}
                         </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* 2. ชื่อผู้ขอ */}
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className=" text-gray-900">{req.name}</p>
                       </div>
                     </div>
                   </td>

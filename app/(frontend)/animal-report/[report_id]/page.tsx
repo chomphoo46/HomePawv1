@@ -75,7 +75,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
         {/* Breadcrumb & Header */}
         <div className="text-center mb-8">
           <nav className="mb-6">
-            <ol className="flex justify-center items-center space-x-2 text-sm text-gray-600">
+            <ol className="flex items-center space-x-2 text-sm text-gray-600">
               <li>
                 <Link
                   href="/"
@@ -85,17 +85,27 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 </Link>
               </li>
               <li className="flex items-center">
-                <span>/</span>
-                <span className="ml-2 font-medium text-gray-800">
+                <svg
+                  className="w-4 h-4 mx-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+                <span className="font-medium text-gray-800">
                   {animal.animal_type}
                 </span>
               </li>
             </ol>
           </nav>
-          <div className="inline-block bg-[#D4A373] px-20 py-3 shadow-md rounded-lg">
-            <h1 className="text-2xl font-semibold text-white">
-              รายละเอียดน้อง
-            </h1>
+          <div className="inline-block bg-[#D4A373] px-20 py-3 shadow-md">
+            <h1 className="text-2xl font-semibold">รายละเอียดน้อง</h1>
           </div>
         </div>
 
@@ -213,7 +223,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 ? "สุนัข"
                 : animal.animal_type === "cat"
                 ? "แมว"
-                : "🐾 สัตว์อื่นๆ"}
+                : animal.animal_type}
             </h2>
             <div className="text-right">
               <span className="block text-sm text-gray-500">วันที่พบ</span>

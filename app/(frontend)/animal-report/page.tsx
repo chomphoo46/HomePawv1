@@ -2,17 +2,20 @@
 
 import { useState, useEffect, useRef } from "react";
 import Header from "@/app/components/Header";
-import { HiPhoto, HiMapPin, HiClock, HiHeart, HiXMark } from "react-icons/hi2";
+import { HiPhoto, HiMapPin, HiXMark } from "react-icons/hi2";
 import { MdOutlinePets } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
-import { FaPaw } from "react-icons/fa";
+import { FaPaw, FaTrash } from "react-icons/fa"; // เพิ่ม icon ถังขยะ
+
 export default function ReportForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState("");
+  // ✅ เปลี่ยน State จากเก็บรูปเดียว เป็นเก็บ Array ของ File และ URL
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
   const [showMap, setShowMap] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
@@ -33,7 +36,7 @@ export default function ReportForm() {
     location: "",
     dateTime: "",
     moreInfo: "",
-    image: null as File | null,
+    // image: null, // ❌ เอาออก เพราะเราแยกไปใช้ selectedImages แทน
   });
 
   // ตั้งค่าวันที่ปัจจุบัน
@@ -47,13 +50,20 @@ export default function ReportForm() {
     }));
   }, []);
 
-  // เมื่อ showMap เป็น true และ container พร้อม ให้ init map
+  // Cleanup Preview URLs เมื่อ Component ถูกทำลาย (เพื่อไม่ให้กิน Ram)
   useEffect(() => {
-    if (!showMap) return; // ถ้า modal ปิด ไม่ต้องทำงาน
-    if (!mapContainerRef.current) return; // ตรวจสอบ container
+    return () => {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
+
+  // Map Logic (เหมือนเดิม) ...
+  useEffect(() => {
+    if (!showMap) return;
+    if (!mapContainerRef.current) return;
 
     const google = (window as any).google;
-    if (!google || mapRef.current) return; // ถ้า google ยังไม่โหลด หรือ map สร้างแล้ว return
+    if (!google || mapRef.current) return;
 
     geocoderRef.current = new google.maps.Geocoder();
     mapRef.current = new google.maps.Map(mapContainerRef.current, {
@@ -61,7 +71,6 @@ export default function ReportForm() {
       zoom: 14,
     });
 
-    // เพิ่ม listener สำหรับ click บน map
     mapRef.current.addListener("click", (e: any) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -81,7 +90,7 @@ export default function ReportForm() {
 
       updateLocation(lat, lng);
     });
-  }, [showMap]); // watch showMap
+  }, [showMap]);
 
   const updateLocation = (lat: number, lng: number) => {
     if (!geocoderRef.current) return;
@@ -116,19 +125,42 @@ export default function ReportForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ ฟังก์ชันเพิ่มรูปภาพ (รองรับการเลือกทีละหลายรูป)
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
-    setFormData((prev) => ({ ...prev, image: file })); // <-- จุดที่ 1 (ของเดิมไม่มี)
-    setPreviewUrl(URL.createObjectURL(file));
-    setFileName(file.name);
+    if (!e.target.files) return;
+
+    const newFiles = Array.from(e.target.files);
+
+    // ตรวจสอบจำนวนรูป (รวมของเก่า + ของใหม่ ต้องไม่เกิน 5)
+    if (selectedImages.length + newFiles.length > 5) {
+      alert("สามารถอัปโหลดรูปภาพได้สูงสุด 5 รูป");
+      return;
+    }
+
+    const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file));
+
+    setSelectedImages((prev) => [...prev, ...newFiles]);
+    setPreviewUrls((prev) => [...prev, ...newPreviewUrls]);
+
+    // Reset value เพื่อให้เลือกรูปเดิมซ้ำได้ถ้าต้องการ (กรณีลบแล้วเพิ่มใหม่)
+    e.target.value = "";
+  };
+
+  // ✅ ฟังก์ชันลบรูปภาพ
+  const removeImage = (index: number) => {
+    // ลบ URL ออกจาก memory
+    URL.revokeObjectURL(previewUrls[index]);
+
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
     if (status === "unauthenticated") {
       signIn(undefined, { callbackUrl: "/animal-report" });
     }
-  }, [status]); // เอา router ออก
+  }, [status]);
+
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#FEFAE0] to-[#F4F3EE]">
@@ -148,11 +180,18 @@ export default function ReportForm() {
       alert("Unauthorized");
       return;
     }
-    // 1. ตรวจสอบว่าถ้าเลือก other แล้วลืมพิมพ์ระบุหรือไม่ (Optional - เพิ่มความชัวร์)
+
     if (formData.animalType === "other" && !formData.customAnimal) {
       alert("กรุณาระบุประเภทสัตว์");
       return;
     }
+
+    // ✅ ตรวจสอบว่ามีรูปภาพอย่างน้อย 1 รูปหรือไม่ (ถ้าบังคับ)
+    // if (selectedImages.length === 0) {
+    //   alert("กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป");
+    //   return;
+    // }
+
     const data = new FormData();
     const finalAnimalType =
       formData.animalType === "other"
@@ -160,7 +199,6 @@ export default function ReportForm() {
         : formData.animalType;
 
     data.append("animalType", finalAnimalType);
-    data.append("animalType", formData.animalType);
     data.append("description", formData.description);
     data.append("behavior", formData.behavior);
     data.append("location", formData.location);
@@ -169,8 +207,11 @@ export default function ReportForm() {
     data.append("lat", selectedLocation?.lat?.toString() || "");
     data.append("lng", selectedLocation?.lng?.toString() || "");
 
-    if (formData.image) data.append("images", formData.image);
-    
+    // ✅ Loop เพื่อ append รูปภาพทั้งหมดลง FormData
+    selectedImages.forEach((file) => {
+      data.append("images", file); // ใช้ key "images" ซ้ำๆ กัน Backend จะได้รับเป็น Array
+    });
+
     try {
       const res = await fetch("/api/animal-report", {
         method: "POST",
@@ -185,7 +226,7 @@ export default function ReportForm() {
       }
 
       alert("ส่งรายงานสำเร็จ!");
-      router.push("/"); // กลับหน้าหลัก
+      router.push("/");
     } catch (err) {
       console.error(err);
       alert("เกิดข้อผิดพลาดในการส่งรายงาน");
@@ -201,7 +242,7 @@ export default function ReportForm() {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-[#D4A373] rounded-full mb-4 shadow-lg">
           <MdOutlinePets className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl font.bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
           แจ้งพบสัตว์ไร้บ้าน
         </h1>
         <p className="text-gray-600 max-w-md mx-auto px-4">
@@ -212,39 +253,33 @@ export default function ReportForm() {
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-6">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 w-full max-w-lg space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ... (ส่วนเลือกประเภทสัตว์ ลักษณะ พฤติกรรม และสถานที่ เหมือนเดิม ไม่มีการเปลี่ยนแปลง) ... */}
+
             {/* ประเภทของสัตว์ */}
             <div className="space-y-2">
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
                 คุณพบสัตว์อะไร
               </label>
-
-              {/* Dropdown เลือกประเภท */}
               <select
                 name="animalType"
                 value={formData.animalType}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                 focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                 transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
               >
                 <option value="">-- เลือกประเภทสัตว์ --</option>
                 <option value="dog">สุนัข</option>
                 <option value="cat">แมว</option>
                 <option value="other">อื่น ๆ (โปรดระบุ)</option>
               </select>
-
-              {/* แสดง Input นี้เมื่อเลือก 'other' เท่านั้น */}
               {formData.animalType === "other" && (
                 <div className="mt-3 animate-fade-in-down">
                   <input
                     type="text"
-                    name="customAnimal" // **ต้องเพิ่ม key นี้ใน state formData ด้วย**
+                    name="customAnimal"
                     value={formData.customAnimal || ""}
                     onChange={handleChange}
                     placeholder="โปรดระบุชนิดสัตว์ (เช่น กระต่าย, นก)"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                   focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                   transition-all duration-300 bg-white placeholder-gray-400"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white placeholder-gray-400"
                   />
                 </div>
               )}
@@ -261,9 +296,7 @@ export default function ReportForm() {
                 onChange={handleChange}
                 placeholder="เช่น ขนสีน้ำตาล มีปลอกคอสีแดง ตัวเล็ก น่ารัก"
                 rows={3}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
               />
             </div>
 
@@ -276,9 +309,7 @@ export default function ReportForm() {
                 name="behavior"
                 value={formData.behavior}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
               >
                 <option value="">-- เลือกพฤติกรรม --</option>
                 <option value="friendly">เชื่อง เข้าหาคนได้</option>
@@ -299,9 +330,7 @@ export default function ReportForm() {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="เช่น หน้าห้างสยามพารากอน ถนนพระราม 1"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
               />
               <button
                 type="button"
@@ -311,7 +340,6 @@ export default function ReportForm() {
                 <HiMapPin className="w-4 h-4 mr-2" />
                 {showMap ? "ปิดแผนที่" : "ปักหมุดบนแผนที่"}
               </button>
-
               {selectedLocation && (
                 <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                   <p className="text-sm text-green-800 font-medium">
@@ -324,9 +352,10 @@ export default function ReportForm() {
               )}
             </div>
 
-            {/* แผนที่ */}
+            {/* แผนที่ Popup (เหมือนเดิม) */}
             {showMap && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                {/* ... Code แผนที่ ... */}
                 <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
                   <div className="flex items-center justify-between p-4 border-b">
                     <h3 className="text-lg font-semibold text-gray-800">
@@ -390,63 +419,110 @@ export default function ReportForm() {
                 name="dateTime"
                 value={formData.dateTime}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
               />
             </div>
 
-            {/* อัปโหลดภาพสัตว์ */}
+            {/* ✅ อัปโหลดรูปภาพ (UI ใหม่: รูปอยู่ในกรอบ) */}
             <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                รูปภาพประกอบ
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  อัปโหลดรูปภาพ (1-5 รูป)
+                </label>
+                <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
+                  {previewUrls.length} / 5 รูป
+                </span>
+              </div>
 
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer text-center border-2 border-dashed border-gray-300 rounded-xl p-8 block transition-all duration-300 hover:border-[#D4A373] hover:bg-[#D4A373]/5 bg-white group"
+              {/* Main Upload Container Area */}
+              <div
+                className={`relative border-2 border-dashed rounded-xl p-4 transition-all duration-300 bg-white
+                  ${
+                    previewUrls.length > 0
+                      ? "border-gray-300"
+                      : "border-gray-300 hover:border-[#D4A373] hover:bg-[#D4A373]/5 group"
+                  }`}
               >
-                {previewUrl ? (
-                  <div className="space-y-3">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="mx-auto max-h-48 object-contain rounded-lg shadow-md"
-                    />
-                    {fileName && (
-                      <p className="text-sm text-gray-600 font-medium">
-                        {fileName}
+                {/* Hidden Input Field */}
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  accept="image/*"
+                  multiple // สำคัญ: เลือกหลายรูป
+                  disabled={previewUrls.length >= 5}
+                  onChange={handleImageChange}
+                  className="sr-only"
+                />
+
+                {/* CASE 1: ยังไม่มีรูปเลย -> แสดง Placeholder ตรงกลาง */}
+                {previewUrls.length === 0 && (
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer flex flex-col items-center justify-center h-32 space-y-3"
+                  >
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-[#D4A373]/20">
+                      <HiPhoto className="w-6 h-6 text-gray-400 group-hover:text-[#D4A373] transition-colors duration-300" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-600">
+                        คลิกเพื่อเพิ่มรูปภาพ
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        สูงสุด 5 รูป (JPG, PNG)
+                      </p>
+                    </div>
+                  </label>
+                )}
+
+                {/* CASE 2: มีรูปแล้ว -> แสดง Grid รูปภาพ + ปุ่ม Add More */}
+                {previewUrls.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {/* Loop แสดงรูปที่มีอยู่ */}
+                    {previewUrls.map((url, index) => (
+                      <div
+                        key={index}
+                        className="relative group/item aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm"
+                      >
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* ปุ่มลบ (กากบาทมุมขวาบน) */}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-white/80 hover:bg-red-50 text-gray-600 hover:text-red-500 p-1 rounded-full shadow-sm transition-all opacity-0 group-hover/item:opacity-100 scale-90 hover:scale-100"
+                          title="ลบรูปภาพ"
+                        >
+                          <HiXMark className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* ปุ่ม "เพิ่มรูป" (แสดงถ้ายังไม่ครบ 5) */}
+                    {previewUrls.length < 5 && (
+                      <label
+                        htmlFor="file-upload"
+                        className="aspect-square cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-[#D4A373] hover:bg-[#D4A373]/10 flex flex-col items-center justify-center text-gray-400 hover:text-[#D4A373] transition-all duration-200 group/add"
+                      >
+                        <HiPhoto className="w-8 h-8 mb-1 transition-transform group-hover/add:scale-110" />
+                        <span className="text-xs font-semibold">
+                          + เพิ่มรูป
+                        </span>
+                      </label>
                     )}
-                    <p className="text-xs text-amber-600">
-                      คลิกเพื่อเปลี่ยนรูป
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="mx-auto w-16 h-16 bg-linear-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center transition-all duration-300">
-                      <HiPhoto className="w-8 h-8 text-gray-400  transition-colors duration-300" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-semibold text-gray-600 mb-2">
-                        คลิกเพื่ออัปโหลดรูปภาพ
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        PNG, JPG, GIF สูงสุด 10MB
-                      </p>
-                    </div>
                   </div>
                 )}
-              </label>
+              </div>
 
-              <input
-                id="file-upload"
-                name="file-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="sr-only"
-              />
+              {/* Helper Text */}
+              {previewUrls.length > 0 && previewUrls.length < 5 && (
+                <p className="text-xs text-gray-500 text-right">
+                  สามารถเพิ่มได้อีก {5 - previewUrls.length} รูป
+                </p>
+              )}
             </div>
 
             {/* ปุ่มส่ง */}

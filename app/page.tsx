@@ -450,7 +450,6 @@ export default function HomePage() {
           </div>
           
           <div style="padding: 16px;">
-            
             <div style="margin-bottom: 12px;">
               <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; color: #111827; font-weight: 700; line-height: 1.4;">
                 พบที่ ${location}
@@ -499,7 +498,12 @@ export default function HomePage() {
                 รับเลี้ยง
               </button>
             </div>
-            
+            <button onclick="window.location.href='/animal-report/${post.report_id}'" 
+                style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 12px;"
+                onmouseover="this.style.background='#FEFAE0'; this.style.borderColor='#000000';" 
+                onmouseout="this.style.background='white'; this.style.borderColor='#E5E7EB';">
+                รายละเอียดเพิ่มเติม
+            </button>
           </div>
         </div>
       `;
@@ -556,10 +560,26 @@ export default function HomePage() {
       let score = 0;
 
       // 1. คะแนนประเภท (30)
-      if (
-        searchCriteria.type === "all" ||
-        post.animal_type === searchCriteria.type
-      ) {
+      let isTypeMatch = false;
+
+      if (searchCriteria.type === "all") {
+        // เลือกทั้งหมด -> ผ่านหมด
+        isTypeMatch = true;
+      } else if (searchCriteria.type === "other") {
+        // เลือกอื่นๆ -> ต้องไม่ใช่ "dog" และไม่ใช่ "cat" (หรือตาม Value ที่คุณตั้งไว้)
+        // เพื่อให้ กระต่าย, นก, งู ผ่านเข้ามาได้
+        if (post.animal_type !== "dog" && post.animal_type !== "cat") {
+          isTypeMatch = true;
+        }
+      } else {
+        // เลือกเจาะจง (dog/cat) -> ต้องตรงเป๊ะ
+        if (post.animal_type === searchCriteria.type) {
+          isTypeMatch = true;
+        }
+      }
+
+      // ถ้าประเภทไม่ตรงตามเงื่อนไขด้านบน ให้ตัดทิ้งเลย
+      if (isTypeMatch) {
         score += 30;
       } else {
         return { ...post, matchScore: 0 };
@@ -880,7 +900,7 @@ export default function HomePage() {
               <option value="all">พฤติกรรม (ทั้งหมด)</option>
               <option value="friendly">เชื่อง เข้าหาคนได้</option>
               <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
-              <option value="aggressive">ดุร้าย หลบหนี</option>
+              <option value="aggressive">ดุร้าย</option>
             </select>
           </div>
 
@@ -889,7 +909,11 @@ export default function HomePage() {
             <div className="flex-2 relative">
               <input
                 type="text"
-                placeholder="ระบุลักษณะ (เช่น สีขาว, ปลอกคอ...)"
+                placeholder={
+                  searchCriteria.type === "other"
+                    ? "พิมพ์ประเภทสัตว์ที่ต้องการหาได้เลย (เช่น กระต่าย, นก, หนู...)"
+                    : "ระบุลักษณะ (เช่น สีขาว, ปลอกคอ...)"
+                }
                 className="w-full rounded-xl px-4 py-3 pl-10 text-gray-800 outline-none border border-gray-300 hover:border-[#D4A373]"
                 value={searchCriteria.keyword}
                 onChange={(e) =>
