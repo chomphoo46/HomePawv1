@@ -36,7 +36,7 @@ export default function ReportForm() {
     location: "",
     dateTime: "",
     moreInfo: "",
-    // image: null, // ❌ เอาออก เพราะเราแยกไปใช้ selectedImages แทน
+    
   });
 
   // ตั้งค่าวันที่ปัจจุบัน

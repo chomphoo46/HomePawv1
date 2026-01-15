@@ -92,6 +92,7 @@ model AdoptionRequest {
   name         String?  @db.VarChar(50) // ชื่อสำหรับคนช่วยเหลือ
   contact_info String?  @db.VarChar(100) // เบอร์ติดต่อ หรือ Line ID ที่กรอกตอนกดปุ่ม
   note         String?  @db.Text         // ข้อความเพิ่มเติม เช่น "บ้านมีรั้วรอบขอบชิด"
+  reason       String?  @db.VarChar(255) //เหตุผลในการปฎิเสธหรืออนุมัติในการให้รับเลี้ยง
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 

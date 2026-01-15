@@ -7,12 +7,11 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaPhone,
-  FaLine,
+  FaClock,
 } from "react-icons/fa";
-import { BiUser, BiTime } from "react-icons/bi";
 import ExportButton from "@/app/components/ExportButton-request";
 
-// Interface ให้ตรงกับข้อมูลที่ API ส่งมา
+// Interface
 interface AdoptionRequest {
   id: number;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
@@ -20,6 +19,7 @@ interface AdoptionRequest {
   contact_info: string;
   note: string;
   created_at: string;
+  reason?: string; // เหตุผลของ Admin
   user: {
     name: string;
     email: string;
@@ -34,9 +34,8 @@ interface AdoptionRequest {
 export default function AdoptionRequestsPage() {
   const [requests, setRequests] = useState<AdoptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("ALL"); // ALL, PENDING, APPROVED
+  const [filter, setFilter] = useState("ALL");
 
-  // 1. ฟังก์ชันดึงข้อมูล (Call GET API)
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -55,28 +54,36 @@ export default function AdoptionRequestsPage() {
     fetchRequests();
   }, []);
 
-  // 2. ฟังก์ชันอัปเดตสถานะ (Call PATCH API)
   const handleUpdateStatus = async (
     req: AdoptionRequest,
     newStatus: "APPROVED" | "REJECTED"
   ) => {
     const isApprove = newStatus === "APPROVED";
 
-    // ถามยืนยันก่อน
-    const result = await Swal.fire({
-      title: isApprove ? "ยืนยันการอนุมัติ?" : "ยืนยันการปฏิเสธ?",
+    const { value: reason, isConfirmed } = await Swal.fire({
+      title: isApprove ? "อนุมัติคำขอ" : "ปฏิเสธคำขอ",
       text: isApprove
-        ? `คุณต้องการอนุมัติให้คุณ ${req.name} รับเลี้ยงน้อง ${req.post.pet_name} ใช่ไหม?`
-        : "คุณต้องการปฏิเสธคำขอนี้ใช่ไหม?",
+        ? `ระบุเหตุผลในการอนุมัติคุณ ${req.name}`
+        : `ระบุเหตุผลในการปฏิเสธคุณ ${req.name}`,
+      input: "textarea",
+      inputLabel: "เหตุผล / หมายเหตุ (บันทึกเข้าระบบ)",
+      inputPlaceholder: isApprove
+        ? "เช่น เอกสารครบถ้วน, บ้านผ่านเกณฑ์..."
+        : "เช่น ที่อยู่ไม่ชัดเจน, ไม่พร้อมรับเลี้ยง...",
       icon: isApprove ? "question" : "warning",
       showCancelButton: true,
       confirmButtonColor: isApprove ? "#10B981" : "#EF4444",
-      confirmButtonText: "ยืนยัน",
+      confirmButtonText: isApprove ? "ยืนยันการอนุมัติ" : "ยืนยันการปฏิเสธ",
       cancelButtonText: "ยกเลิก",
     });
 
-    if (result.isConfirmed) {
+    if (isConfirmed) {
       try {
+        Swal.fire({
+          title: "กำลังบันทึก...",
+          didOpen: () => Swal.showLoading(),
+        });
+
         const res = await fetch("/api/admin/adoption", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -84,12 +91,17 @@ export default function AdoptionRequestsPage() {
             requestId: req.id,
             postId: req.post.post_id,
             status: newStatus,
+            reason:
+              reason ||
+              (isApprove
+                ? "อนุมัติโดยไม่มีหมายเหตุ"
+                : "ปฏิเสธโดยไม่มีหมายเหตุ"),
           }),
         });
 
         if (res.ok) {
-          Swal.fire("สำเร็จ", "ดำเนินการเรียบร้อยแล้ว", "success");
-          fetchRequests(); // ดึงข้อมูลใหม่เพื่ออัปเดตหน้าจอ
+          await Swal.fire("สำเร็จ", "ดำเนินการเรียบร้อยแล้ว", "success");
+          fetchRequests();
         } else {
           Swal.fire("ผิดพลาด", "ไม่สามารถอัปเดตข้อมูลได้", "error");
         }
@@ -99,7 +111,6 @@ export default function AdoptionRequestsPage() {
     }
   };
 
-  // Filter Logic
   const filteredRequests = requests.filter((r) => {
     if (filter === "ALL") return true;
     return r.status === filter;
@@ -114,49 +125,33 @@ export default function AdoptionRequestsPage() {
     <div className="p-6 min-h-screen bg-gray-50">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">คำขอรับเลี้ยง</h1>
 
-      {/* Tabs Filter */}
+      {/* Filter Tabs */}
       <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setFilter("ALL")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            filter === "ALL"
-              ? "bg-[#D4A373] text-white shadow-md"
-              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-          }`}
-        >
-          ทั้งหมด
-        </button>
-        <button
-          onClick={() => setFilter("PENDING")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            filter === "PENDING"
-              ? "bg-orange-500 text-white shadow-md"
-              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-          }`}
-        >
-          รอดำเนินการ
-        </button>
-        <button
-          onClick={() => setFilter("APPROVED")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            filter === "APPROVED"
-              ? "bg-green-600 text-white shadow-md"
-              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-          }`}
-        >
-          อนุมัติแล้ว
-        </button>
-        <button
-          onClick={() => setFilter("REJECTED")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            filter === "REJECTED"
-              ? "bg-red-600  text-white shadow-md"
-              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-          }`}
-        >
-          ปฏิเสธแล้ว
-        </button>
-
+        {["ALL", "PENDING", "APPROVED", "REJECTED"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              filter === f
+                ? f === "PENDING"
+                  ? "bg-orange-500 text-white"
+                  : f === "APPROVED"
+                  ? "bg-green-600 text-white"
+                  : f === "REJECTED"
+                  ? "bg-red-600 text-white"
+                  : "bg-[#D4A373] text-white"
+                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            } shadow-md`}
+          >
+            {f === "ALL"
+              ? "ทั้งหมด"
+              : f === "PENDING"
+              ? "รอดำเนินการ"
+              : f === "APPROVED"
+              ? "อนุมัติแล้ว"
+              : "ปฏิเสธแล้ว"}
+          </button>
+        ))}
         <div className="ml-auto">
           <ExportButton />
         </div>
@@ -165,14 +160,14 @@ export default function AdoptionRequestsPage() {
       {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
         <table className="w-full text-left border-collapse">
-          <thead className="bg-[#D4A373] text-md font-semibold">
+          <thead className="bg-[#D4A373] text-md font-semibold text-white">
             <tr>
               <th className="p-4">สัตว์เลี้ยง</th>
               <th className="p-4">ผู้ขอรับเลี้ยง</th>
-              <th className="p-4">ชื่อผู้ขอ</th>
-              <th className="p-4">ข้อมูลติดต่อ / เหตุผล</th>
+              <th className="p-4">ข้อมูลติดต่อ (ผู้ขอ)</th>
               <th className="p-4">วันที่ส่งคำขอ</th>
               <th className="p-4">สถานะ</th>
+              <th className="p-4 w-1/5">เหตุผล (แอดมิน)</th>
               <th className="p-4 text-center">จัดการ</th>
             </tr>
           </thead>
@@ -207,53 +202,39 @@ export default function AdoptionRequestsPage() {
 
                   {/* 2. ผู้ขอ */}
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {req.user.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {req.user.email}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="font-medium text-gray-900">{req.name}</p>
+                    <p className="text-xs text-gray-500">{req.user.email}</p>
                   </td>
 
-                  {/* 2. ชื่อผู้ขอ */}
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <p className=" text-gray-900">{req.name}</p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* 3. ข้อมูลติดต่อ */}
+                  {/* 3. ข้อมูลติดต่อ + Note ผู้ขอ */}
                   <td className="p-4 max-w-xs">
                     <div className="space-y-1">
                       <p className="flex items-center gap-2 text-gray-700 font-medium">
+                        <FaPhone className="text-gray-400 text-xs" />{" "}
                         {req.contact_info || "-"}
                       </p>
-                      <p className="text-gray-500 italic bg-gray-50 p-2 rounded border border-gray-100 text-xs">
-                        "{req.note || "ไม่ได้ระบุเหตุผล"}"
-                      </p>
+                      <div className="text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 text-xs italic">
+                        "{req.note || "ไม่มีข้อความเพิ่มเติม"}"
+                      </div>
                     </div>
                   </td>
 
-                  {/* 4. วันที่ */}
+                  {/* 5. วันที่ */}
                   <td className="p-4 text-gray-500">
-                    <div className="flex items-center gap-1">
-                      {new Date(req.created_at).toLocaleDateString("th-TH")}
-                    </div>
-                    <div className="text-xs pl-5">
-                      {new Date(req.created_at).toLocaleTimeString("th-TH", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <div className="flex flex-col">
+                      <span>
+                        {new Date(req.created_at).toLocaleDateString("th-TH")}
+                      </span>
+                      <span className="text-xs opacity-75">
+                        {new Date(req.created_at).toLocaleTimeString("th-TH", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                     </div>
                   </td>
 
-                  {/* 5. สถานะ */}
+                  {/* 6. สถานะ */}
                   <td className="p-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
@@ -266,38 +247,56 @@ export default function AdoptionRequestsPage() {
                           : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
+                      {req.status === "APPROVED" && <FaCheckCircle />}
+                      {req.status === "REJECTED" && <FaTimesCircle />}
+                      {req.status === "PENDING" && <FaClock />}
                       {req.status}
                     </span>
                   </td>
-
-                  {/* 6. ปุ่มจัดการ */}
+                  {/* 4. เหตุผลแอดมิน (แยกคอลัมน์มาแล้ว) */}
+                  <td className="p-4">
+                    {req.status === "PENDING" ? (
+                      <span className="text-gray-300 text-xs">
+                        - รอการพิจารณา -
+                      </span>
+                    ) : (
+                      <div
+                        className={`p-2 rounded text-xs border ${
+                          req.status === "APPROVED"
+                            ? "bg-green-50 border-green-200 text-green-800"
+                            : "bg-red-50 border-red-200 text-red-800"
+                        }`}
+                      >
+                        {req.reason || "- ไม่ระบุเหตุผล -"}
+                      </div>
+                    )}
+                  </td>
+                  {/* 7. ปุ่มจัดการ */}
                   <td className="p-4 text-center">
                     {req.status === "PENDING" ? (
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleUpdateStatus(req, "APPROVED")}
-                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 text-xs font-bold shadow-sm transition-transform hover:scale-105"
+                          className="px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600 text-xs shadow-sm"
                         >
                           อนุมัติ
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(req, "REJECTED")}
-                          className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs font-bold shadow-sm transition-transform hover:scale-105"
+                          className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 text-xs shadow-sm"
                         >
                           ปฏิเสธ
                         </button>
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-xs">
-                        - ดำเนินการแล้ว -
-                      </span>
+                      <span className="text-gray-400 text-xs">- ปิดเคส -</span>
                     )}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-gray-500">
+                <td colSpan={8} className="text-center py-10 text-gray-500">
                   <div className="flex flex-col items-center">
                     <FaPaw className="text-4xl text-gray-200 mb-2" />
                     ไม่มีคำขอรับเลี้ยงในสถานะนี้

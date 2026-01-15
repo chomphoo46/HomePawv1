@@ -409,14 +409,61 @@ export default function HomePage() {
           '<p style="margin: 4px 0; font-size: 0.85rem; color: #777;"><i>ยังไม่มีคนให้ความช่วยเหลือ...</i></p>';
       }
 
+      // -------------------------------------------------------------
+      // ส่วนเตรียมข้อมูลรูปภาพและ Slider (เพิ่มใหม่)
+      // -------------------------------------------------------------
+
+      // 1. ดึงลิสต์รูปภาพ (รองรับทั้งเคสที่มีรูปเดียวและหลายรูป)
+      const imagesList =
+        post.images && post.images.length > 0
+          ? post.images.map((img: any) =>
+              typeof img === "string" ? img : img.image_url
+            ) // ดึง url ออกมา
+          : [imageUrl]; // ถ้าไม่มี array images ให้ใช้รูปหลักรูปเดียว
+
+      // 2. สร้าง ID เฉพาะให้ Slider นี้ (เพื่อให้กดปุ่มแล้วเลื่อนถูกอัน ไม่ตีกัน)
+      const sliderId = `slider-${post.report_id}`;
+
+      // 3. สร้าง HTML ของรูปภาพแต่ละรูป (เรียงกันแนวนอน)
+      const imagesHtml = imagesList
+        .map(
+          (url: any) => `
+    <img src="${url}" style="min-width: 100%; height: 100%; object-fit: cover; display: block; scroll-snap-align: start;">
+  `
+        )
+        .join("");
+
+      // 4. สร้างปุ่มลูกศรซ้าย-ขวา (แสดงเฉพาะถ้ามีรูปมากกว่า 1 รูป)
+      const arrowsHtml =
+        imagesList.length > 1
+          ? `
+    <button onclick="document.getElementById('${sliderId}').scrollBy({left: -320, behavior: 'smooth'})" 
+      style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
+      ❮
+    </button>
+    <button onclick="document.getElementById('${sliderId}').scrollBy({left: 320, behavior: 'smooth'})" 
+      style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
+      ❯
+    </button>
+  `
+          : "";
+
+      // -------------------------------------------------------------
+      // ส่วน HTML String หลัก (แก้ไขแล้ว)
+      // -------------------------------------------------------------
       const contentString = `
         <div style="font-family: '${
           mali.style.fontFamily
         }', sans-serif; width: 320px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
           
           <div style="position: relative; height: 200px;">
-            <img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
             
+            <div id="${sliderId}" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 100%; width: 100%; scrollbar-width: none; -ms-overflow-style: none;">
+              ${imagesHtml}
+            </div>
+            
+            ${arrowsHtml}
+
             <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(0,0,0,0.2), transparent); pointer-events: none;"></div>
 
             ${
@@ -484,26 +531,32 @@ export default function HomePage() {
                 : ""
             }
             
-            <div style="display: flex; gap: 8px;">
-              <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
-                style="flex: 1; padding: 10px 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;"
-                onmouseover="this.style.background='#FFEDD5';" 
-                onmouseout="this.style.background='#FFF7ED';">
-                ให้อาหาร
-              </button>
-              <button onclick="handleHelpAction(${post.report_id}, 'ADOPT')" 
-                style="flex: 1; padding: 10px 0; background: #D4A373; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(212, 163, 115, 0.4); transition: all 0.2s;"
-                onmouseover="this.style.background='#B88D63'; this.style.transform='translateY(-1px)';" 
-                onmouseout="this.style.background='#D4A373'; this.style.transform='translateY(0)';">
-                รับเลี้ยง
-              </button>
+            <div style="display: flex; flex-col; gap: 8px;">
+                <div style="display: flex; gap: 8px;">
+                  <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
+                    style="flex: 1; padding: 10px 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;"
+                    onmouseover="this.style.background='#FFEDD5';" 
+                    onmouseout="this.style.background='#FFF7ED';">
+                    ให้อาหาร
+                  </button>
+                  <button onclick="handleHelpAction(${
+                    post.report_id
+                  }, 'ADOPT')" 
+                    style="flex: 1; padding: 10px 0; background: #D4A373; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(212, 163, 115, 0.4); transition: all 0.2s;"
+                    onmouseover="this.style.background='#B88D63'; this.style.transform='translateY(-1px)';" 
+                    onmouseout="this.style.background='#D4A373'; this.style.transform='translateY(0)';">
+                    รับเลี้ยง
+                  </button>
+                </div>
+                <button onclick="window.location.href='/animal-report/${
+                  post.report_id
+                }'" 
+                    style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 0px;"
+                    onmouseover="this.style.background='#FEFAE0'; this.style.borderColor='#000000';" 
+                    onmouseout="this.style.background='white'; this.style.borderColor='#E5E7EB';">
+                    รายละเอียดเพิ่มเติม
+                </button>
             </div>
-            <button onclick="window.location.href='/animal-report/${post.report_id}'" 
-                style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 12px;"
-                onmouseover="this.style.background='#FEFAE0'; this.style.borderColor='#000000';" 
-                onmouseout="this.style.background='white'; this.style.borderColor='#E5E7EB';">
-                รายละเอียดเพิ่มเติม
-            </button>
           </div>
         </div>
       `;
