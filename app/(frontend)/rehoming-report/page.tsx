@@ -15,6 +15,7 @@ import { FaSearch } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
 import Link from "next/link";
 import { Mali } from "next/font/google";
+import PetCard from "@/app/components/PetCard";
 
 const mali = Mali({
   subsets: ["latin", "thai"],
@@ -337,132 +338,10 @@ export default function RehomingReportPage() {
 
         {/* Pet cards grid */}
         <div className="px-4 md:px-8 lg:px-12 w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
             {sortedPosts.map((post: any) => (
-              <div
-                key={post.post_id}
-                className="relative w-full rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all bg-white group border border-gray-100 flex flex-col"
-              >
-                <Link
-                  key={post.post_id}
-                  href={`/rehoming-report/${post.post_id}`}
-                  className="flex flex-col h-full"
-                >
-                  {/* Image Container */}
-                  <div className="relative">
-                    {" "}
-                    {/* เพิ่ม div ครอบ img เพื่อวาง Badge */}
-                    {/* ✅ ส่วนที่เพิ่ม: Status Badge */}
-                    <div className="absolute top-3 right-3 z-10">
-                      {post.status === "ADOPTED" ? (
-                        <span className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
-                          <FaCircleCheck className="text-white" /> ได้บ้านแล้ว
-                        </span>
-                      ) : (
-                        <span className="bg-[#D4A373]/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm animate-pulse">
-                          หาบ้านอยู่
-                        </span>
-                      )}
-                    </div>
-                    {/* Image */}
-                    {post.images?.length > 0 ? (
-                      <img
-                        src={post.images[0].image_url}
-                        alt={post.pet_name}
-                        className={`w-full aspect-4/3 object-cover transition-transform duration-300 ${
-                          post.status === "ADOPTED"
-                            ? "grayscale opacity-80"
-                            : "group-hover:scale-105"
-                        }`}
-                      />
-                    ) : (
-                      <div className="w-full aspect-4/3 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                        ไม่มีรูปภาพ
-                      </div>
-                    )}
-                    {/* Optional: Overlay "ได้บ้านแล้ว" ทับทั้งรูปให้ชัดเจนขึ้น */}
-                    {post.status === "ADOPTED" && (
-                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                        {/* ถ้าอยากได้ตัวหนังสือใหญ่ๆ ทับรูป ให้เปิด comment นี้ */}
-                        {/* <span className="bg-white/80 text-green-700 px-4 py-2 rounded-lg font-bold border-2 border-green-600 transform -rotate-12 shadow-lg">ADOPTED</span> */}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content - คงเดิม */}
-                  <div className="p-4 text-sm md:text-base text-gray-700 space-y-2 grow">
-                    {/* ... (เนื้อหาเดิมของคุณ) ... */}
-                    <h3 className="text-xl font-semibold text-[#D4A373] truncate mb-3">
-                      {post.pet_name}
-                    </h3>
-                    <p className="flex items-center gap-2">
-                      <HiOutlineTag className="text-[#D4A373] shrink-0" />{" "}
-                      <span className="truncate">{post.type || "ไม่ระบุ"}</span>
-                    </p>
-                    {/* ... (รายการอื่นๆ คงเดิม) ... */}
-                    <p className="flex items-center gap-2">
-                      {post.sex === "MALE" ? (
-                        <FaMars className="text-blue-500 shrink-0" />
-                      ) : post.sex === "FEMALE" ? (
-                        <FaVenus className="text-pink-500 shrink-0" />
-                      ) : (
-                        <FaGenderless className="text-gray-400 shrink-0" />
-                      )}
-                      <span className="truncate">{getSexLabel(post.sex)}</span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
-                      <span className="truncate">
-                        อายุ: {post.age || "ไม่ระบุ"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
-                      <span className="truncate">
-                        เหตุผล: {post.reason || "ไม่ระบุ"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <HiOutlinePhone className="text-[#D4A373] shrink-0" />
-                      <span className="truncate">
-                        {post.phone || "ไม่ระบุ"}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <FiMapPin className="text-red-500 shrink-0" />
-                      <span className="truncate">
-                        {post.address || "ไม่ระบุ"}
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* Footer - คงเดิม */}
-                  <div className="px-4 pb-4 pt-2 mt-auto">
-                    {/* ... (เนื้อหาเดิมของคุณ) ... */}
-                    <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="shrink-0">
-                          {healthStatusIcons[post.vaccination_status]?.icon}
-                        </span>
-                        <span className="truncate">
-                          {healthStatusIcons[post.vaccination_status]?.label ||
-                            "ไม่ระบุ"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="shrink-0">
-                          {neuteredstatusIcons[post.neutered_status]?.icon}
-                        </span>
-                        <span className="truncate">
-                          {neuteredstatusIcons[post.neutered_status]?.label ||
-                            "ไม่ระบุ"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
+              // ✅ เรียกใช้ Component แค่บรรทัดเดียว
+              <PetCard key={post.post_id} post={post} />
             ))}
           </div>
         </div>

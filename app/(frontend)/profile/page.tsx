@@ -10,7 +10,7 @@ import {
   FaTimesCircle,
   FaTrash,
   FaExclamationCircle,
-  FaClipboardList, // Icon สำหรับ Tab ใหม่
+  FaClipboardList,
   FaClock,
 } from "react-icons/fa";
 import {
@@ -23,11 +23,92 @@ import { FaCircleCheck, FaLocationDot } from "react-icons/fa6";
 import Link from "next/link";
 import { Mali } from "next/font/google";
 import { MdModeEdit, MdPets, MdOutlineQuestionAnswer } from "react-icons/md";
+import InfoRow from "@/app/components/profile/InfoRow";
+import TabButton from "@/app/components/profile/TabButton";
+import StatusIcon from "@/app/components/profile/StatusIcon";
 
 const mali = Mali({
   subsets: ["latin", "thai"],
   weight: ["400", "500", "700"],
 });
+
+const healthStatusIcons: Record<string, { label: string; icon: JSX.Element }> =
+  {
+    VACCINATED: {
+      label: "ฉีดวัคซีนแล้ว",
+      icon: <FaCircleCheck size={18} style={{ color: "green" }} />,
+    },
+    NOT_VACCINATED: {
+      label: "ยังไม่ได้ฉีดวัคซีน",
+      icon: <FaTimesCircle size={18} style={{ color: "red" }} />,
+    },
+  };
+
+const neuteredstatusIcons: Record<
+  string,
+  { label: string; icon: JSX.Element }
+> = {
+  NEUTERED: {
+    label: "ทำหมันแล้ว",
+    icon: <FaCircleCheck size={18} style={{ color: "green" }} />,
+  },
+  NOT_NEUTERED: {
+    label: "ยังไม่ได้ทำหมัน",
+    icon: <FaTimesCircle size={18} style={{ color: "red" }} />,
+  },
+};
+
+const getFoundStatusLabel = (status: string) => {
+  switch (status) {
+    case "STILL_THERE":
+      return "ยังอยู่ที่เดิม";
+    case "RESCUED":
+      return "ช่วยเหลือแล้ว";
+    case "MOVED":
+      return "ย้ายที่แล้ว";
+    case "OTHER":
+      return "อื่นๆ";
+    default:
+      return status;
+  }
+};
+
+const getBehaviorLabel = (behavior: string) => {
+  switch (behavior) {
+    case "friendly":
+      return "เชื่อง เข้าหาคนได้";
+    case "aggressive":
+      return "ดุร้าย";
+    case "injured":
+      return "บาดเจ็บ ต้องการความช่วยเหลือ";
+    default:
+      return "อื่นๆ";
+  }
+};
+
+const getRequestStatusBadge = (status: string) => {
+  switch (status) {
+    case "APPROVED":
+      return (
+        <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-bold border border-green-200 flex items-center gap-1 w-fit">
+          <FaCircleCheck /> อนุมัติแล้ว
+        </span>
+      );
+    case "REJECTED":
+      return (
+        <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-bold border border-red-200 flex items-center gap-1 w-fit">
+          <FaTimesCircle /> ไม่ผ่านการอนุมัติ
+        </span>
+      );
+    case "PENDING":
+    default:
+      return (
+        <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold border border-yellow-200 flex items-center gap-1 w-fit">
+          <FaClock /> รอตรวจสอบ
+        </span>
+      );
+  }
+};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -39,47 +120,16 @@ export default function ProfilePage() {
   const [rehomingPosts, setRehomingPosts] = useState<any[]>([]);
   const [foundPosts, setFoundPosts] = useState<any[]>([]);
   const [adoptionRequests, setAdoptionRequests] = useState<any[]>([]);
-  // ดึงข้อมูลหาบ้าน
-  const fetchRehomingPosts = async () => {
-    try {
-      const res = await fetch("/api/rehoming-report/my-posts", {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setRehomingPosts(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
-  // ดึงข้อมูลแจ้งพบสัตว์ไร้บ้าน
-  const fetchFoundPosts = async () => {
+  const fetchData = async (url: string, setter: (data: any[]) => void) => {
     try {
-      const res = await fetch("/api/animal-report/my-posts", {
-        cache: "no-store",
-      });
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setFoundPosts(data);
+        setter(data);
       }
     } catch (err) {
-      console.error(err);
-    }
-  };
-  // 2. เพิ่มฟังก์ชันดึงข้อมูลคำขอ
-  const fetchAdoptionRequests = async () => {
-    try {
-      const res = await fetch("/api/adopt/my-request", {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAdoptionRequests(data);
-      }
-    } catch (err) {
-      console.error(err);
+      console.error(`Error fetching ${url}:`, err);
     }
   };
 
@@ -87,116 +137,25 @@ export default function ProfilePage() {
     const initData = async () => {
       setLoading(true);
       await Promise.all([
-        fetchRehomingPosts(),
-        fetchFoundPosts(),
-        fetchAdoptionRequests(), // เรียก function ใหม่
+        fetchData("/api/rehoming-report/my-posts", setRehomingPosts),
+        fetchData("/api/animal-report/my-posts", setFoundPosts),
+        fetchData("/api/adopt/my-request", setAdoptionRequests),
       ]);
       setLoading(false);
     };
     initData();
   }, []);
 
-  // ตัวแปรสำหรับข้อมูลปัจจุบัน
-  const currentPosts =
-    activeTab === "rehoming"
-      ? rehomingPosts
-      : activeTab === "found"
-        ? foundPosts
-        : adoptionRequests;
-
-  // Icons Helper
-  const healthStatusIcons: Record<
-    string,
-    { label: string; icon: JSX.Element }
-  > = {
-    VACCINATED: {
-      label: "ฉีดวัคซีนแล้ว",
-      icon: <FaCircleCheck size={18} style={{ color: "green" }} />,
-    },
-    NOT_VACCINATED: {
-      label: "ยังไม่ได้ฉีดวัคซีน",
-      icon: <FaTimesCircle size={18} style={{ color: "red" }} />,
-    },
-  };
-
-  const neuteredstatusIcons: Record<
-    string,
-    { label: string; icon: JSX.Element }
-  > = {
-    NEUTERED: {
-      label: "ทำหมันแล้ว",
-      icon: <FaCircleCheck size={18} style={{ color: "green" }} />,
-    },
-    NOT_NEUTERED: {
-      label: "ยังไม่ได้ทำหมัน",
-      icon: <FaTimesCircle size={18} style={{ color: "red" }} />,
-    },
-  };
-
-  // Helper แปลสถานะแจ้งพบ
-  const getFoundStatusLabel = (status: string) => {
-    switch (status) {
-      case "STILL_THERE":
-        return "ยังอยู่ที่เดิม";
-      case "RESCUED":
-        return "ช่วยเหลือแล้ว";
-      case "MOVED":
-        return "ย้ายที่แล้ว";
-      case "OTHER":
-        return "อื่นๆ";
-      default:
-        return status;
-    }
-  };
-
-  const getBehaviorLabel = (behavior: string) => {
-    switch (behavior) {
-      case "friendly":
-        return "เชื่อง เข้าหาคนได้";
-      case "aggressive":
-        return "ดุร้าย";
-      case "injured":
-        return "บาดเจ็บ ต้องการความช่วยเหลือ";
-      default:
-        return "อื่นๆ";
-    }
-  };
-  // ฟังก์ชันสำหรับแสดงป้ายสถานะ (APPROVED/REJECTED/PENDING)
-  const getRequestStatusBadge = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return (
-          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-bold border border-green-200 flex items-center gap-1 w-fit">
-            <FaCircleCheck /> อนุมัติแล้ว
-          </span>
-        );
-      case "REJECTED":
-        return (
-          <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-bold border border-red-200 flex items-center gap-1 w-fit">
-            <FaTimesCircle /> ไม่ผ่านการอนุมัติ
-          </span>
-        );
-      case "PENDING":
-      default:
-        return (
-          <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold border border-yellow-200 flex items-center gap-1 w-fit">
-            <FaClock /> รอตรวจสอบ
-          </span>
-        );
-    }
-  };
-
   const handleDelete = async (id: number) => {
-    if (activeTab === "my-requests") return; // Tab คำขอ ลบไม่ได้ (หรือต้องทำ API ยกเลิกคำขอเพิ่ม)
+    if (activeTab === "my-requests") return;
 
-    const confirmDelete = confirm("คุณแน่ใจว่าต้องการลบโพสต์นี้?");
-    if (!confirmDelete) return;
+    if (!confirm("คุณแน่ใจว่าต้องการลบโพสต์นี้?")) return;
 
-    const endpoint =
-      activeTab === "rehoming"
-        ? "/api/rehoming-report/my-posts"
-        : "/api/animal-report/my-posts";
-    const body = activeTab === "rehoming" ? { post_id: id } : { report_id: id };
+    const isRehoming = activeTab === "rehoming";
+    const endpoint = isRehoming
+      ? "/api/rehoming-report/my-posts"
+      : "/api/animal-report/my-posts";
+    const body = isRehoming ? { post_id: id } : { report_id: id };
 
     try {
       const res = await fetch(endpoint, {
@@ -204,16 +163,27 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+
       if (!res.ok) throw new Error("ลบโพสต์ไม่สำเร็จ");
 
-      if (activeTab === "rehoming") fetchRehomingPosts();
-      else fetchFoundPosts();
+      // Refetch เฉพาะส่วนที่ลบ
+      if (isRehoming)
+        fetchData("/api/rehoming-report/my-posts", setRehomingPosts);
+      else fetchData("/api/animal-report/my-posts", setFoundPosts);
+
       alert("ลบโพสต์เรียบร้อย");
     } catch (err) {
       console.error(err);
       alert("เกิดข้อผิดพลาดในการลบโพสต์");
     }
   };
+
+  const currentPosts =
+    activeTab === "rehoming"
+      ? rehomingPosts
+      : activeTab === "found"
+        ? foundPosts
+        : adoptionRequests;
 
   return (
     <div className={`min-h-screen bg-white ${mali.className}`}>
@@ -232,49 +202,30 @@ export default function ProfilePage() {
         <div className="mb-8">
           <div className="border-b border-gray-200 bg-white rounded-t-2xl shadow-sm">
             <nav className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-0">
-              {/* Tab 1: Rehoming */}
-              <button
+              <TabButton
+                label="🐶 หาบ้านให้น้อง"
+                count={rehomingPosts.length}
+                isActive={activeTab === "rehoming"}
                 onClick={() => setActiveTab("rehoming")}
-                className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
-                  activeTab === "rehoming"
-                    ? "bg-linear-to-br from-[#FEFAE0] via-white to-[#F4F3EE] text-[#D4A373] shadow-lg border-t-2 border-[#D4A373]"
-                    : "text-gray-500 hover:text-[#D4A373] hover:bg-orange-50"
-                }`}
-              >
-                <span>🐶 หาบ้านให้น้อง</span>
-                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                  {rehomingPosts.length}
-                </span>
-              </button>
-              {/* Tab 3: Found */}
-              <button
+                activeColor="text-[#D4A373] border-[#D4A373] bg-linear-to-br from-[#FEFAE0] via-white to-[#F4F3EE]"
+                hoverColor="hover:text-[#D4A373] hover:bg-orange-50"
+              />
+              <TabButton
+                label="📢 แจ้งพบสัตว์"
+                count={foundPosts.length}
+                isActive={activeTab === "found"}
                 onClick={() => setActiveTab("found")}
-                className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
-                  activeTab === "found"
-                    ? "bg-linear-to-r from-green-50 to-emerald-50 text-emerald-600 shadow-lg border-t-2 border-emerald-500"
-                    : "text-gray-500 hover:text-emerald-500 hover:bg-green-50"
-                }`}
-              >
-                <span>📢 แจ้งพบสัตว์</span>
-                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                  {foundPosts.length}
-                </span>
-              </button>
-
-              {/* Tab 2: Requests (New!) */}
-              <button
+                activeColor="text-emerald-600 border-emerald-500 bg-linear-to-r from-green-50 to-emerald-50"
+                hoverColor="hover:text-emerald-500 hover:bg-green-50"
+              />
+              <TabButton
+                label="📋 ติดตามสถานะ"
+                count={adoptionRequests.length}
+                isActive={activeTab === "my-requests"}
                 onClick={() => setActiveTab("my-requests")}
-                className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
-                  activeTab === "my-requests"
-                    ? "bg-linear-to-br from-blue-50 via-white to-indigo-50 text-blue-600 shadow-lg border-t-2 border-blue-500"
-                    : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
-                }`}
-              >
-                <span>📋 ติดตามสถานะ</span>
-                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                  {adoptionRequests.length}
-                </span>
-              </button>
+                activeColor="text-blue-600 border-blue-500 bg-linear-to-br from-blue-50 via-white to-indigo-50"
+                hoverColor="hover:text-blue-600 hover:bg-blue-50"
+              />
             </nav>
           </div>
         </div>
@@ -290,13 +241,12 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {currentPosts.map((item: any) => {
-              // Logic การแยกตัวแปรตาม Tab
               const isRequestTab = activeTab === "my-requests";
               const isRehomeTab = activeTab === "rehoming";
+              const isFoundTab = activeTab === "found";
 
-              // ถ้าเป็น Request ข้อมูลสัตว์จะอยู่ใน item.post ถ้าเป็น Tab อื่น ข้อมูลอยู่ที่ item เลย
+              // --- 3. Normalization Data (จัดการตัวแปรให้เหมือนกัน) ---
               const data = isRequestTab ? item.post : item;
-
               const id = isRehomeTab
                 ? item.post_id
                 : isRequestTab
@@ -315,13 +265,27 @@ export default function ProfilePage() {
                   ? data?.address
                   : item.location;
 
+              // --- 4. Logic ตัวช่วย (Helper Logic) ---
+              const isAdopted = isRehomeTab && item.status === "ADOPTED";
+
+              // กำหนด Badge Config
+              let badgeConfig = { text: "พบเห็น", color: "bg-emerald-500" }; // Default (Found)
+              if (isRehomeTab) {
+                badgeConfig = isAdopted
+                  ? { text: "ได้บ้านแล้ว", color: "bg-green-500" }
+                  : { text: "หาบ้าน", color: "bg-[#D4A373]" };
+              } else if (isRequestTab) {
+                badgeConfig = { text: "ขอเลี้ยง", color: "bg-blue-500" };
+              }
+
               return (
                 <div
                   key={id}
-                  className="relative w-full rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all bg-white border border-gray-100 group flex flex-col h-full"
+                  className={`relative w-full rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 group flex flex-col h-full ${
+                    isAdopted ? "bg-gray-100" : "bg-white"
+                  }`}
                 >
                   <Link
-                    // ถ้าเป็น Request ให้ลิงก์ไปหน้าสัตว์ตัวนั้น (rehoming-report)
                     href={
                       isRehomeTab || isRequestTab
                         ? `/rehoming-report/${data?.post_id || item.post_id}`
@@ -335,7 +299,9 @@ export default function ProfilePage() {
                         <img
                           src={image}
                           alt={title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                            isAdopted ? "grayscale opacity-75" : ""
+                          }`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
@@ -343,58 +309,44 @@ export default function ProfilePage() {
                         </div>
                       )}
                       <div
-                        className={`absolute top-2 left-2 px-2 py-1 rounded text-[10px] font-bold text-white shadow-sm ${
-                          isRehomeTab
-                            ? "bg-[#D4A373]"
-                            : isRequestTab
-                              ? "bg-blue-500"
-                              : "bg-emerald-500"
-                        }`}
+                        className={`absolute top-2 left-2 px-2 py-1 rounded text-[10px] font-bold text-white shadow-sm ${badgeConfig.color}`}
                       >
-                        {isRehomeTab
-                          ? "หาบ้าน"
-                          : isRequestTab
-                            ? "ขอเลี้ยง"
-                            : "พบเห็น"}
+                        {badgeConfig.text}
                       </div>
                     </div>
 
                     {/* Content Area */}
                     <div className="p-5 flex flex-col grow gap-3">
-                      {/* กรณี Tab Request: แสดงสถานะตัวใหญ่ๆ */}
                       {isRequestTab && (
                         <div className="mb-1">
                           {getRequestStatusBadge(item.status)}
                         </div>
                       )}
 
-                      <div className="flex items-start justify-between gap-2">
-                        <h2
-                          className={`font-bold text-lg line-clamp-2 flex-1 ${
-                            isRehomeTab
-                              ? "text-[#D4A373]"
-                              : isRequestTab
-                                ? "text-gray-800"
-                                : "text-emerald-600"
-                          }`}
-                        >
-                          {title || "ไม่ระบุชื่อ"}
-                        </h2>
-                      </div>
-
-                      {/* Info List */}
                       <div className="space-y-2.5">
-                        {/* ถ้าเป็น Request แสดงเหตุผลจากแอดมิน (ถ้ามี) */}
                         {isRequestTab && item.reason && (
                           <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
                             <p className="text-xs text-gray-500 font-bold mb-1">
-                              💬 บันทึกจากแอดมิน:
+                              เหตุผลจากแอดมิน:
                             </p>
                             <p className="text-sm text-gray-700 wrap-break-word">
                               {item.reason}
                             </p>
                           </div>
                         )}
+                        <div className="flex items-start justify-between gap-2">
+                          <h2
+                            className={`font-bold text-lg line-clamp-2 flex-1 ${
+                              isRehomeTab
+                                ? "text-[#D4A373]"
+                                : isRequestTab
+                                  ? "text-gray-800"
+                                  : "text-emerald-600"
+                            }`}
+                          >
+                            {title || "ไม่ระบุชื่อ"}
+                          </h2>
+                        </div>
 
                         <div className="flex items-start gap-2.5">
                           <FiMapPin className="text-[#D4A373] shrink-0" />
@@ -403,29 +355,22 @@ export default function ProfilePage() {
                           </span>
                         </div>
 
-                        {/* แสดงข้อมูลเฉพาะของแต่ละ Tab */}
-                        {isRehomeTab ? (
+                        {isRehomeTab || isRequestTab ? (
                           <>
+                            <InfoRow icon={HiOutlineTag} text={data?.type} />
                             <div className="flex items-center gap-2.5">
-                              <HiOutlineTag className="text-[#D4A373] shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                {item.type}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2.5">
-                              {item.sex === "MALE" ? (
+                              {data?.sex === "MALE" ? (
                                 <>
                                   <FaMars className="text-blue-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
-                                    ผู้
+                                    เพศ: ผู้
                                   </span>
                                 </>
-                              ) : item.sex === "FEMALE" ? (
+                              ) : data?.sex === "FEMALE" ? (
                                 <>
                                   <FaVenus className="text-pink-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
-                                    เมีย
+                                    เพศ: เมีย
                                   </span>
                                 </>
                               ) : (
@@ -437,77 +382,49 @@ export default function ProfilePage() {
                                 </>
                               )}
                             </div>
-
-                            <div className="flex items-center gap-2.5">
-                              <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                อายุ: {item.age || "ไม่ระบุ"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2.5">
-                              <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                เหตุผล: {item.reason || "ไม่ระบุ"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2.5">
-                              <HiOutlinePhone className="text-[#D4A373] shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                {item.phone}
-                              </span>
-                            </div>
+                            <InfoRow
+                              icon={HiOutlineCalendar}
+                              text={`อายุ: ${data?.age || "ไม่ระบุ"}`}
+                            />
+                            {/* สำหรับ Request Tab: data.reason คือเหตุผลหาบ้านของสัตว์ (ไม่ใช่เหตุผลแอดมิน) */}
+                            <InfoRow
+                              icon={MdOutlineQuestionAnswer}
+                              text={`เหตุผล: ${data?.reason || "ไม่ระบุ"}`}
+                            />
+                            <InfoRow icon={HiOutlinePhone} text={data?.phone} />
                           </>
                         ) : (
-                          <>
-                            <div className="flex items-start gap-2.5">
-                              <HiOutlineTag className="text-[#D4A373] shrink-0" />
-                              <p className="text-sm text-gray-700">
-                                ลักษณะ:{" "}
-                                {item.description || "ไม่มีรายละเอียดเพิ่มเติม"}
-                              </p>
-                            </div>
-
-                            <div className="flex items-start gap-2.5">
-                              <MdPets className="text-[#D4A373] shrink-0" />
-                              <span className="text-sm text-gray-700">
-                                พฤติกรรม: {getBehaviorLabel(item.behavior)}
-                              </span>
-                            </div>
-                          </>
+                          // Found Tab (เหมือนเดิม)
+                          !isRequestTab && (
+                            <>
+                              <InfoRow
+                                icon={HiOutlineTag}
+                                text={`ลักษณะ: ${item.description || "ไม่มีรายละเอียดเพิ่มเติม"}`}
+                              />
+                              <InfoRow
+                                icon={MdPets}
+                                text={`พฤติกรรม: ${getBehaviorLabel(item.behavior)}`}
+                              />
+                            </>
+                          )
                         )}
                       </div>
 
-                      {/* Footer Section */}
-                      {isRehomeTab ? (
+                      {/* Footer Section: ให้ Request Tab โชว์ไอคอนวัคซีนด้วย */}
+                      {isRehomeTab || isRequestTab ? (
                         <div className="px-4 pb-4 pt-2 mt-auto">
                           <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
-                            <div className="flex items-center gap-1.5 truncate min-w-0">
-                              <span className="shrink-0">
-                                {
-                                  healthStatusIcons[item.vaccination_status]
-                                    ?.icon
-                                }
-                              </span>
-                              <span className="truncate">
-                                {healthStatusIcons[item.vaccination_status]
-                                  ?.label || "ไม่ระบุ"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 truncate min-w-0">
-                              <span className="shrink-0">
-                                {
-                                  neuteredstatusIcons[item.neutered_status]
-                                    ?.icon
-                                }
-                              </span>
-                              <span className="truncate">
-                                {neuteredstatusIcons[item.neutered_status]
-                                  ?.label || "ไม่ระบุ"}
-                              </span>
-                            </div>
+                            {/* เปลี่ยน item. เป็น data. */}
+                            <StatusIcon
+                              config={
+                                healthStatusIcons[data?.vaccination_status]
+                              }
+                            />
+                            <StatusIcon
+                              config={
+                                neuteredstatusIcons[data?.neutered_status]
+                              }
+                            />
                           </div>
                         </div>
                       ) : (
