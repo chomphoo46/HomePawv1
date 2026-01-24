@@ -34,7 +34,7 @@ export default function ExportButton() {
           สถานะ: p.status,
           ผู้โพสต์: p.user?.name || "ไม่ระบุ",
           เบอร์โทร: p.phone || "-",
-          "ที่อยู่ / พิกัด": p.address || p.location || "-",
+          "ที่อยู่/พิกัด": p.address || p.location || "-",
           วันที่สร้าง: new Date(p.createdAt).toLocaleDateString("th-TH"),
           เวลา: new Date(p.createdAt).toLocaleTimeString("th-TH"),
         };

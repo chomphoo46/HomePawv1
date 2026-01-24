@@ -220,7 +220,7 @@ export async function PATCH(
           status: payload.status,
           animal_type: payload.pet_name,
           behavior: payload.gene,
-          // location: payload.address
+          location: payload.address
         },
       });
 

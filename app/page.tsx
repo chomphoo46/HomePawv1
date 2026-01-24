@@ -552,8 +552,8 @@ export default function HomePage() {
                   post.report_id
                 }'" 
                     style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 0px;"
-                    onmouseover="this.style.background='#FEFAE0'; this.style.borderColor='#000000';" 
-                    onmouseout="this.style.background='white'; this.style.borderColor='#E5E7EB';">
+                    onmouseover="this.style.background='#FEFAE0'; this.style.transform='translateY(-1px)';" 
+                    onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">
                     รายละเอียดเพิ่มเติม
                 </button>
             </div>

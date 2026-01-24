@@ -10,6 +10,8 @@ import {
   FaTimesCircle,
   FaTrash,
   FaExclamationCircle,
+  FaClipboardList, // Icon สำหรับ Tab ใหม่
+  FaClock,
 } from "react-icons/fa";
 import {
   HiOutlineTag,
@@ -30,11 +32,13 @@ const mali = Mali({
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"rehoming" | "found">("rehoming");
+  const [activeTab, setActiveTab] = useState<
+    "rehoming" | "found" | "my-requests"
+  >("rehoming");
 
   const [rehomingPosts, setRehomingPosts] = useState<any[]>([]);
   const [foundPosts, setFoundPosts] = useState<any[]>([]);
-
+  const [adoptionRequests, setAdoptionRequests] = useState<any[]>([]);
   // ดึงข้อมูลหาบ้าน
   const fetchRehomingPosts = async () => {
     try {
@@ -64,18 +68,41 @@ export default function ProfilePage() {
       console.error(err);
     }
   };
+  // 2. เพิ่มฟังก์ชันดึงข้อมูลคำขอ
+  const fetchAdoptionRequests = async () => {
+    try {
+      const res = await fetch("/api/adopt/my-request", {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAdoptionRequests(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
-      await Promise.all([fetchRehomingPosts(), fetchFoundPosts()]);
+      await Promise.all([
+        fetchRehomingPosts(),
+        fetchFoundPosts(),
+        fetchAdoptionRequests(), // เรียก function ใหม่
+      ]);
       setLoading(false);
     };
     initData();
   }, []);
 
   // ตัวแปรสำหรับข้อมูลปัจจุบัน
-  const currentPosts = activeTab === "rehoming" ? rehomingPosts : foundPosts;
+  const currentPosts =
+    activeTab === "rehoming"
+      ? rehomingPosts
+      : activeTab === "found"
+        ? foundPosts
+        : adoptionRequests;
 
   // Icons Helper
   const healthStatusIcons: Record<
@@ -134,9 +161,34 @@ export default function ProfilePage() {
         return "อื่นๆ";
     }
   };
+  // ฟังก์ชันสำหรับแสดงป้ายสถานะ (APPROVED/REJECTED/PENDING)
+  const getRequestStatusBadge = (status: string) => {
+    switch (status) {
+      case "APPROVED":
+        return (
+          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-bold border border-green-200 flex items-center gap-1 w-fit">
+            <FaCircleCheck /> อนุมัติแล้ว
+          </span>
+        );
+      case "REJECTED":
+        return (
+          <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-bold border border-red-200 flex items-center gap-1 w-fit">
+            <FaTimesCircle /> ไม่ผ่านการอนุมัติ
+          </span>
+        );
+      case "PENDING":
+      default:
+        return (
+          <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-bold border border-yellow-200 flex items-center gap-1 w-fit">
+            <FaClock /> รอตรวจสอบ
+          </span>
+        );
+    }
+  };
 
   const handleDelete = async (id: number) => {
-    // ID เป็น number ตาม Schema
+    if (activeTab === "my-requests") return; // Tab คำขอ ลบไม่ได้ (หรือต้องทำ API ยกเลิกคำขอเพิ่ม)
+
     const confirmDelete = confirm("คุณแน่ใจว่าต้องการลบโพสต์นี้?");
     if (!confirmDelete) return;
 
@@ -144,7 +196,6 @@ export default function ProfilePage() {
       activeTab === "rehoming"
         ? "/api/rehoming-report/my-posts"
         : "/api/animal-report/my-posts";
-
     const body = activeTab === "rehoming" ? { post_id: id } : { report_id: id };
 
     try {
@@ -153,12 +204,10 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) throw new Error("ลบโพสต์ไม่สำเร็จ");
 
       if (activeTab === "rehoming") fetchRehomingPosts();
       else fetchFoundPosts();
-
       alert("ลบโพสต์เรียบร้อย");
     } catch (err) {
       console.error(err);
@@ -172,17 +221,18 @@ export default function ProfilePage() {
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            โพสต์ของฉัน
+            กิจกรรมของฉัน
           </h1>
           <p className="text-gray-600">
-            จัดการโพสต์หาบ้านและแจ้งพบสัตว์ไร้บ้านของคุณ
+            ติดตามสถานะการขอรับเลี้ยง และจัดการโพสต์ของคุณได้ที่นี่
           </p>
         </div>
 
         {/* Tab Buttons */}
         <div className="mb-8">
           <div className="border-b border-gray-200 bg-white rounded-t-2xl shadow-sm">
-            <nav className="flex space-x-0">
+            <nav className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-0">
+              {/* Tab 1: Rehoming */}
               <button
                 onClick={() => setActiveTab("rehoming")}
                 className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
@@ -196,6 +246,7 @@ export default function ProfilePage() {
                   {rehomingPosts.length}
                 </span>
               </button>
+              {/* Tab 3: Found */}
               <button
                 onClick={() => setActiveTab("found")}
                 className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
@@ -207,6 +258,21 @@ export default function ProfilePage() {
                 <span>📢 แจ้งพบสัตว์</span>
                 <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">
                   {foundPosts.length}
+                </span>
+              </button>
+
+              {/* Tab 2: Requests (New!) */}
+              <button
+                onClick={() => setActiveTab("my-requests")}
+                className={`flex-1 py-4 px-6 text-center font-semibold rounded-t-2xl transition-all duration-200 flex justify-center items-center gap-2 ${
+                  activeTab === "my-requests"
+                    ? "bg-linear-to-br from-blue-50 via-white to-indigo-50 text-blue-600 shadow-lg border-t-2 border-blue-500"
+                    : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                }`}
+              >
+                <span>📋 ติดตามสถานะ</span>
+                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">
+                  {adoptionRequests.length}
                 </span>
               </button>
             </nav>
@@ -223,13 +289,31 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {currentPosts.map((post: any) => {
-              // Normalize ID and Fields based on Tab
-              const isRehome = activeTab === "rehoming";
-              const id = isRehome ? post.post_id : post.report_id;
-              const title = isRehome ? post.pet_name : post.animal_type; // Rehome ใช้ชื่อ, Found ใช้ชนิดสัตว์
-              const location = isRehome ? post.address : post.location;
-              const image = post.images?.[0]?.image_url;
+            {currentPosts.map((item: any) => {
+              // Logic การแยกตัวแปรตาม Tab
+              const isRequestTab = activeTab === "my-requests";
+              const isRehomeTab = activeTab === "rehoming";
+
+              // ถ้าเป็น Request ข้อมูลสัตว์จะอยู่ใน item.post ถ้าเป็น Tab อื่น ข้อมูลอยู่ที่ item เลย
+              const data = isRequestTab ? item.post : item;
+
+              const id = isRehomeTab
+                ? item.post_id
+                : isRequestTab
+                  ? item.id
+                  : item.report_id;
+              const title = isRequestTab
+                ? data?.pet_name
+                : isRehomeTab
+                  ? item.pet_name
+                  : item.animal_type;
+              const image =
+                data?.images?.[0]?.image_url || item.images?.[0]?.image_url;
+              const location = isRehomeTab
+                ? item.address
+                : isRequestTab
+                  ? data?.address
+                  : item.location;
 
               return (
                 <div
@@ -237,9 +321,10 @@ export default function ProfilePage() {
                   className="relative w-full rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all bg-white border border-gray-100 group flex flex-col h-full"
                 >
                   <Link
+                    // ถ้าเป็น Request ให้ลิงก์ไปหน้าสัตว์ตัวนั้น (rehoming-report)
                     href={
-                      isRehome
-                        ? `/rehoming-report/${id}`
+                      isRehomeTab || isRequestTab
+                        ? `/rehoming-report/${data?.post_id || item.post_id}`
                         : `/animal-report/${id}`
                     }
                     className="flex flex-col h-full"
@@ -259,29 +344,58 @@ export default function ProfilePage() {
                       )}
                       <div
                         className={`absolute top-2 left-2 px-2 py-1 rounded text-[10px] font-bold text-white shadow-sm ${
-                          isRehome ? "bg-[#D4A373]" : "bg-emerald-500"
+                          isRehomeTab
+                            ? "bg-[#D4A373]"
+                            : isRequestTab
+                              ? "bg-blue-500"
+                              : "bg-emerald-500"
                         }`}
                       >
-                        {isRehome ? "หาบ้าน" : "พบเห็นสัตว์"}
+                        {isRehomeTab
+                          ? "หาบ้าน"
+                          : isRequestTab
+                            ? "ขอเลี้ยง"
+                            : "พบเห็น"}
                       </div>
                     </div>
 
                     {/* Content Area */}
                     <div className="p-5 flex flex-col grow gap-3">
-                      {/* Header with Badge */}
+                      {/* กรณี Tab Request: แสดงสถานะตัวใหญ่ๆ */}
+                      {isRequestTab && (
+                        <div className="mb-1">
+                          {getRequestStatusBadge(item.status)}
+                        </div>
+                      )}
+
                       <div className="flex items-start justify-between gap-2">
                         <h2
                           className={`font-bold text-lg line-clamp-2 flex-1 ${
-                            isRehome ? "text-[#D4A373]" : "text-emerald-600"
+                            isRehomeTab
+                              ? "text-[#D4A373]"
+                              : isRequestTab
+                                ? "text-gray-800"
+                                : "text-emerald-600"
                           }`}
                         >
-                          {title || "ไม่ระบุ"}
+                          {title || "ไม่ระบุชื่อ"}
                         </h2>
                       </div>
 
-                      {/* Info List - Vertical */}
+                      {/* Info List */}
                       <div className="space-y-2.5">
-                        {/* Location */}
+                        {/* ถ้าเป็น Request แสดงเหตุผลจากแอดมิน (ถ้ามี) */}
+                        {isRequestTab && item.reason && (
+                          <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-500 font-bold mb-1">
+                              💬 บันทึกจากแอดมิน:
+                            </p>
+                            <p className="text-sm text-gray-700 wrap-break-word">
+                              {item.reason}
+                            </p>
+                          </div>
+                        )}
+
                         <div className="flex items-start gap-2.5">
                           <FiMapPin className="text-[#D4A373] shrink-0" />
                           <span className="text-sm text-gray-700 line-clamp-1 flex-1">
@@ -289,25 +403,25 @@ export default function ProfilePage() {
                           </span>
                         </div>
 
-                        {/* Type-Specific Info */}
-                        {isRehome ? (
+                        {/* แสดงข้อมูลเฉพาะของแต่ละ Tab */}
+                        {isRehomeTab ? (
                           <>
                             <div className="flex items-center gap-2.5">
                               <HiOutlineTag className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
-                                {post.type}
+                                {item.type}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2.5">
-                              {post.sex === "MALE" ? (
+                              {item.sex === "MALE" ? (
                                 <>
                                   <FaMars className="text-blue-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
                                     ผู้
                                   </span>
                                 </>
-                              ) : post.sex === "FEMALE" ? (
+                              ) : item.sex === "FEMALE" ? (
                                 <>
                                   <FaVenus className="text-pink-500 shrink-0" />
                                   <span className="text-sm text-gray-700">
@@ -327,21 +441,21 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-2.5">
                               <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
-                                อายุ: {post.age || "ไม่ระบุ"}
+                                อายุ: {item.age || "ไม่ระบุ"}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2.5">
                               <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
-                                เหตุผล: {post.reason || "ไม่ระบุ"}
+                                เหตุผล: {item.reason || "ไม่ระบุ"}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2.5">
                               <HiOutlinePhone className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
-                                {post.phone}
+                                {item.phone}
                               </span>
                             </div>
                           </>
@@ -351,14 +465,14 @@ export default function ProfilePage() {
                               <HiOutlineTag className="text-[#D4A373] shrink-0" />
                               <p className="text-sm text-gray-700">
                                 ลักษณะ:{" "}
-                                {post.description || "ไม่มีรายละเอียดเพิ่มเติม"}
+                                {item.description || "ไม่มีรายละเอียดเพิ่มเติม"}
                               </p>
                             </div>
 
                             <div className="flex items-start gap-2.5">
                               <MdPets className="text-[#D4A373] shrink-0" />
                               <span className="text-sm text-gray-700">
-                                พฤติกรรม: {getBehaviorLabel(post.behavior)}
+                                พฤติกรรม: {getBehaviorLabel(item.behavior)}
                               </span>
                             </div>
                           </>
@@ -366,18 +480,18 @@ export default function ProfilePage() {
                       </div>
 
                       {/* Footer Section */}
-                      {isRehome ? (
+                      {isRehomeTab ? (
                         <div className="px-4 pb-4 pt-2 mt-auto">
                           <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
                             <div className="flex items-center gap-1.5 truncate min-w-0">
                               <span className="shrink-0">
                                 {
-                                  healthStatusIcons[post.vaccination_status]
+                                  healthStatusIcons[item.vaccination_status]
                                     ?.icon
                                 }
                               </span>
                               <span className="truncate">
-                                {healthStatusIcons[post.vaccination_status]
+                                {healthStatusIcons[item.vaccination_status]
                                   ?.label || "ไม่ระบุ"}
                               </span>
                             </div>
@@ -385,12 +499,12 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-1.5 truncate min-w-0">
                               <span className="shrink-0">
                                 {
-                                  neuteredstatusIcons[post.neutered_status]
+                                  neuteredstatusIcons[item.neutered_status]
                                     ?.icon
                                 }
                               </span>
                               <span className="truncate">
-                                {neuteredstatusIcons[post.neutered_status]
+                                {neuteredstatusIcons[item.neutered_status]
                                   ?.label || "ไม่ระบุ"}
                               </span>
                             </div>
@@ -400,35 +514,36 @@ export default function ProfilePage() {
                         <div className="flex items-start gap-2.5 border-t border-gray-100 pt-3 mt-auto">
                           <FaExclamationCircle className="text-orange-400 mt-0.5 shrink-0 text-base" />
                           <span className="text-sm text-gray-700">
-                            สถานะ: {getFoundStatusLabel(post.status)}
+                            สถานะ: {getFoundStatusLabel(item.status)}
                           </span>
                         </div>
                       )}
                     </div>
                   </Link>
 
-                  {/* Actions (Delete / Edit) */}
-                  <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleDelete(id);
-                      }}
-                      className="bg-white/90 p-2 rounded-full shadow hover:text-red-600 text-gray-400"
-                    >
-                      <FaTrash size={14} />
-                    </button>
-                    <Link
-                      href={
-                        isRehome
-                          ? `/rehoming-report/edit/${id}`
-                          : `/animal-report/edit/${id}`
-                      }
-                      className="bg-white/90 p-2 rounded-full shadow hover:text-blue-600 text-gray-400 flex items-center justify-center"
-                    >
-                      <MdModeEdit size={16} />
-                    </Link>
-                  </div>
+                  {!isRequestTab && (
+                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDelete(id);
+                        }}
+                        className="bg-white/90 p-2 rounded-full shadow hover:text-red-600 text-gray-400"
+                      >
+                        <FaTrash size={14} />
+                      </button>
+                      <Link
+                        href={
+                          isRehomeTab
+                            ? `/rehoming-report/edit/${id}`
+                            : `/animal-report/edit/${id}`
+                        }
+                        className="bg-white/90 p-2 rounded-full shadow hover:text-blue-600 text-gray-400 flex items-center justify-center"
+                      >
+                        <MdModeEdit size={16} />
+                      </Link>
+                    </div>
+                  )}
                 </div>
               );
             })}

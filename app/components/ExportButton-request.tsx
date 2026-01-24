@@ -32,10 +32,12 @@ export default function ExportRequestsButton() {
         return {
           "ID คำขอ": r.id,
           "ชื่อสัตว์": r.post?.pet_name || "ไม่ระบุ", // ชื่อสัตว์จาก post
-          "ผู้ขอรับเลี้ยง": r.user?.name || "ไม่ระบุ", // ชื่อคนขอจาก user
+          "ผู้ขอรับเลี้ยง": r.name || "ไม่ระบุ", // ชื่อคนขอจาก user
+          "อีเมลผู้ขอ": r.user?.email || "ไม่ระบุ", // อีเมลคนขอจาก user
           "ข้อมูลติดต่อ": r.contact_info || "-",      // เบอร์โทร/Line ที่กรอกมา
           "เหตุผล/หมายเหตุ": r.note || "-",           // เหตุผลที่กรอกมา
           "สถานะ": statusMap[r.status] || r.status,   // แปลงสถานะเป็นไทย
+          "เหตุผลการอนุมัติ/ปฏิเสธ": r.reason || "-", // เหตุผลการปฏิเสธ
           "วันที่ส่งคำขอ": new Date(r.created_at).toLocaleDateString("th-TH"),
           "เวลา": new Date(r.created_at).toLocaleTimeString("th-TH"),
         };
@@ -49,9 +51,11 @@ export default function ExportRequestsButton() {
         { wch: 10 }, // ID คำขอ
         { wch: 20 }, // ชื่อสัตว์
         { wch: 20 }, // ผู้ขอรับเลี้ยง
+        { wch: 25 }, // อีเมลผู้ขอ
         { wch: 25 }, // ข้อมูลติดต่อ
         { wch: 30 }, // เหตุผล
         { wch: 15 }, // สถานะ
+        { wch: 30 }, // เหตุผลการอนุมัติ/ปฏิเสธ
         { wch: 15 }, // วันที่
         { wch: 10 }, // เวลา
       ];
