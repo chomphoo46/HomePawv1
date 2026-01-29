@@ -531,7 +531,7 @@ export default function HomePage() {
                 : ""
             }
             
-            <div style="display: flex; flex-col; gap: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; gap: 8px;">
                   <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
                     style="flex: 1; padding: 10px 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;"
@@ -552,7 +552,7 @@ export default function HomePage() {
                   post.report_id
                 }'" 
                     style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 0px;"
-                    onmouseover="this.style.background='#FEFAE0'; this.style.transform='translateY(-1px)';" 
+                    onmouseover="this.style.background='#FEFAE0'; this.style.transform='translateY';" 
                     onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">
                     รายละเอียดเพิ่มเติม
                 </button>

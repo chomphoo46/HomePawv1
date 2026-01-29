@@ -11,7 +11,6 @@ import { FiMapPin } from "react-icons/fi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaTimesCircle } from "react-icons/fa";
 
-// --- Helper Data & Functions (ย้ายมาไว้ที่นี่เพื่อให้ Component จบในตัว) ---
 const healthStatusIcons: Record<
   string,
   { label: string; icon: React.ReactNode }

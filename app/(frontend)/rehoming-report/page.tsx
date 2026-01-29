@@ -4,16 +4,8 @@ import Header from "@/app/components/Header";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, JSX } from "react";
 import { FaMars, FaVenus, FaGenderless, FaTimesCircle } from "react-icons/fa";
-import {
-  HiOutlineTag,
-  HiOutlineCalendar,
-  HiOutlinePhone,
-} from "react-icons/hi";
-import { FiMapPin } from "react-icons/fi";
-import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
-import Link from "next/link";
 import { Mali } from "next/font/google";
 import PetCard from "@/app/components/PetCard";
 
@@ -340,7 +332,6 @@ export default function RehomingReportPage() {
         <div className="px-4 md:px-8 lg:px-12 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
             {sortedPosts.map((post: any) => (
-              // ✅ เรียกใช้ Component แค่บรรทัดเดียว
               <PetCard key={post.post_id} post={post} />
             ))}
           </div>

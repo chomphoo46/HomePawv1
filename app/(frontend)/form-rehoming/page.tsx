@@ -38,7 +38,7 @@ export default function FormRehomingPage() {
   }>({ dateTime: "", images: [] });
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
- 
+
   // ✅ ฟังก์ชันเพิ่มรูปภาพ (รองรับการเลือกทีละหลายรูป)
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -101,7 +101,7 @@ export default function FormRehomingPage() {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -132,10 +132,15 @@ export default function FormRehomingPage() {
       data.append("phone", form.phone);
       data.append("contact", form.contact);
       data.append("address", form.address);
-      if (form.images.length > 0) {
-        form.images.forEach((file) => {
+      if (selectedImages.length > 0) {
+        selectedImages.forEach((file) => {
           data.append("images", file);
         });
+      } else {
+        // (Optional) เพิ่มดัก Error ฝั่งหน้าบ้านถ้าลืมใส่รูป
+        setError("กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป");
+        setSubmitting(false);
+        return;
       }
 
       const res = await fetch("/api/rehoming-report", {

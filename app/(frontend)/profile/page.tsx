@@ -203,7 +203,7 @@ export default function ProfilePage() {
           <div className="border-b border-gray-200 bg-white rounded-t-2xl shadow-sm">
             <nav className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-0">
               <TabButton
-                label="🐶 หาบ้านให้น้อง"
+                label="หาบ้านให้น้อง"
                 count={rehomingPosts.length}
                 isActive={activeTab === "rehoming"}
                 onClick={() => setActiveTab("rehoming")}
@@ -211,7 +211,7 @@ export default function ProfilePage() {
                 hoverColor="hover:text-[#D4A373] hover:bg-orange-50"
               />
               <TabButton
-                label="📢 แจ้งพบสัตว์"
+                label="แจ้งพบสัตว์"
                 count={foundPosts.length}
                 isActive={activeTab === "found"}
                 onClick={() => setActiveTab("found")}
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                 hoverColor="hover:text-emerald-500 hover:bg-green-50"
               />
               <TabButton
-                label="📋 ติดตามสถานะ"
+                label="ติดตามสถานะสัตว์ที่ขอรับเลี้ยง"
                 count={adoptionRequests.length}
                 isActive={activeTab === "my-requests"}
                 onClick={() => setActiveTab("my-requests")}
