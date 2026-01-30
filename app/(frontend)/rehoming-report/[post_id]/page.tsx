@@ -18,11 +18,9 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-interface DetailAnimalProps {
-  params: {
-    post_id: string;
-  };
-}
+type DetailAnimalProps = {
+  params: Promise<{ post_id: string }>; // 1. ใส่ Promise ครอบไว้
+};
 
 export default async function DetailAnimalPage(props: DetailAnimalProps) {
   const params = await props.params;

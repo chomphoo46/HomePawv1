@@ -1,44 +1,56 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }, // ✅ 1. ใส่ Promise
 ) {
-  return Response.json(await prisma.post.findUnique({
-    where: { id: Number(params.id) },
-  }))
+  const { id } = await params; // ✅ 2. สั่ง await ก่อนใช้
+
+  return Response.json(
+    await prisma.petRehomePost.findUnique({
+      where: { post_id: Number(id) },
+    }),
+  );
 }
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }, // ✅ 1. ใส่ Promise
 ) {
   try {
-    const { title, content } = await req.json()
-    return Response.json(await prisma.post.update({
-      where: { id: Number(params.id) },
-      data: { title, content },
-    }))
+    const { id } = await params; // ✅ 2. สั่ง await ก่อนใช้
+    const body = await req.json();
+
+    return Response.json(
+      await prisma.petRehomePost.update({
+        where: { post_id: Number(id) },
+        data: body,
+      }),
+    );
   } catch (error) {
     return new Response(error as BodyInit, {
       status: 500,
-    })
+    });
   }
 }
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }, // ✅ 1. ใส่ Promise
 ) {
   try {
-    return Response.json(await prisma.post.delete({
-      where: { id: Number(params.id) },
-    }))
+    const { id } = await params; // ✅ 2. สั่ง await ก่อนใช้
+
+    return Response.json(
+      await prisma.petRehomePost.delete({
+        where: { post_id: Number(id) },
+      }),
+    );
   } catch (error) {
     return new Response(error as BodyInit, {
       status: 500,
-    })
+    });
   }
 }

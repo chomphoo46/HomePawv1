@@ -169,17 +169,15 @@ export default function ManagePostsPage() {
     }
   };
 
-  // ✅ สร้างฟังก์ชันใหม่สำหรับกดปุ่มแก้ไข
+  // กดปุ่มแก้ไข
   const handleEditClick = async (id: number, type: string) => {
-    setIsLoadingEdit(true); // เริ่มหมุน
+    setIsLoadingEdit(true);
     try {
-      // 1. เรียก API GET [id] เพื่อเอาข้อมูลฉบับเต็ม
+      // เรียก API GET [id] เพื่อเอาข้อมูลฉบับเต็ม
       const res = await fetch(`/api/admin/posts/${id}?type=${type}`);
       const data = await res.json();
 
       if (res.ok) {
-        // 2. ✅ [สำคัญ] set state ด้วยข้อมูลฉบับเต็มที่เพิ่ง fetch มา
-        // data นี้จะมี 'vaccinationStatus: { code: ... }' ที่ถูกต้อง
         setEditingPost(data);
       } else {
         alert(data.error || "ไม่สามารถโหลดข้อมูลได้");
@@ -310,12 +308,19 @@ export default function ManagePostsPage() {
                   <td className="p-4">
                     <span
                       className={`px-3 py-1 rounded-full text-sm ${
-                        post.status === "Adopted" || post.status === "ADOPTED"
+                        // สีเขียว: ช่วยเหลือแล้ว หรือ ได้บ้านแล้ว
+                        post.status === "RESCUED" ||
+                        post.status === "Adopted" ||
+                        post.status === "ADOPTED"
                           ? "bg-green-100 text-green-700"
-                          : post.status === "AVAILABLE" ||
-                            post.status === "PENDING"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-700"
+                          : post.status === "STILL_THERE"
+                            ? "bg-blue-100 text-blue-700"
+                            : post.status === "MOVED"
+                              ? "bg-orange-100 text-orange-700"
+                            : post.status === "AVAILABLE" ||
+                                post.status === "PENDING"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
                       }`}
                     >
                       {post.status}
@@ -325,7 +330,6 @@ export default function ManagePostsPage() {
                   {/* แสดงชื่อ หรือ username (ถ้ามี) */}
                   <td className="p-4">{post.user?.name || "ไม่ทราบชื่อ"}</td>
                   <td className="p-4">
-                    {/* แปลงวันที่ และตรวจสอบ Invalid Date */}
                     {post.createdAt &&
                     new Date(post.createdAt).toString() !== "Invalid Date"
                       ? new Date(post.createdAt).toLocaleDateString("th-TH")
@@ -620,7 +624,7 @@ export default function ManagePostsPage() {
                               setEditingPost({
                                 ...editingPost,
                                 images: editingPost.images.filter(
-                                  (_, i) => i !== index
+                                  (_, i) => i !== index,
                                 ),
                               })
                             }
@@ -745,8 +749,8 @@ export default function ManagePostsPage() {
                   {isSaving
                     ? "กำลังบันทึก..."
                     : isLoadingEdit
-                    ? "กำลังอัปโหลดรูป..."
-                    : "บันทึก"}
+                      ? "กำลังอัปโหลดรูป..."
+                      : "บันทึก"}
                 </button>
               </div>
             </div>
@@ -810,10 +814,10 @@ export default function ManagePostsPage() {
                               selectedPost.images.length === 1
                                 ? "w-64 h-64"
                                 : selectedPost.images.length === 2
-                                ? "w-52 h-52"
-                                : selectedPost.images.length === 3
-                                ? "w-44 h-44"
-                                : "w-40 h-40 sm:w-44 sm:h-44"
+                                  ? "w-52 h-52"
+                                  : selectedPost.images.length === 3
+                                    ? "w-44 h-44"
+                                    : "w-40 h-40 sm:w-44 sm:h-44"
                             }`}
                           >
                             <img
@@ -859,9 +863,9 @@ export default function ManagePostsPage() {
                     selectedPost.status === "ADOPTED"
                       ? "bg-green-100 text-green-700"
                       : selectedPost.status === "AVAILABLE" ||
-                        selectedPost.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-700"
+                          selectedPost.status === "PENDING"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-100 text-gray-700"
                   }`}
                 >
                   {(selectedPost.status === "Adopted" ||
@@ -934,7 +938,7 @@ export default function ManagePostsPage() {
                     icon: <HiOutlineCalendar />,
                     label: "วันที่โพสต์",
                     value: new Date(selectedPost.createdAt).toLocaleDateString(
-                      "th-TH"
+                      "th-TH",
                     ),
                   },
                 ].map((item, idx) => (

@@ -43,7 +43,7 @@ export async function GET() {
       age: p.age,
       VaccinationStatus: p.vaccination_status as VaccinationStatus,
       sex: p.sex,
-      address: p.address, 
+      address: p.address,
       contact: p.contact,
       NeuteredStatus: p.neutered_status as NeuteredStatus,
       status: p.status,
@@ -59,9 +59,9 @@ export async function GET() {
       title: r.description,
       type: "report",
       status: r.status,
-      location: r.location, 
-      behavior: r.behavior, 
-      animal_type: r.animal_type, 
+      location: r.location,
+      behavior: r.behavior,
+      animal_type: r.animal_type,
       user: r.user
         ? { id: r.user.user_id, name: r.user.name ?? r.user.name }
         : null,
@@ -99,26 +99,31 @@ export async function DELETE(req: Request) {
 
     if (type === "pet") {
       // --- ลบโพสต์หาบ้าน ---
+
+      // 1. ลบรูปภาพก่อน
       await prisma.petRehomeImages.deleteMany({
         where: { post_id: id },
       });
+
+      // 2.ลบคำขอรับเลี้ยง
+
+      await prisma.adoptionRequest.deleteMany({
+        where: { post_id: id },
+      });
+
+      // 3. สุดท้ายค่อยลบตัวโพสต์
       await prisma.petRehomePost.delete({
         where: { post_id: id },
       });
     } else if (type === "report") {
-      // --- ลบโพสต์แจ้งพบสัตว์ ---
-
-      // 1. ลบรูป
       await prisma.animalImage.deleteMany({
         where: { report_id: id },
       });
 
-      // 2. ✅ เพิ่ม: ลบ HelpAction ที่ผูกกับ Report นี้ออกก่อน (สำคัญ!)
       await prisma.helpAction.deleteMany({
         where: { report_id: id },
       });
 
-      // 3. ลบตัว Report
       await prisma.animalReports.delete({
         where: { report_id: id },
       });
@@ -127,7 +132,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true, message: "ลบสำเร็จ" });
   } catch (error) {
     console.error("❌ Error deleting post:", error);
-    // ส่งรายละเอียด error กลับไปเพื่อ debug ง่ายขึ้น
     return NextResponse.json(
       { error: "Failed to delete post", details: String(error) },
       { status: 500 },

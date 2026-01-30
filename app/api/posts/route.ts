@@ -1,24 +1,48 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 export async function GET() {
-  return Response.json(await prisma.post.findMany())
+  return Response.json(await prisma.petRehomePost.findMany());
 }
 
 export async function POST(req: Request) {
   try {
-    const { title, content } = await req.json()
-    const newPost = await prisma.post.create({
+    const {
+      user_id,
+      phone,
+      pet_name,
+      type,
+      age,
+      vaccination_status,
+      reason,
+      status,
+      sex,
+      address,
+      contact,
+      neutered_status,
+    } = await req.json();
+
+    const newPost = await prisma.petRehomePost.create({
       data: {
-        title,
-        content,
+        user_id,
+        phone,
+        pet_name,
+        type,
+        age,
+        vaccination_status,
+        reason,
+        status,
+        sex,
+        address,
+        contact,
+        neutered_status,
       },
-    })
-    return Response.json(newPost)
+    });
+    return Response.json(newPost);
   } catch (error) {
     return new Response(error as BodyInit, {
       status: 500,
-    })
+    });
   }
 }
