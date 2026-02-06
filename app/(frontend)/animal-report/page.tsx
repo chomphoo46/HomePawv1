@@ -36,7 +36,6 @@ export default function ReportForm() {
     location: "",
     dateTime: "",
     moreInfo: "",
-    
   });
 
   // ตั้งค่าวันที่ปัจจุบัน
@@ -104,7 +103,7 @@ export default function ReportForm() {
             address: results[0].formatted_address,
           });
         }
-      }
+      },
     );
   };
 
@@ -119,7 +118,7 @@ export default function ReportForm() {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -177,7 +176,7 @@ export default function ReportForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.user?.id) {
-      alert("Unauthorized");
+      alert("กรุณาเข้าสู่ระบบก่อนทำรายการ");
       return;
     }
 
@@ -186,37 +185,56 @@ export default function ReportForm() {
       return;
     }
 
-    // ✅ ตรวจสอบว่ามีรูปภาพอย่างน้อย 1 รูปหรือไม่ (ถ้าบังคับ)
-    // if (selectedImages.length === 0) {
-    //   alert("กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป");
-    //   return;
-    // }
-
-    const data = new FormData();
-    const finalAnimalType =
-      formData.animalType === "other"
-        ? formData.customAnimal
-        : formData.animalType;
-
-    data.append("animalType", finalAnimalType);
-    data.append("description", formData.description);
-    data.append("behavior", formData.behavior);
-    data.append("location", formData.location);
-    data.append("dateTime", formData.dateTime);
-    data.append("moreInfo", formData.moreInfo);
-    data.append("lat", selectedLocation?.lat?.toString() || "");
-    data.append("lng", selectedLocation?.lng?.toString() || "");
-
-    // ✅ Loop เพื่อ append รูปภาพทั้งหมดลง FormData
-    selectedImages.forEach((file) => {
-      data.append("images", file); // ใช้ key "images" ซ้ำๆ กัน Backend จะได้รับเป็น Array
-    });
+    // Validation: ตรวจสอบรูปภาพ
+    if (selectedImages.length === 0) {
+      alert(
+        "กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป เพื่อช่วยให้น้องได้รับการช่วยเหลือที่เร็วขึ้น",
+      );
+      return;
+    }
 
     try {
+      // --- ส่วนที่ 1: อัปโหลดรูปภาพไปยัง Vercel Blob ---
+      const uploadedUrls: string[] = [];
+
+      for (const file of selectedImages) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+
+        if (!uploadRes.ok)
+          throw new Error(`ไม่สามารถอัปโหลดรูป ${file.name} ได้`);
+
+        const { url } = await uploadRes.json();
+        uploadedUrls.push(url);
+      }
+
+      // --- ส่วนที่ 2: ส่งข้อมูลรายงานทั้งหมด (JSON) ไปยัง Database ---
+      const finalAnimalType =
+        formData.animalType === "other"
+          ? formData.customAnimal
+          : formData.animalType;
+
       const res = await fetch("/api/animal-report", {
         method: "POST",
-        body: data,
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          animalType: finalAnimalType,
+          description: formData.description,
+          behavior: formData.behavior,
+          location: formData.location,
+          dateTime: formData.dateTime,
+          moreInfo: formData.moreInfo,
+          lat: selectedLocation?.lat || 0,
+          lng: selectedLocation?.lng || 0,
+          images: uploadedUrls, // ส่งอาเรย์ของ URL ที่ได้จาก Blob
+        }),
       });
 
       if (!res.ok) {
@@ -225,14 +243,13 @@ export default function ReportForm() {
         return;
       }
 
-      alert("ส่งรายงานสำเร็จ!");
+      alert("ส่งรายงานสำเร็จ! ขอบคุณที่ช่วยเหลือน้องๆ ครับ");
       router.push("/");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("เกิดข้อผิดพลาดในการส่งรายงาน");
+      alert(err.message || "เกิดข้อผิดพลาดในการส่งรายงาน");
     }
   };
-
   return (
     <div className="min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col">
       <Header />

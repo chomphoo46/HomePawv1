@@ -1,14 +1,11 @@
-// app/api/animal-report/route.ts
 import { NextResponse } from "next/server";
-import path from "path";
-import fs from "fs/promises";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient, AnimalReportStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// POST - แจ้งพบสัตว์ไร้บ้าน
+// POST - แจ้งพบสัตว์ไร้บ้าน (เวอร์ชันรับ JSON URL จาก Vercel Blob)
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -16,43 +13,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    const formData = await req.formData();
-    const animal_type = formData.get("animalType") as string;
-    const description = formData.get("description") as string;
-    const behavior = formData.get("behavior") as string;
-    const lat = Number(formData.get("lat"));
-    const lng = Number(formData.get("lng"));
-    const location = formData.get("location") as string;
-    const images = formData.getAll("images") as File[];
+    // รับค่าเป็น JSON ทั้งหมด (รวมถึง URLs รูปภาพที่อัปโหลดเข้า Blob ไปก่อนหน้านี้)
+    const body = await req.json();
+    const { 
+      animalType, 
+      description, 
+      behavior, 
+      lat, 
+      lng, 
+      location, 
+      images // Array ของ URL: ["https://...", "https://..."]
+    } = body;
 
-    if (!animal_type || !description || !behavior || !location) {
-      return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (!animalType || !description || !behavior || !location || !images || images.length === 0) {
+      return NextResponse.json({ error: "กรอกข้อมูลไม่ครบถ้วน" }, { status: 400 });
     }
 
-    // สร้าง path สำหรับเก็บรูป
-    const imageUrls: string[] = [];
-    for (const file of images) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const filename = `${Date.now()}-${file.name}`;
-      const filePath = path.join(process.cwd(), "public/uploads", filename);
-      await fs.writeFile(filePath, buffer);
-      imageUrls.push(`/uploads/${filename}`);
-    }
-
-    // สร้าง report
+    // บันทึกลงฐานข้อมูล Neon
     const report = await prisma.animalReports.create({
       data: {
         user_id: session.user.id,
-        animal_type,
+        animal_type: animalType,
         description,
         behavior,
         location: location,
         status: AnimalReportStatus.STILL_THERE,
-        latitude: lat,
-        longitude: lng,
+        latitude: Number(lat),
+        longitude: Number(lng),
         images: {
-          create: imageUrls.map((url) => ({ image_url: url })),
+          create: images.map((url: string) => ({ image_url: url })),
         },
       },
       include: { images: true },
@@ -60,8 +50,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, report }, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
+    console.error("Database error:", error);
+    return NextResponse.json({ error: "ไม่สามารถบันทึกข้อมูลได้" }, { status: 500 });
   }
 }
 
@@ -70,7 +60,6 @@ export async function GET() {
   try {
     const reports = await prisma.animalReports.findMany({
       orderBy: { created_at: "desc" },
-
       include: {
         images: true,
         user: {
@@ -88,43 +77,7 @@ export async function GET() {
     });
     return NextResponse.json(reports, { status: 200 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
-  }
-}
-
-// DELETE - ลบรายงาน
-export async function DELETE(req: Request) {
-  try {
-    const { report_id } = await req.json();
-    if (!report_id) {
-      return NextResponse.json(
-        { error: "report_id required" },
-        { status: 400 }
-      );
-    }
-
-    const report = await prisma.animalReports.findUnique({
-      where: { report_id },
-      include: { images: true },
-    });
-
-    if (!report) {
-      return NextResponse.json({ error: "ไม่พบรายงาน" }, { status: 404 });
-    }
-
-    // ลบไฟล์รูปจริง
-    for (const img of report.images) {
-      const filePath = path.join(process.cwd(), "public", img.image_url);
-      try {
-        await fs.unlink(filePath);
-      } catch (_) {}
-    }
-
-    const deleted = await prisma.animalReports.delete({ where: { report_id } });
-    return NextResponse.json(deleted, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
+    console.error("Fetch error:", error);
+    return NextResponse.json({ error: "ไม่สามารถดึงข้อมูลได้" }, { status: 500 });
   }
 }
