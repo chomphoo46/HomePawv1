@@ -107,65 +107,72 @@ export default function FormRehomingPage() {
     setError("");
     setSuccess(false);
 
+    // 1. ตรวจสอบเบอร์โทรศัพท์ (เฉพาะตัวเลข)
     if (!/^[0-9]+$/.test(form.phone)) {
       setError("เบอร์โทรต้องเป็นตัวเลขเท่านั้น");
       setSubmitting(false);
       return;
     }
 
-    // Validation เพิ่มเติม: ต้องมีรูปภาพ
+    // 2. ตรวจสอบว่ามีรูปภาพอย่างน้อย 1 รูป
     if (selectedImages.length === 0) {
-      setError(
-        "กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป เพื่อให้น้องมีโอกาสได้บ้านมากขึ้น",
-      );
+      setError("กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป เพื่อให้น้องมีโอกาสได้บ้านมากขึ้น");
       setSubmitting(false);
       return;
     }
 
     try {
-      const data = new FormData();
-      // append ข้อมูล Text
-      data.append("user_id", session?.user?.id ?? "");
-      data.append("pet_name", form.pet_name);
-      data.append("type", form.type);
-      data.append("sex", form.sex);
-      data.append("age", form.age);
-      data.append("vaccination_status", form.vaccination_status);
-      data.append("neutered_status", form.neutered_status);
-      data.append("reason", form.reason);
-      data.append("phone", form.phone);
-      data.append("contact", form.contact);
-      data.append("address", form.address);
-      data.append("dateTime", form.dateTime); // ✅ อย่าลืมส่งวันที่
+      // --- ส่วนที่ 1: อัปโหลดรูปภาพไปที่ Vercel Blob ผ่าน API /api/upload ---
+      const uploadedUrls: string[] = [];
 
-      // append รูปภาพ
-      selectedImages.forEach((file) => {
-        data.append("images", file);
-      });
+      for (const file of selectedImages) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
 
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`ไม่สามารถอัปโหลดรูปภาพ ${file.name} ได้`);
+        }
+        
+        const uploadData = await uploadRes.json();
+        uploadedUrls.push(uploadData.url); // จะได้ URL แบบ https://...vercel-storage.com/...
+      }
+
+      // --- ส่วนที่ 2: ส่งข้อมูลทั้งหมดไปที่ API /api/rehoming-report ---
       const res = await fetch("/api/rehoming-report", {
         method: "POST",
-        body: data,
-        // ไม่ต้องใส่ headers Content-Type, browser จัดการเองเมื่อใช้ FormData
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: session?.user?.id ?? "",
+          ...form, // กระจายค่า pet_name, type, sex, age, ฯลฯ ออกมา
+          images: uploadedUrls, // ส่งเป็นอาเรย์ของ URL รูปภาพแทนไฟล์ดิบ
+        }),
       });
 
       if (res.ok) {
         setSuccess(true);
-        // Reset form
+        // Reset ข้อมูลในฟอร์ม
         setForm({ ...initialForm, dateTime: form.dateTime });
         setSelectedImages([]);
         setPreviewUrls([]);
 
-        // redirect
+        // แจ้งเตือนและเปลี่ยนหน้า
         setTimeout(() => {
-          window.location.href = "/rehoming-report"; // หรือ path ที่ต้องการหลังเสร็จ
+          router.push("/rehoming-report");
         }, 1500);
       } else {
         const errData = await res.json();
-        setError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อมูล");
+        setError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์");
       }
-    } catch {
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+    } catch (err: any) {
+      console.error("Submission error:", err);
+      setError(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
       setSubmitting(false);
     }
