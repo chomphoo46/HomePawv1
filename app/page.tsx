@@ -36,7 +36,7 @@ function getDistanceFromLatLonInKm(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ) {
   const R = 6371; // Radius of the earth in km
   const dLat = deg2rad(lat2 - lat1);
@@ -142,39 +142,6 @@ export default function HomePage() {
         return "ไม่ระบุ";
     }
   };
-  // Helper แปลสถานะแจ้งพบ
-  const getFoundStatusLabel = (status: string) => {
-    switch (status) {
-      case "STILL_THERE":
-        return "ยังอยู่ที่เดิม";
-      case "RESCUED":
-        return "ช่วยเหลือแล้ว";
-      case "MOVED":
-        return "ย้ายที่แล้ว";
-      case "OTHER":
-        return "อื่นๆ";
-      default:
-        return status;
-    }
-  };
-
-  // const statsIcons: Record<
-  //   string,
-  //   { label: string; icon: JSX.Element }
-  // > = {
-  //   foundAnimals: {
-  //     label: "ประกาศหาบ้าน",
-  //     icon: <RiHomeHeartFill size={22} style={{ color: "green" }} />,
-  //   },
-  //   rehomingPosts: {
-  //     label: "สัตว์ไร้บ้านที่พบ",
-  //     icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
-  //   },
-  //   urgentHelp: {
-  //     label: "คนช่วยเหลือ",
-  //     icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
-  //   },
-  // };
 
   // Mapping สถานะต่างๆ
   const neuteredstatusIcons: Record<
@@ -261,7 +228,7 @@ export default function HomePage() {
   useEffect(() => {
     (window as any).handleHelpAction = async (
       report_id: number,
-      action_type: "FEED" | "ADOPT"
+      action_type: "FEED" | "ADOPT",
     ) => {
       if (status === "unauthenticated") {
         alert("กรุณาเข้าสู่ระบบก่อนดำเนินการ");
@@ -306,10 +273,10 @@ export default function HomePage() {
     };
   }, [status, session]);
 
-  // --- Add Markers Logic (Updated for Smart Search) ---
+  // --- Add Markers Logic (Updated for Responsive) ---
   const addMarkers = () => {
     const google = (window as any).google;
-    if (!google || !mapRef.current || !filteredPosts) return; // ใช้ filteredPosts แทน
+    if (!google || !mapRef.current || !filteredPosts) return;
 
     // 1. ลบ Marker เก่า โดยใช้ markersRef
     if (markersRef.current.length > 0) {
@@ -322,8 +289,6 @@ export default function HomePage() {
       if (!post.latitude || !post.longitude) return;
 
       const iconUrl = getMarkerIcon(post.animal_type);
-
-      // Smart Logic: เช็คคะแนนเพื่อปรับขนาดหมุด
       const matchScore = post.matchScore || 0;
       const isHighMatch = isSmartSearchActive && matchScore > 70;
 
@@ -336,18 +301,16 @@ export default function HomePage() {
         title: post.animal_type,
         icon: {
           url: iconUrl,
-          // ถ้าคะแนนสูง ให้หมุดใหญ่ขึ้น
           scaledSize: new google.maps.Size(
             isHighMatch ? 65 : 53,
-            isHighMatch ? 65 : 53
+            isHighMatch ? 65 : 53,
           ),
           anchor: new google.maps.Point(26.5, 53),
         },
-        // ถ้าคะแนนสูง ให้หมุดเด้งดึ๋ง
         animation: isHighMatch ? google.maps.Animation.BOUNCE : null,
       });
 
-      // HTML Content
+      // Data Prep
       const imageUrl =
         post.images?.length > 0
           ? post.images[0].image_url
@@ -355,16 +318,11 @@ export default function HomePage() {
 
       const location = post.location || "ไม่ระบุตำแหน่ง";
       const getAnimalTypeLabel = (type: string | number) => {
-        // 1. กำหนดค่ามาตรฐาน
         const typeMap: Record<string, string> = {
           dog: "สุนัข",
           cat: "แมว",
-          other: "อื่นๆ", // เผื่อกรณีข้อมูลเก่าหลุดมา
+          other: "อื่นๆ",
         };
-
-        // 2. คืนค่าตาม Logic:
-        // - ถ้า type ตรงกับ key ใน map (เช่น 'dog') -> คืนค่า 'สุนัข'
-        // - ถ้าไม่ตรง (เช่น 'กระต่าย' ที่ user พิมพ์มาเอง) -> คืนค่า 'กระต่าย' กลับไปเลย
         return typeMap[String(type)] || type;
       };
       const behavior = getBehaviorLabel(post.behavior);
@@ -372,7 +330,7 @@ export default function HomePage() {
       const reporter = post.user?.name || "ไม่ระบุชื่อ";
       const description = post.description || "ไม่มีคำอธิบาย";
 
-      // Smart Logic: Badge คะแนน
+      // Badge Logic
       let scoreBadge = "";
       if (isSmartSearchActive) {
         scoreBadge = `
@@ -384,11 +342,12 @@ export default function HomePage() {
          `;
       }
 
+      // Help Summary
       const feedActions = post.actions.filter(
-        (a: any) => a.action_type === "FEED"
+        (a: any) => a.action_type === "FEED",
       );
       const adoptActions = post.actions.filter(
-        (a: any) => a.action_type === "ADOPT"
+        (a: any) => a.action_type === "ADOPT",
       );
 
       let helpSummaryHtml = "";
@@ -409,166 +368,144 @@ export default function HomePage() {
           '<p style="margin: 4px 0; font-size: 0.85rem; color: #777;"><i>ยังไม่มีคนให้ความช่วยเหลือ...</i></p>';
       }
 
-      // -------------------------------------------------------------
-      // ส่วนเตรียมข้อมูลรูปภาพและ Slider (เพิ่มใหม่)
-      // -------------------------------------------------------------
+      // --- Slider & Responsive HTML ---
 
-      // 1. ดึงลิสต์รูปภาพ (รองรับทั้งเคสที่มีรูปเดียวและหลายรูป)
+      // 1. ดึงลิสต์รูปภาพ
       const imagesList =
         post.images && post.images.length > 0
           ? post.images.map((img: any) =>
-              typeof img === "string" ? img : img.image_url
-            ) // ดึง url ออกมา
-          : [imageUrl]; // ถ้าไม่มี array images ให้ใช้รูปหลักรูปเดียว
+              typeof img === "string" ? img : img.image_url,
+            )
+          : [imageUrl];
 
-      // 2. สร้าง ID เฉพาะให้ Slider นี้ (เพื่อให้กดปุ่มแล้วเลื่อนถูกอัน ไม่ตีกัน)
       const sliderId = `slider-${post.report_id}`;
 
-      // 3. สร้าง HTML ของรูปภาพแต่ละรูป (เรียงกันแนวนอน)
+      // 2. สร้าง HTML รูปภาพ
       const imagesHtml = imagesList
         .map(
           (url: any) => `
-    <img src="${url}" style="min-width: 100%; height: 100%; object-fit: cover; display: block; scroll-snap-align: start;">
-  `
+        <img src="${url}" style="min-width: 100%; height: 100%; object-fit: cover; display: block; scroll-snap-align: start;">
+      `,
         )
         .join("");
 
-      // 4. สร้างปุ่มลูกศรซ้าย-ขวา (แสดงเฉพาะถ้ามีรูปมากกว่า 1 รูป)
+      // 3. ปุ่มลูกศร (แก้ไขให้ Responsive - เลื่อนตามความกว้าง element)
       const arrowsHtml =
         imagesList.length > 1
           ? `
-    <button onclick="document.getElementById('${sliderId}').scrollBy({left: -320, behavior: 'smooth'})" 
-      style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
-      ❮
-    </button>
-    <button onclick="document.getElementById('${sliderId}').scrollBy({left: 320, behavior: 'smooth'})" 
-      style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
-      ❯
-    </button>
-  `
+        <button onclick="var el = document.getElementById('${sliderId}'); el.scrollBy({left: -el.clientWidth, behavior: 'smooth'})" 
+          style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
+          ❮
+        </button>
+        <button onclick="var el = document.getElementById('${sliderId}'); el.scrollBy({left: el.clientWidth, behavior: 'smooth'})" 
+          style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s;">
+          ❯
+        </button>
+      `
           : "";
 
-      // -------------------------------------------------------------
-      // ส่วน HTML String หลัก (แก้ไขแล้ว)
-      // -------------------------------------------------------------
+      // ... (ส่วน imageList, sliderId, arrowsHtml เหมือนเดิม) ...
+
+      // แก้ไข contentString ให้ขนาดกะทัดรัดขึ้น (Compact Version)
       const contentString = `
-        <div style="font-family: '${
-          mali.style.fontFamily
-        }', sans-serif; width: 320px; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
+        <div style="
+            font-family: '${mali.style.fontFamily}', sans-serif; 
+            width: 280px; /* กำหนดความกว้างตายตัว เพื่อป้องกัน map บีบ */
+            background: white; 
+            display: flex;
+            flex-direction: column;
+        ">
           
-          <div style="position: relative; height: 200px;">
-            
+          <div style="position: relative; height: 160px; shrink: 0;">
             <div id="${sliderId}" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 100%; width: 100%; scrollbar-width: none; -ms-overflow-style: none;">
               ${imagesHtml}
             </div>
             
             ${arrowsHtml}
 
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to top, rgba(0,0,0,0.2), transparent); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 50px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none;"></div>
 
             ${
               scoreBadge
-                ? `<div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10; width: 90%; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                  ${scoreBadge}
-               </div>`
+                ? `<div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; width: 90%; text-align: center;">${scoreBadge}</div>`
                 : ""
             }
             
-            <div style="position: absolute; top: 12px; left: 12px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px;">
+            <div style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px;">
                <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
                  post.status === "STILL_THERE"
                    ? "#EF4444"
                    : post.status === "MOVED"
-                   ? "#F59E0B"
-                   : "#10B981"
+                     ? "#F59E0B"
+                     : "#10B981"
                };"></div>
-               <span style="font-size: 0.75rem; font-weight: 600; color: white;">${
+               <span style="font-size: 0.7rem; font-weight: 600; color: white;">${
                  post.status === "STILL_THERE"
                    ? "ยังอยู่ที่เดิม"
                    : post.status === "MOVED"
-                   ? "ย้ายที่แล้ว / หาไม่เจอ"
-                   : "ช่วยเหลือแล้ว"
+                     ? "ย้าย/ไม่เจอ"
+                     : "ช่วยแล้ว"
                }</span>
             </div>
-
-            <span style="position: absolute; bottom: 12px; right: 12px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; color: #D4A373; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              ${getAnimalTypeLabel(post.animal_type)}
-            </span>
           </div>
           
-          <div style="padding: 16px;">
-            <div style="margin-bottom: 12px;">
-              <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; color: #111827; font-weight: 700; line-height: 1.4;">
+          <div style="padding: 12px;">
+            <div style="margin-bottom: 8px;">
+              <h3 style="margin: 0; font-size: 1rem; color: #111827; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 พบที่ ${location}
               </h3>
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #6B7280;">
-                 <span style="display: flex; align-items: center; gap: 4px;">
-                    ${dateTime}
-                 </span>
-                 <span>
-                    โดย ${reporter}
-                 </span>
-              </div>
+              <p style="font-size: 0.7rem; color: #6B7280; margin: 2px 0 0 0;">
+                ${dateTime} • โดย ${reporter}
+              </p>
             </div>
             
-            <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; margin-bottom: 16px;">
-              <div style="margin-bottom: 8px;">
-                <span style="font-size: 0.75rem; color: #9CA3AF; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">ลักษณะ</span>
-                <p style="margin: 2px 0 0 0; font-size: 0.9rem; color: #374151; line-height: 1.4;">${description}</p>
+            <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px; margin-bottom: 10px;">
+              <div style="margin-bottom: 4px;">
+                 <p style="margin: 0; font-size: 0.8rem; color: #374151; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+                   <span style="color: #9CA3AF; font-size: 0.7rem;">ลักษณะ:</span> ${description}
+                 </p>
               </div>
               <div>
-                <span style="font-size: 0.75rem; color: #9CA3AF; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">พฤติกรรม</span>
-                <p style="margin: 2px 0 0 0; font-size: 0.9rem; color: #374151; line-height: 1.4;">${behavior}</p>
+                 <p style="margin: 0; font-size: 0.8rem; color: #374151;">
+                   <span style="color: #9CA3AF; font-size: 0.7rem;">พฤติกรรม:</span> ${behavior}
+                 </p>
               </div>
             </div>
 
             ${
               helpSummaryHtml
-                ? `
-            <div style="background: #ECFDF5; border: 1px solid #D1FAE5; padding: 10px; border-radius: 10px; margin-bottom: 16px; font-size: 0.8rem;">
-              ${helpSummaryHtml}
-            </div>`
+                ? `<div style="background: #ECFDF5; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-size: 0.75rem;">${helpSummaryHtml}</div>`
                 : ""
             }
             
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; gap: 8px;">
-                  <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
-                    style="flex: 1; padding: 10px 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: all 0.2s;"
-                    onmouseover="this.style.background='#FFEDD5';" 
-                    onmouseout="this.style.background='#FFF7ED';">
-                    ให้อาหาร
-                  </button>
-                  <button onclick="handleHelpAction(${
-                    post.report_id
-                  }, 'ADOPT')" 
-                    style="flex: 1; padding: 10px 0; background: #D4A373; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(212, 163, 115, 0.4); transition: all 0.2s;"
-                    onmouseover="this.style.background='#B88D63'; this.style.transform='translateY(-1px)';" 
-                    onmouseout="this.style.background='#D4A373'; this.style.transform='translateY(0)';">
-                    รับเลี้ยง
-                  </button>
-                </div>
-                <button onclick="window.location.href='/animal-report/${
-                  post.report_id
-                }'" 
-                    style="width: 100%; padding: 10px 0; background: white; color: #000000; border: 1px solid #E5E7EB; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; margin-top: 0px;"
-                    onmouseover="this.style.background='#FEFAE0'; this.style.transform='translateY';" 
-                    onmouseout="this.style.background='white'; this.style.transform='translateY(0)';">
-                    รายละเอียดเพิ่มเติม
-                </button>
+            <div style="display: flex; gap: 6px;">
+               <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
+                 style="flex: 1; padding: 8px 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                 ให้อาหาร
+               </button>
+               <button onclick="handleHelpAction(${post.report_id}, 'ADOPT')" 
+                 style="flex: 1; padding: 8px 0; background: #D4A373; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                 รับเลี้ยง
+               </button>
             </div>
+            
+            <button onclick="window.location.href='/animal-report/${
+              post.report_id
+            }'" 
+                style="width: 100%; padding: 6px 0; margin-top: 6px; background: transparent; color: #6B7280; border: none; cursor: pointer; font-size: 0.75rem; text-decoration: underline;">
+                ดูรายละเอียดเพิ่มเติม
+            </button>
           </div>
         </div>
       `;
       const infoWindow = new google.maps.InfoWindow({ content: contentString });
       marker.addListener("click", () =>
-        infoWindow.open(mapRef.current, marker)
+        infoWindow.open(mapRef.current, marker),
       );
 
       markersRef.current.push(marker);
     });
 
-    // Auto Zoom ไปหาจุดที่เจอผลลัพธ์
     if (isSmartSearchActive && filteredPosts.length > 0 && mapRef.current) {
       const bounds = new google.maps.LatLngBounds();
       filteredPosts.forEach((post) => {
@@ -590,19 +527,16 @@ export default function HomePage() {
     }
   }, [filteredPosts]);
 
-  // --- Handle Smart Search Logic (Upgraded) ---
+  // --- Handle Smart Search Logic ---
   const handleSmartSearch = () => {
     if (!allAnimalPosts.length) return;
     setIsSmartSearchActive(true);
 
     const scoredPosts = allAnimalPosts.map((post) => {
-      // --- กรองเบื้องต้น (Hard Filter) ---
-      // ถ้าเลือก "เฉพาะที่ยังอยู่" แล้วโพสต์สถานะไม่ใช่ STILL_THERE -> ตัดทิ้งเลย
+      // Hard Filters
       if (searchCriteria.onlyActive && post.status !== "STILL_THERE") {
         return { ...post, matchScore: 0 };
       }
-
-      // ถ้าเลือก "พฤติกรรม" เจาะจง แล้วไม่ตรง -> ตัดทิ้งเลย
       if (
         searchCriteria.behavior !== "all" &&
         post.behavior !== searchCriteria.behavior
@@ -612,39 +546,33 @@ export default function HomePage() {
 
       let score = 0;
 
-      // 1. คะแนนประเภท (30)
+      // 1. Type Score
       let isTypeMatch = false;
-
       if (searchCriteria.type === "all") {
-        // เลือกทั้งหมด -> ผ่านหมด
         isTypeMatch = true;
       } else if (searchCriteria.type === "other") {
-        // เลือกอื่นๆ -> ต้องไม่ใช่ "dog" และไม่ใช่ "cat" (หรือตาม Value ที่คุณตั้งไว้)
-        // เพื่อให้ กระต่าย, นก, งู ผ่านเข้ามาได้
         if (post.animal_type !== "dog" && post.animal_type !== "cat") {
           isTypeMatch = true;
         }
       } else {
-        // เลือกเจาะจง (dog/cat) -> ต้องตรงเป๊ะ
         if (post.animal_type === searchCriteria.type) {
           isTypeMatch = true;
         }
       }
 
-      // ถ้าประเภทไม่ตรงตามเงื่อนไขด้านบน ให้ตัดทิ้งเลย
       if (isTypeMatch) {
         score += 30;
       } else {
         return { ...post, matchScore: 0 };
       }
 
-      // 2. คะแนนระยะทาง (Max 40)
+      // 2. Distance Score
       if (post.latitude && post.longitude) {
         const dist = getDistanceFromLatLonInKm(
           searchCriteria.userLat,
           searchCriteria.userLng,
           parseFloat(post.latitude),
-          parseFloat(post.longitude)
+          parseFloat(post.longitude),
         );
         if (dist < 2) score += 40;
         else if (dist < 5) score += 30;
@@ -652,7 +580,7 @@ export default function HomePage() {
         else score += 5;
       }
 
-      // 3. คะแนนคีย์เวิร์ด (Max 30)
+      // 3. Keyword Score
       if (searchCriteria.keyword && post.description) {
         const keywords = searchCriteria.keyword.split(" ");
         let hit = 0;
@@ -699,8 +627,8 @@ export default function HomePage() {
       try {
         const res = await fetch("/api/animal-report", { cache: "no-store" });
         const data = await res.json();
-        setAllAnimalPosts(data); // เก็บ Master
-        setFilteredPosts(data); // เริ่มต้นโชว์ทั้งหมด
+        setAllAnimalPosts(data);
+        setFilteredPosts(data);
       } catch (err) {
         console.error(err);
       }
@@ -721,7 +649,7 @@ export default function HomePage() {
           const sorted = data.sort(
             (a: any, b: any) =>
               new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
+              new Date(a.created_at).getTime(),
           );
           setRehomingPosts(sorted.slice(0, 4));
         }
@@ -732,7 +660,7 @@ export default function HomePage() {
             fetch("/api/rehoming-report", { cache: "no-store" }),
             fetch("/api/animal-report", { cache: "no-store" }),
             fetch("/api/help-action", { cache: "no-store" }),
-          ]
+          ],
         );
 
         if (rehomingRes.ok && animalReportRes.ok && helpActionRes.ok) {
@@ -901,7 +829,6 @@ export default function HomePage() {
             <div
               className={`${item.bgColor} ${item.color} w-14 h-14 rounded-full flex items-center justify-center mb-4`}
             >
-              {/* เรียกใช้ Icon ในรูปแบบ Component */}
               <item.IconComponent className="w-7 h-7" strokeWidth={2} />
             </div>
 
@@ -913,7 +840,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* --- NEW: Smart Search Section --- */}
+      {/* --- Smart Search Section --- */}
       <section className="px-4 pt-6 pb-2">
         <div className="p-6 text-black">
           <div className="flex items-center gap-3 mb-5">
@@ -925,7 +852,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* แถวที่ 1: ประเภท + พฤติกรรม */}
+          {/* แถวที่ 1 */}
           <div className="flex flex-col md:flex-row gap-3 mb-3">
             <select
               className="flex-1 rounded-xl border border-gray-300 hover:border-[#D4A373] px-4 py-3 text-gray-800 outline-none"
@@ -957,14 +884,14 @@ export default function HomePage() {
             </select>
           </div>
 
-          {/* แถวที่ 2: คีย์เวิร์ด + ปุ่มค้นหา */}
+          {/* แถวที่ 2 */}
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-2 relative">
               <input
                 type="text"
                 placeholder={
                   searchCriteria.type === "other"
-                    ? "พิมพ์ประเภทสัตว์ที่ต้องการหาได้เลย (เช่น กระต่าย, นก, หนู...)"
+                    ? "พิมพ์ประเภทสัตว์ (เช่น กระต่าย, นก...)"
                     : "ระบุลักษณะ (เช่น สีขาว, ปลอกคอ...)"
                 }
                 className="w-full rounded-xl px-4 py-3 pl-10 text-gray-800 outline-none border border-gray-300 hover:border-[#D4A373]"
@@ -995,7 +922,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* แถวที่ 3: Checkbox ตัวเลือกเสริม */}
+          {/* แถวที่ 3 */}
           <div className="mt-3 flex items-center gap-2">
             <input
               type="checkbox"
@@ -1040,7 +967,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        {/* ปรับความสูง Map ให้ Responsive */}
+        {/* Map Container */}
         <div
           id="map"
           className="w-full h-[50vh] md:h-[600px] lg:h-[700px] rounded-2xl overflow-hidden shadow-lg border-2 border-orange-100"

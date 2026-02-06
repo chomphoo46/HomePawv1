@@ -11,6 +11,19 @@ import { FiMapPin } from "react-icons/fi";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FaTimesCircle } from "react-icons/fa";
 
+// ✅ ฟังก์ชันแก้ URL แบบ "ไม้ตาย" (ตัดทุก Domain ทิ้ง เอาแค่ Path)
+const getSafeImageUrl = (url: string) => {
+  if (!url) return "";
+  
+  // ถ้า URL มีคำว่า "/uploads/" ให้ตัดข้างหน้าทิ้งหมด เอาตั้งแต่ /uploads/ เป็นต้นไป
+  if (url.includes("/uploads/")) {
+    return "/uploads/" + url.split("/uploads/")[1];
+  }
+  
+  // ถ้าเป็น URL อื่นๆ ที่ไม่ใช่ uploads ให้คืนค่าเดิม
+  return url;
+};
+
 const healthStatusIcons: Record<
   string,
   { label: string; icon: React.ReactNode }
@@ -50,9 +63,8 @@ const getSexLabel = (sex: string) => {
   }
 };
 
-// --- Component Definition ---
 interface PetCardProps {
-  post: any; // หรือใส่ Type Interface ของ PetRehomePost ถ้ามี
+  post: any;
 }
 
 export default function PetCard({ post }: PetCardProps) {
@@ -81,7 +93,7 @@ export default function PetCard({ post }: PetCardProps) {
           {/* Image */}
           {post.images?.length > 0 ? (
             <img
-              src={post.images[0].image_url}
+              src={getSafeImageUrl(post.images[0].image_url)} // ✅ ใช้ฟังก์ชันตัด Domain
               alt={post.pet_name}
               className={`w-full aspect-4/3 object-cover transition-transform duration-500 group-hover:scale-110 ${
                 isAdopted ? "grayscale opacity-80" : "group-hover:scale-105"
@@ -93,7 +105,6 @@ export default function PetCard({ post }: PetCardProps) {
             </div>
           )}
 
-          {/* Overlay for Adopted */}
           {isAdopted && (
             <div className="absolute inset-0 bg-black/10 flex items-center justify-center"></div>
           )}
@@ -146,7 +157,6 @@ export default function PetCard({ post }: PetCardProps) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 pb-4 pt-2 mt-auto">
           <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5 truncate min-w-0">

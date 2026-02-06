@@ -5,12 +5,9 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/app/components/Header";
 import { HiPhoto, HiHeart, HiSparkles, HiXMark } from "react-icons/hi2";
-import { FaPaw, FaCheck } from "react-icons/fa";
-type ExistingImage = {
-  id: number;
-  image_url: string;
-};
+import { FaPaw } from "react-icons/fa";
 
+// รวม State ไว้ที่เดียว
 const initialForm = {
   pet_name: "",
   type: "",
@@ -22,30 +19,30 @@ const initialForm = {
   phone: "",
   contact: "",
   address: "",
-  images: [] as File[],
+  dateTime: "", // เพิ่ม field นี้เข้ามา
 };
 
 export default function FormRehomingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  // ใช้ state เดียวจัดการ text field ทั้งหมด
   const [form, setForm] = useState(initialForm);
+
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<{
-    dateTime: string;
-    images: File[];
-  }>({ dateTime: "", images: [] });
+
+  // State สำหรับรูปภาพ
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
-  // ✅ ฟังก์ชันเพิ่มรูปภาพ (รองรับการเลือกทีละหลายรูป)
+  // ✅ ฟังก์ชันเพิ่มรูปภาพ
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
     const newFiles = Array.from(e.target.files);
 
-    // ตรวจสอบจำนวนรูป (รวมของเก่า + ของใหม่ ต้องไม่เกิน 5)
     if (selectedImages.length + newFiles.length > 5) {
       alert("สามารถอัปโหลดรูปภาพได้สูงสุด 5 รูป");
       return;
@@ -56,30 +53,29 @@ export default function FormRehomingPage() {
     setSelectedImages((prev) => [...prev, ...newFiles]);
     setPreviewUrls((prev) => [...prev, ...newPreviewUrls]);
 
-    // Reset value เพื่อให้เลือกรูปเดิมซ้ำได้ถ้าต้องการ (กรณีลบแล้วเพิ่มใหม่)
     e.target.value = "";
   };
 
   // ✅ ฟังก์ชันลบรูปภาพ
   const removeImage = (index: number) => {
-    // ลบ URL ออกจาก memory
     URL.revokeObjectURL(previewUrls[index]);
-
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ตั้งค่าเวลาปัจจุบัน
   useEffect(() => {
     const now = new Date();
     const tzOffset = now.getTimezoneOffset() * 60000;
     const bangkokTime = new Date(now.getTime() - tzOffset);
     const formattedDate = bangkokTime.toISOString().slice(0, 16);
-    setFormData((prev) => ({ ...prev, dateTime: formattedDate }));
+
+    setForm((prev) => ({ ...prev, dateTime: formattedDate }));
   }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/login"); // หรือ path login ของคุณ
     }
   }, [status, router]);
 
@@ -94,9 +90,7 @@ export default function FormRehomingPage() {
     );
   }
 
-  if (status === "unauthenticated") {
-    return null;
-  }
+  if (status === "unauthenticated") return null;
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -119,8 +113,18 @@ export default function FormRehomingPage() {
       return;
     }
 
+    // Validation เพิ่มเติม: ต้องมีรูปภาพ
+    if (selectedImages.length === 0) {
+      setError(
+        "กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป เพื่อให้น้องมีโอกาสได้บ้านมากขึ้น",
+      );
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const data = new FormData();
+      // append ข้อมูล Text
       data.append("user_id", session?.user?.id ?? "");
       data.append("pet_name", form.pet_name);
       data.append("type", form.type);
@@ -132,29 +136,33 @@ export default function FormRehomingPage() {
       data.append("phone", form.phone);
       data.append("contact", form.contact);
       data.append("address", form.address);
-      if (selectedImages.length > 0) {
-        selectedImages.forEach((file) => {
-          data.append("images", file);
-        });
-      } else {
-        // (Optional) เพิ่มดัก Error ฝั่งหน้าบ้านถ้าลืมใส่รูป
-        setError("กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป");
-        setSubmitting(false);
-        return;
-      }
+      data.append("dateTime", form.dateTime); // ✅ อย่าลืมส่งวันที่
+
+      // append รูปภาพ
+      selectedImages.forEach((file) => {
+        data.append("images", file);
+      });
 
       const res = await fetch("/api/rehoming-report", {
         method: "POST",
         body: data,
-        credentials: "include",
+        // ไม่ต้องใส่ headers Content-Type, browser จัดการเองเมื่อใช้ FormData
       });
 
       if (res.ok) {
         setSuccess(true);
-        setForm(initialForm);
-        window.location.href = "/rehoming-report";
+        // Reset form
+        setForm({ ...initialForm, dateTime: form.dateTime });
+        setSelectedImages([]);
+        setPreviewUrls([]);
+
+        // redirect
+        setTimeout(() => {
+          window.location.href = "/rehoming-report"; // หรือ path ที่ต้องการหลังเสร็จ
+        }, 1500);
       } else {
-        setError("เกิดข้อผิดพลาดในการส่งข้อมูล");
+        const errData = await res.json();
+        setError(errData.error || "เกิดข้อผิดพลาดในการส่งข้อมูล");
       }
     } catch {
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
@@ -197,141 +205,111 @@ export default function FormRehomingPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
-            {/* Pet Basic Info Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                <FaPaw className="text-[#D4A373]" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  ข้อมูลพื้นฐาน
-                </h3>
+            {/* ... (ส่วน Input เหมือนเดิม ไม่ต้องแก้ แต่ขอตัดมาแสดงเฉพาะจุดสำคัญ) ... */}
+
+            {/* Pet Name & Type */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  ชื่อสัตว์เลี้ยง <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="pet_name"
+                  placeholder="เช่น มิโกะ"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                  value={form.pet_name}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    ชื่อสัตว์เลี้ยง <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="pet_name"
-                    placeholder="เช่น มิโกะ"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-                    value={form.pet_name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    สายพันธุ์/ประเภท <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="type"
-                    placeholder="เช่น บางแก้ว, ชิบะ อินุ"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-                    value={form.type}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    เพศ <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="sex"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white cursor-pointer"
-                    value={form.sex}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">-- เลือกเพศ --</option>
-                    <option value="MALE">เพศผู้</option>
-                    <option value="FEMALE">เพศเมีย</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    อายุ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="age"
-                    placeholder="เช่น 2 ปี 3 เดือน"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-                    value={form.age}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  สายพันธุ์/ประเภท <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="type"
+                  placeholder="เช่น บางแก้ว, ชิบะ อินุ"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                  value={form.type}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
 
-            {/* Health Info Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                <HiHeart className="text-red-500" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  ข้อมูลสุขภาพ
-                </h3>
+            {/* Sex & Age */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  เพศ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="sex"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white cursor-pointer"
+                  value={form.sex}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">-- เลือกเพศ --</option>
+                  <option value="MALE">เพศผู้</option>
+                  <option value="FEMALE">เพศเมีย</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    สถานะวัคซีน <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="vaccination_status"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white cursor-pointer"
-                    value={form.vaccination_status}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">-- เลือกสถานะวัคซีน --</option>
-                    <option value="VACCINATED">ฉีดวัดซีนแล้ว</option>
-                    <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    สถานะการทำหมัน <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="neutered_status"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white cursor-pointer"
-                    value={form.neutered_status}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">-- เลือกสถานะการทำหมัน --</option>
-                    <option value="NEUTERED">ทำหมันแล้ว</option>
-                    <option value="NOT_NEUTERED">ยังไม่ได้ทำหมัน</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  อายุ <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="age"
+                  placeholder="เช่น 2 ปี 3 เดือน"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                  value={form.age}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
 
-            {/* Reason Section */}
+            {/* Vaccine & Neuter (Copy เดิมมาใส่ได้เลยครับ ผมข้ามมาส่วนที่แก้) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  สถานะวัคซีน <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="vaccination_status"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white cursor-pointer"
+                  value={form.vaccination_status}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">-- เลือกสถานะวัคซีน --</option>
+                  <option value="VACCINATED">ฉีดวัดซีนแล้ว</option>
+                  <option value="NOT_VACCINATED">ยังไม่ได้ฉีดวัคซีน</option>
+                </select>
+              </div>
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  สถานะการทำหมัน <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="neutered_status"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white cursor-pointer"
+                  value={form.neutered_status}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">-- เลือกสถานะการทำหมัน --</option>
+                  <option value="NEUTERED">ทำหมันแล้ว</option>
+                  <option value="NOT_NEUTERED">ยังไม่ได้ทำหมัน</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Reason */}
             <div>
               <label className="block mb-2 font-medium text-gray-700">
                 เหตุผลที่หาบ้านใหม่ <span className="text-red-500">*</span>
@@ -339,9 +317,7 @@ export default function FormRehomingPage() {
               <textarea
                 name="reason"
                 placeholder="กรุณาอธิบายเหตุผลที่ต้องการหาบ้านใหม่ให้น้อง..."
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                         focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                         transition-all duration-300 bg-white resize-none"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white resize-none"
                 value={form.reason}
                 onChange={handleChange}
                 rows={4}
@@ -349,69 +325,52 @@ export default function FormRehomingPage() {
               />
             </div>
 
-            {/* Contact Info Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                <HiSparkles className="text-[#E76F51]" />
-                <h3 className="text-lg font-semibold text-gray-800">
-                  ข้อมูลการติดต่อ
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    เบอร์โทรติดต่อ <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="phone"
-                    placeholder="08xxxxxxxx"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">
-                    ช่องทางติดต่ออื่น
-                  </label>
-                  <input
-                    type="text"
-                    name="contact"
-                    placeholder="เช่น Line ID, Facebook"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                             focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                             transition-all duration-300 bg-white"
-                    value={form.contact}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
+            {/* Contact (Phone, Contact, Address) - Copy เดิมมาใส่ได้เลย */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block mb-2 font-medium text-gray-700">
-                  ที่อยู่ <span className="text-red-500">*</span>
+                  เบอร์โทรติดต่อ <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  name="address"
-                  placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
-                           focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
-                           transition-all duration-300 bg-white resize-none"
-                  value={form.address}
+                <input
+                  type="text"
+                  name="phone"
+                  placeholder="08xxxxxxxx"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                  value={form.phone}
                   onChange={handleChange}
-                  rows={3}
                   required
                 />
               </div>
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  ช่องทางติดต่ออื่น
+                </label>
+                <input
+                  type="text"
+                  name="contact"
+                  placeholder="เช่น Line ID, Facebook"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                  value={form.contact}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                ที่อยู่ <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="address"
+                placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white resize-none"
+                value={form.address}
+                onChange={handleChange}
+                rows={3}
+                required
+              />
             </div>
 
-            {/* DateTime */}
+            {/* ✅ แก้ไข: Date Time Input */}
             <div>
               <label className="block mb-2 font-medium text-gray-700">
                 วันที่และเวลาที่แจ้ง <span className="text-red-500">*</span>
@@ -419,7 +378,8 @@ export default function FormRehomingPage() {
               <input
                 type="datetime-local"
                 name="dateTime"
-                value={formData.dateTime}
+                // ใช้ value จาก form (ไม่ใช่ formData ที่แยกไปแล้ว)
+                value={form.dateTime}
                 onChange={handleChange}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none 
                          focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 
@@ -427,8 +387,7 @@ export default function FormRehomingPage() {
               />
             </div>
 
-            {/* Image Upload */}
-            {/* ✅ อัปโหลดรูปภาพ (UI แบบหน้าหาบ้าน) */}
+            {/* Image Upload (ส่วนนี้ถูกต้องแล้วในโค้ดใหม่ด้านบน) */}
             <div className="space-y-2">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-semibold text-gray-700">
@@ -439,7 +398,6 @@ export default function FormRehomingPage() {
                 </span>
               </div>
 
-              {/* Container หลัก */}
               <div
                 className={`border-2 border-dashed border-gray-300 rounded-2xl p-6 block transition-all 
                 ${
@@ -449,9 +407,7 @@ export default function FormRehomingPage() {
                 }`}
               >
                 {previewUrls.length > 0 ? (
-                  // --- กรณีมีรูปภาพแล้ว (แสดง Grid) ---
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {/* Loop แสดงรูปที่เลือกไว้ */}
                     {previewUrls.map((url, idx) => (
                       <div key={idx} className="relative group aspect-square">
                         <img
@@ -459,11 +415,10 @@ export default function FormRehomingPage() {
                           alt={`Preview ${idx + 1}`}
                           className="w-full h-full rounded-xl shadow-md object-cover border border-gray-200"
                         />
-                        {/* ปุ่มลบรูป (กากบาทสีแดง) */}
                         <button
                           type="button"
                           onClick={(e) => {
-                            e.stopPropagation(); // กันไม่ให้กดไปโดน input อื่น
+                            e.stopPropagation();
                             removeImage(idx);
                           }}
                           className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-sm transition-colors"
@@ -472,8 +427,6 @@ export default function FormRehomingPage() {
                         </button>
                       </div>
                     ))}
-
-                    {/* ปุ่ม + เพิ่มรูป (แสดงเมื่อยังไม่ครบ 5 รูป) */}
                     {previewUrls.length < 5 && (
                       <label className="aspect-square border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#D4A373] hover:bg-[#D4A373]/5 hover:text-[#D4A373] text-gray-400 transition-all bg-gray-50">
                         <input
@@ -489,7 +442,6 @@ export default function FormRehomingPage() {
                     )}
                   </div>
                 ) : (
-                  // --- กรณีไม่มีรูป (แสดงพื้นที่อัปโหลดใหญ่) ---
                   <label
                     htmlFor="file-upload"
                     className="block w-full h-full cursor-pointer text-center py-4"
@@ -503,10 +455,9 @@ export default function FormRehomingPage() {
                     <p className="text-sm text-gray-500">
                       PNG, JPG, GIF สูงสุด 10MB (ไม่เกิน 5 รูป)
                     </p>
-                    {/* Input หลักสำหรับตอนยังไม่มีรูป */}
                     <input
                       id="file-upload"
-                      name="file-upload" // ต้องตรงกับ State
+                      name="file-upload"
                       type="file"
                       accept="image/*"
                       multiple
@@ -518,7 +469,6 @@ export default function FormRehomingPage() {
               </div>
             </div>
 
-            {/* Error and Success Messages */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
                 ❌ {error}
@@ -530,11 +480,10 @@ export default function FormRehomingPage() {
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-linear-to-r fbg-gradient-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
+              className="w-full bg-linear-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
                        text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
                        transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
                        disabled:cursor-not-allowed disabled:transform-none text-lg"

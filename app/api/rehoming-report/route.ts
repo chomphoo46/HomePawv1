@@ -15,7 +15,6 @@ const prisma = new PrismaClient();
 
 // POST - เพิ่มประกาศ
 export async function POST(req: Request) {
-  // ✅ ดึง session จาก NextAuth
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -56,7 +55,7 @@ export async function POST(req: Request) {
     ) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบ" }, { status: 400 });
     }
-    // ตรวจสอบว่า phone เป็นตัวเลขเท่านั้น
+
     if (!/^[0-9]+$/.test(phone)) {
       return NextResponse.json(
         { error: "เบอร์โทรต้องเป็นตัวเลขเท่านั้น" },
@@ -64,24 +63,42 @@ export async function POST(req: Request) {
       );
     }
 
-    // เก็บ path ของรูปที่จะใช้บันทึก
+    // ---------------------------------------------------------
+    // ✅ ส่วนที่แก้ไข: เตรียมโฟลเดอร์และจัดการชื่อไฟล์
+    // ---------------------------------------------------------
+    
+    // 1. ระบุ Path ของโฟลเดอร์ public/uploads
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+
+    // 2. ตรวจสอบว่ามีโฟลเดอร์ไหม ถ้าไม่มีให้สร้างใหม่ (สำคัญมาก!)
+    try {
+      await fs.access(uploadDir);
+    } catch {
+      await fs.mkdir(uploadDir, { recursive: true });
+    }
+
     const imageUrls: string[] = [];
 
     for (const file of images) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // สร้างชื่อไฟล์ใหม่
-      const filename = `${Date.now()}-${file.name}`;
-      const filePath = path.join(process.cwd(), "public/uploads", filename);
+      // 3. ตั้งชื่อไฟล์ใหม่ (ลบช่องว่าง, ลบภาษาไทย, ป้องกันชื่อไฟล์แปลกๆ)
+      // เช่น "My Dog.jpg" -> "173824567-My_Dog.jpg"
+      const safeName = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9.\-_]/g, "");
+      const filename = `${Date.now()}-${safeName}`;
+      
+      const filePath = path.join(uploadDir, filename);
 
+      // 4. บันทึกไฟล์
       await fs.writeFile(filePath, buffer);
 
-      // เก็บ URL ไว้ใน array
+      // 5. เก็บ URL (ต้องเริ่มด้วย /uploads/...)
       imageUrls.push(`/uploads/${filename}`);
     }
+    // ---------------------------------------------------------
 
-    // แปลง string เป็น enum
+    // แปลง Enum
     const vaccination_status =
       VaccinationStatus[vaccinationStr as keyof typeof VaccinationStatus];
     if (!vaccination_status) {
@@ -99,7 +116,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    // แปลง string เป็น enum
+    
     let sexEnum: PetSex;
     if (sexStr === "MALE") {
       sexEnum = PetSex.MALE;
@@ -134,8 +151,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json(createdPost, { status: 201 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: "error" }, { status: 500 });
+    console.error("Error creating post:", error);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -145,9 +162,7 @@ export async function GET() {
     const posts = await prisma.petRehomePost.findMany({
       orderBy: { created_at: "desc" },
       include: {
-        images: {
-          take: 1, // ดึงเฉพาะรูปแรก
-        },
+        images: true, // ✅ แก้เป็นดึงรูปทั้งหมด (เผื่อหน้า Frontend อยากโชว์ Gallery)
         user: { select: { name: true, email: true } },
       },
     });
@@ -171,7 +186,6 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // หา images ของโพสต์นี้ก่อน
     const post = await prisma.petRehomePost.findUnique({
       where: { post_id },
       include: { images: true },
@@ -181,13 +195,15 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "ไม่พบโพสต์" }, { status: 404 });
     }
 
-    // ลบไฟล์จริงใน public/uploads
+    // ลบไฟล์จริงออกจากเครื่อง
     for (const img of post.images) {
+      // img.image_url คือ "/uploads/xxxxx.jpg"
+      // ต้องเติม process.cwd() + "public" เข้าไปข้างหน้า
       const filePath = path.join(process.cwd(), "public", img.image_url);
       try {
         await fs.unlink(filePath);
       } catch (err) {
-        console.warn(`⚠️ ลบไฟล์ไม่สำเร็จ: ${filePath}`);
+        console.warn(`⚠️ ลบไฟล์ไม่สำเร็จ (อาจจะไม่มีไฟล์อยู่แล้ว): ${filePath}`);
       }
     }
 
