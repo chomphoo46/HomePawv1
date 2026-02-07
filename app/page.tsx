@@ -180,11 +180,23 @@ export default function HomePage() {
     // Smart Feature: ขอพิกัดผู้ใช้ทันทีที่เข้าเว็บ
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        // 1. อัปเดตพิกัดเข้า State เพื่อใช้คำนวณระยะทาง
         setSearchCriteria((prev) => ({
           ...prev,
-          userLat: position.coords.latitude,
-          userLng: position.coords.longitude,
+          userLat: coords.lat,
+          userLng: coords.lng,
         }));
+
+        // 2. สั่งให้แผนที่เลื่อนไปที่ตำแหน่งปัจจุบันของเรา (ถ้าแผนที่โหลดเสร็จแล้ว)
+        if (mapRef.current) {
+          mapRef.current.setCenter(coords);
+          mapRef.current.setZoom(14); // ปรับระดับการซูมให้พอดี (ประมาณ 14-15 กำลังสวยครับ)
+        }
       });
     }
   }, []);
@@ -206,8 +218,9 @@ export default function HomePage() {
     const google = (window as any).google;
     if (!google) return;
 
+    // ใช้ค่าจาก searchCriteria ที่เราอัปเดตจาก Geolocation
     const map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat: 13.7563, lng: 100.5018 },
+      center: { lat: searchCriteria.userLat, lng: searchCriteria.userLng },
       zoom: 12,
     });
     mapRef.current = map;
@@ -403,8 +416,6 @@ export default function HomePage() {
         </button>
       `
           : "";
-
-      // ... (ส่วน imageList, sliderId, arrowsHtml เหมือนเดิม) ...
 
       // แก้ไข contentString ให้ขนาดกะทัดรัดขึ้น (Compact Version)
       const contentString = `
