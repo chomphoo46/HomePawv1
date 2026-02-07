@@ -439,15 +439,16 @@ export default function ProfilePage() {
                   </Link>
 
                   {!isRequestTab && (
-                    <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="absolute top-2 right-2 flex flex-col gap-2 z-30 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           handleDelete(id);
                         }}
-                        className="bg-white/90 p-2 rounded-full shadow hover:text-red-600 text-gray-400"
+                        className="bg-white/95 p-2.5 rounded-full shadow-lg hover:text-red-600 text-gray-500 active:scale-95 transition-all flex items-center justify-center"
                       >
-                        <FaTrash size={14} />
+                        <FaTrash size={16} />
                       </button>
                       <Link
                         href={
@@ -455,9 +456,10 @@ export default function ProfilePage() {
                             ? `/rehoming-report/edit/${id}`
                             : `/animal-report/edit/${id}`
                         }
-                        className="bg-white/90 p-2 rounded-full shadow hover:text-blue-600 text-gray-400 flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white/95 p-2.5 rounded-full shadow-lg hover:text-blue-600 text-gray-500 flex items-center justify-center active:scale-95 transition-all"
                       >
-                        <MdModeEdit size={16} />
+                        <MdModeEdit size={18} />
                       </Link>
                     </div>
                   )}
