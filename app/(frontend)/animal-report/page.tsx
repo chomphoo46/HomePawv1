@@ -294,7 +294,9 @@ export default function ReportForm() {
       }
 
       alert("ส่งรายงานสำเร็จ! ขอบคุณที่ช่วยเหลือน้องๆ ครับ");
-      router.push("/");
+      const targetLat = selectedLocation?.lat || 0;
+      const targetLng = selectedLocation?.lng || 0;
+      router.push(`/?lat=${targetLat}&lng=${targetLng}`);
     } catch (err: any) {
       console.error(err);
       alert(err.message || "เกิดข้อผิดพลาดในการส่งรายงาน");
@@ -408,7 +410,7 @@ export default function ReportForm() {
                   className="sm:w-auto inline-flex justify-center items-center px-4 py-3 bg-[#D4A373] text-white font-medium rounded-xl text-sm transition-all shadow-md hover:bg-[#c49261]"
                 >
                   <HiMapPin className="w-4 h-4 mr-2" />
-                  {showMap ? "ปิดแผนที่" : "ปักหมุด"}
+                  {showMap ? "ปิดแผนที่" : "ปักหมุดบนแผนที่"}
                 </button>
               </div>
               {selectedLocation && (
@@ -430,7 +432,12 @@ export default function ReportForm() {
                 name="dateTime"
                 value={formData.dateTime}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
+                max={new Date(
+                  new Date().getTime() - new Date().getTimezoneOffset() * 60000,
+                )
+                  .toISOString()
+                  .slice(0, 16)}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] transition-all bg-white text-sm"
               />
             </div>
 
@@ -481,7 +488,7 @@ export default function ReportForm() {
                           onClick={() => removeImage(index)}
                           className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-full shadow-sm"
                         >
-                          <HiXMark className="w-3 h-3 md:w-4 h-4" />
+                          <HiXMark className="w-3 h-3 md:w-4" />
                         </button>
                       </div>
                     ))}
@@ -515,7 +522,8 @@ export default function ReportForm() {
           <div className="bg-white w-full h-full md:h-auto md:max-w-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold text-gray-800 flex items-center">
-                <HiMapPin className="mr-2 text-[#D4A373]" /> ปักหมุดตำแหน่ง
+                <HiMapPin className="mr-2 text-[#D4A373]" />{" "}
+                ปักหมุดตำแหน่งสัตว์ที่พบบนแผนที่
               </h3>
               <button
                 onClick={() => setShowMap(false)}

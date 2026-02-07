@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import { Mali } from "next/font/google";
 import { useSession, signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 const mali = Mali({
   subsets: ["latin", "thai"],
@@ -101,6 +102,7 @@ const formatDateTime = (dateString: string) => {
 export default function HomePage() {
   const [userName, setUserName] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const searchParams = useSearchParams();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Map Refs
@@ -237,6 +239,39 @@ export default function HomePage() {
     };
     checkGoogle();
   }, []);
+
+  useEffect(() => {
+    const queryLat = searchParams.get("lat");
+    const queryLng = searchParams.get("lng");
+
+    if (queryLat && queryLng && mapRef.current && allAnimalPosts.length > 0) {
+      const targetPos = {
+        lat: parseFloat(queryLat),
+        lng: parseFloat(queryLng),
+      };
+
+      // 1. เลื่อนกล้องไปยังพิกัดเป้าหมาย
+      mapRef.current.panTo(targetPos);
+      mapRef.current.setZoom(17);
+
+      // 2. ค้นหาหมุดที่ตรงกับพิกัดนี้เพื่อเปิดหน้าต่างข้อมูล (InfoWindow)
+      // เราจะวนลูปเช็คใน markersRef ที่เราเก็บค่าไว้ตอนแอดหมุด
+      setTimeout(() => {
+        markersRef.current.forEach((marker) => {
+          const markerLat = marker.getPosition().lat().toFixed(6);
+          const markerLng = marker.getPosition().lng().toFixed(6);
+
+          if (
+            markerLat === targetPos.lat.toFixed(6) &&
+            markerLng === targetPos.lng.toFixed(6)
+          ) {
+            // จำลองการคลิกหมุดเพื่อให้ InfoWindow แสดงผล
+            google.maps.event.trigger(marker, "click");
+          }
+        });
+      }, 500); // หน่วงเวลาเล็กน้อยเพื่อให้แผนที่โหลดหมุดเสร็จก่อน
+    }
+  }, [searchParams, allAnimalPosts]);
 
   //Handle Help Action
   useEffect(() => {
