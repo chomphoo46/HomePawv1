@@ -56,20 +56,64 @@ export default function ReportForm() {
     };
   }, [previewUrls]);
 
-  // Map Logic (เหมือนเดิม) ...
+  // Map Logic
   useEffect(() => {
     if (!showMap) return;
     if (!mapContainerRef.current) return;
 
     const google = (window as any).google;
-    if (!google || mapRef.current) return;
+    if (!google) return;
 
+    // สร้าง Geocoder ไว้ใช้งาน
     geocoderRef.current = new google.maps.Geocoder();
+
+    // สร้างแผนที่ (ใช้พิกัดกรุงเทพฯ เป็น Default เผื่อดึงตำแหน่งปัจจุบันไม่ได้)
+    const defaultLocation = { lat: 13.7563, lng: 100.5018 };
     mapRef.current = new google.maps.Map(mapContainerRef.current, {
-      center: { lat: 13.7563, lng: 100.5018 },
-      zoom: 14,
+      center: defaultLocation,
+      zoom: 15,
     });
 
+    // --- ส่วนที่เพิ่ม: ดึงตำแหน่งปัจจุบัน ---
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentPos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+
+          // เลื่อนแผนที่ไปที่ตำแหน่งปัจจุบัน
+          mapRef.current.setCenter(currentPos);
+
+          // ปักหมุดที่ตำแหน่งปัจจุบันทันที
+          if (!markerRef.current) {
+            markerRef.current = new google.maps.Marker({
+              position: currentPos,
+              map: mapRef.current,
+              draggable: true,
+              animation: google.maps.Animation.DROP,
+            });
+
+            // เพิ่ม Event ลากหมุด
+            markerRef.current.addListener("dragend", (event: any) => {
+              updateLocation(event.latLng.lat(), event.latLng.lng());
+            });
+          } else {
+            markerRef.current.setPosition(currentPos);
+          }
+
+          // อัปเดตที่อยู่จากพิกัด
+          updateLocation(currentPos.lat, currentPos.lng);
+        },
+        () => {
+          console.warn("ไม่สามารถเข้าถึงตำแหน่งปัจจุบันได้");
+        },
+      );
+    }
+    // ------------------------------------
+
+    // Event คลิกบนแผนที่เดิม
     mapRef.current.addListener("click", (e: any) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -86,7 +130,6 @@ export default function ReportForm() {
       } else {
         markerRef.current.setPosition({ lat, lng });
       }
-
       updateLocation(lat, lng);
     });
   }, [showMap]);
