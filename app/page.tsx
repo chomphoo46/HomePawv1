@@ -222,6 +222,7 @@ export default function HomePage() {
     const map = new google.maps.Map(document.getElementById("map"), {
       center: { lat: searchCriteria.userLat, lng: searchCriteria.userLng },
       zoom: 12,
+      gestureHandling: "greedy",
     });
     mapRef.current = map;
   };
@@ -416,110 +417,66 @@ export default function HomePage() {
   </button>
 `
           : "";
-
-      // แก้ไข contentString ให้รองรับทุกขนาดหน้าจอ (Fully Responsive)
       const contentString = `
   <div style="
       font-family: '${mali.style.fontFamily}', sans-serif; 
       width: 100%;
-      max-width: 320px;
-      min-width: 260px;
       background: white; 
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      border-radius: 12px;
-      overflow: hidden;
+      box-sizing: border-box;
   ">
-    
-    <!-- Image Slider Section -->
-    <div style="position: relative; width: 100%; padding-top: 60%; overflow: hidden;">
-      <div id="${sliderId}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none;">
-        <style>
-          #${sliderId}::-webkit-scrollbar { display: none; }
-        </style>
+    <div style="width: 100%; height: 140px; overflow: hidden; position: relative; flex-shrink: 0;">
+      <div id="${sliderId}" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 100%; scrollbar-width: none; -ms-overflow-style: none;">
         ${imagesHtml}
       </div>
-      
       ${arrowsHtml}
-
-      <!-- Gradient Overlay -->
-      <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(to top, rgba(0,0,0,0.3), transparent); pointer-events: none;"></div>
-
-      <!-- Score Badge -->
-      ${
-        scoreBadge
-          ? `<div style="position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 10; width: 90%; max-width: 200px; text-align: center;">${scoreBadge}</div>`
-          : ""
-      }
       
-      <!-- Status Badge -->
-      <div style="position: absolute; top: 8px; left: 8px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px;">
+      <div style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 12px; z-index: 10;">
          <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
            post.status === "STILL_THERE"
              ? "#EF4444"
              : post.status === "MOVED"
                ? "#F59E0B"
                : "#10B981"
-         }; flex-shrink: 0;"></div>
-         <span style="font-size: 0.65rem; font-weight: 600; color: white; white-space: nowrap;">${
-           post.status === "STILL_THERE"
-             ? "ยังอยู่ที่เดิม"
-             : post.status === "MOVED"
-               ? "ย้าย/ไม่เจอ"
-               : "ช่วยแล้ว"
-         }</span>
+         }; display: inline-block; margin-right: 4px;"></div>
+         <span style="font-size: 0.65rem; font-weight: 600; color: white;">
+           ${post.status === "STILL_THERE" ? "ยังอยู่ที่เดิม" : post.status === "MOVED" ? "ย้าย/ไม่เจอ" : "ช่วยแล้ว"}
+         </span>
       </div>
     </div>
+    </div>
     
-    <!-- Content Section -->
-    <div style="padding: clamp(8px, 3vw, 12px);">
-      <!-- Header -->
-      <div style="margin-bottom: 8px;">
-        <h3 style="margin: 0; font-size: clamp(0.875rem, 2.5vw, 1rem); color: #111827; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-          พบที่ ${location}
-        </h3>
-        <p style="font-size: clamp(0.65rem, 2vw, 0.7rem); color: #6B7280; margin: 2px 0 0 0;">
-          ${dateTime} • โดย ${reporter}
-        </p>
-      </div>
+    <div style="padding: 12px; padding-bottom: 30px; box-sizing: border-box;">
+      <h3 style="margin: 0; font-size: 0.9rem; color: #111827; font-weight: 700; line-height: 1.3;">
+        พบที่ ${location}
+      </h3>
+      <p style="font-size: 0.65rem; color: #6B7280; margin: 2px 0 8px 0;">${dateTime} • โดย ${reporter}</p>
       
-      <!-- Description Box -->
-      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px; margin-bottom: 8px;">
-        <div style="margin-bottom: 4px;">
-           <p style="margin: 0; font-size: clamp(0.7rem, 2.2vw, 0.8rem); color: #374151; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
-             <span style="color: #9CA3AF; font-size: clamp(0.65rem, 2vw, 0.7rem);">ลักษณะ:</span> ${description}
-           </p>
-        </div>
-        <div>
-           <p style="margin: 0; font-size: clamp(0.7rem, 2.2vw, 0.8rem); color: #374151; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">
-             <span style="color: #9CA3AF; font-size: clamp(0.65rem, 2vw, 0.7rem);">พฤติกรรม:</span> ${behavior}
-           </p>
-        </div>
+      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px; margin-bottom: 12px; font-size: 0.75rem;">
+         <div style="margin-bottom: 4px; color: #374151;">
+           <span style="color: #9CA3AF; font-size: 0.7rem;">ลักษณะ:</span> ${description}
+         </div>
+         <div style="color: #374151;">
+           <span style="color: #9CA3AF; font-size: 0.7rem;">พฤติกรรม:</span> ${behavior}
+         </div>
       </div>
 
-      <!-- Help Summary -->
-      ${
-        helpSummaryHtml
-          ? `<div style="background: #ECFDF5; padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; font-size: clamp(0.7rem, 2vw, 0.75rem);">${helpSummaryHtml}</div>`
-          : ""
-      }
+      ${helpSummaryHtml ? `<div style="background: #ECFDF5; padding: 6px 8px; border-radius: 6px; margin-bottom: 12px; font-size: 0.7rem; color: #065F46;">${helpSummaryHtml}</div>` : ""}
       
-      <!-- Action Buttons -->
-      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
          <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
-           style="flex: 1; padding: clamp(6px, 2vw, 8px) 0; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 8px; cursor: pointer; font-size: clamp(0.7rem, 2.2vw, 0.8rem); font-weight: 700; transition: all 0.2s;">
+           style="flex: 1; height: 40px; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
            ให้อาหาร
          </button>
          <button onclick="handleHelpAction(${post.report_id}, 'ADOPT')" 
-           style="flex: 1; padding: clamp(6px, 2vw, 8px) 0; background: #D4A373; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: clamp(0.7rem, 2.2vw, 0.8rem); font-weight: 700; transition: all 0.2s;">
+           style="flex: 1; height: 40px; background: #D4A373; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
            รับเลี้ยง
          </button>
       </div>
       
-      <!-- Details Link -->
       <button onclick="window.location.href='/animal-report/${post.report_id}'" 
-          style="width: 100%; padding: 6px 0; background: transparent; color: #6B7280; border: none; cursor: pointer; font-size: clamp(0.65rem, 2vw, 0.75rem); text-decoration: underline; transition: color 0.2s;">
+          style="width: 100%; padding: 6px 0; background: transparent; color: #6B7280; border: none; cursor: pointer; font-size: 0.7rem; text-decoration: underline;">
           ดูรายละเอียดเพิ่มเติม
       </button>
     </div>

@@ -1,30 +1,66 @@
 @import "tailwindcss";
 /* --- Google Maps InfoWindow Overrides --- */
 
-/* ลบ Padding ของกรอบ InfoWindow */
+/* 1. คุมกรอบสีขาวด้านนอกสุด */
 .gm-style-iw-c {
   padding: 0 !important;
   border-radius: 16px !important;
+  max-width: 270px !important; /* ✅ จำกัดความกว้างให้แคบกว่าจอมือถือทั่วไปเพื่อไม่ให้ล้นออกข้าง */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
 }
 
-/* ลบ Scrollbar และ Padding ด้านใน */
+/* 2. คุมพื้นที่แสดงผลด้านใน */
 .gm-style-iw-d {
-  overflow: hidden !important; 
-  max-height: none !important;
+  overflow-y: auto !important; /* ✅ อนุญาตให้เลื่อนขึ้น-ลงได้ */
+  overflow-x: hidden !important; /* ✅ ห้ามเลื่อนซ้าย-ขวาเด็ดขาด */
+  max-height: 400px !important; /* ✅ กำหนดความสูงสูงสุดเพื่อให้เลื่อนได้เมื่อเนื้อหาเยอะ */
   padding: 0 !important;
 }
 
-/* ปรับปุ่มปิด (x) ให้สวยขึ้น */
+/* ซ่อนแถบเลื่อนเพื่อให้ดูเหมือนแอปมือถือ */
+.gm-style-iw-d::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- ชุดไม้ตาย: สร้างปุ่มวงกลมและวาดเส้นกากบาทใหม่เอง --- */
 .gm-ui-hover-effect {
-  background: white !important;
-  border-radius: 50% !important;
-  top: 6px !important;
-  right: 6px !important;
-  opacity: 0.9 !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+  background-color: white !important; /* พื้นหลังขาว */
+  border-radius: 50% !important; /* ทรงกลม */
+  top: 8px !important;
+  right: 8px !important;
   width: 30px !important;
   height: 30px !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999 !important;
+  border: none !important;
+  outline: none !important;
 }
-.gm-ui-hover-effect > span {
-  margin: 8px !important; /* จัดตำแหน่งกากบาทให้อยู่ตรงกลางปุ่ม */
+
+/* ซ่อนไอคอนกากบาทเดิมของ Google ทั้งหมดเพื่อไม่ให้ซ้อน */
+.gm-ui-hover-effect img, 
+.gm-ui-hover-effect span {
+  display: none !important;
+}
+
+/* วาดเส้นกากบาทใหม่ด้วย Pseudo-elements (เส้นตัดกัน 45 องศา) */
+.gm-ui-hover-effect::before,
+.gm-ui-hover-effect::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 14px !important; /* ความยาวเส้น */
+  height: 2px !important; /* ความหนาเส้น */
+  background-color: #555 !important; /* สีเทาเข้ม */
+  border-radius: 1px !important;
+}
+
+.gm-ui-hover-effect::before {
+  transform: rotate(45deg) !important;
+}
+
+.gm-ui-hover-effect::after {
+  transform: rotate(-45deg) !important;
 }
