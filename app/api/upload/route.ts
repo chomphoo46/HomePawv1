@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     // อัปโหลดไปยัง Vercel Blob แทนการเขียนลง Disk
     const blob = await put(file.name, file, {
       access: "public",
+      addRandomSuffix: true,
     });
 
     // ส่ง URL ที่ได้จาก Blob กลับไป (หน้าตาจะเป็น https://xxxx.public.blob.vercel-storage.com/...)
