@@ -64,60 +64,61 @@ export default function ReportForm() {
     const google = (window as any).google;
     if (!google) return;
 
-    // สร้าง Geocoder ไว้ใช้งาน
     geocoderRef.current = new google.maps.Geocoder();
 
-    // สร้างแผนที่ (ใช้พิกัดกรุงเทพฯ เป็น Default เผื่อดึงตำแหน่งปัจจุบันไม่ได้)
-    const defaultLocation = { lat: 13.7563, lng: 100.5018 };
+    // 1. กำหนดจุดเริ่มต้น: ถ้าเคยเลือกไว้แล้วให้ไปที่นั่น ถ้ายังให้ไปกรุงเทพฯ
+    const initialPos = selectedLocation
+      ? { lat: selectedLocation.lat, lng: selectedLocation.lng }
+      : { lat: 13.7563, lng: 100.5018 };
+
     mapRef.current = new google.maps.Map(mapContainerRef.current, {
-      center: defaultLocation,
+      center: initialPos,
       zoom: 15,
     });
 
-    // --- ส่วนที่เพิ่ม: ดึงตำแหน่งปัจจุบัน ---
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const currentPos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
+    // 2. ล้างหมุดตัวเก่าในหน่วยความจำออกก่อน (สำคัญ!)
+    markerRef.current = null;
 
-          // เลื่อนแผนที่ไปที่ตำแหน่งปัจจุบัน
-          mapRef.current.setCenter(currentPos);
+    // 3. ถ้ามีตำแหน่งที่เลือกไว้เดิม (เช่น พฤกษา 12) ให้วาดหมุดลงไปใหม่ทันที
+    if (selectedLocation) {
+      markerRef.current = new google.maps.Marker({
+        position: initialPos,
+        map: mapRef.current,
+        draggable: true,
+      });
 
-          // ปักหมุดที่ตำแหน่งปัจจุบันทันที
-          if (!markerRef.current) {
-            markerRef.current = new google.maps.Marker({
-              position: currentPos,
-              map: mapRef.current,
-              draggable: true,
-              animation: google.maps.Animation.DROP,
-            });
-
-            // เพิ่ม Event ลากหมุด
-            markerRef.current.addListener("dragend", (event: any) => {
-              updateLocation(event.latLng.lat(), event.latLng.lng());
-            });
-          } else {
-            markerRef.current.setPosition(currentPos);
-          }
-
-          // อัปเดตที่อยู่จากพิกัด
-          updateLocation(currentPos.lat, currentPos.lng);
-        },
-        () => {
-          console.warn("ไม่สามารถเข้าถึงตำแหน่งปัจจุบันได้");
-        },
-      );
+      markerRef.current.addListener("dragend", (event: any) => {
+        updateLocation(event.latLng.lat(), event.latLng.lng());
+      });
     }
-    // ------------------------------------
 
-    // Event คลิกบนแผนที่เดิม
+    // 4. ส่วนการดึงพิกัดปัจจุบัน (Geolocation) ให้ทำงานเฉพาะตอนที่ยังไม่มีการเลือกตำแหน่งเท่านั้น
+    if (!selectedLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const currentPos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        mapRef.current.setCenter(currentPos);
+
+        if (!markerRef.current) {
+          markerRef.current = new google.maps.Marker({
+            position: currentPos,
+            map: mapRef.current,
+            draggable: true,
+          });
+          markerRef.current.addListener("dragend", (event: any) => {
+            updateLocation(event.latLng.lat(), event.latLng.lng());
+          });
+        }
+        updateLocation(currentPos.lat, currentPos.lng);
+      });
+    }
+
+    // Event คลิกเพื่อย้ายหมุด
     mapRef.current.addListener("click", (e: any) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
-
       if (!markerRef.current) {
         markerRef.current = new google.maps.Marker({
           position: { lat, lng },
@@ -132,7 +133,7 @@ export default function ReportForm() {
       }
       updateLocation(lat, lng);
     });
-  }, [showMap]);
+  }, [showMap]); // ทำงานทุกครั้งที่เปิด/ปิด Popup แผนที่
 
   const updateLocation = (lat: number, lng: number) => {
     if (!geocoderRef.current) return;
