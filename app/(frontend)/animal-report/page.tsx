@@ -58,82 +58,88 @@ export default function ReportForm() {
 
   // Map Logic
   useEffect(() => {
-    if (!showMap) return;
-    if (!mapContainerRef.current) return;
+    if (!showMap || !mapContainerRef.current) return;
 
     const google = (window as any).google;
     if (!google) return;
 
+    // 1. สร้าง Geocoder และ Map Instance
     geocoderRef.current = new google.maps.Geocoder();
 
-    // 1. กำหนดจุดเริ่มต้น: ถ้าเคยเลือกไว้แล้วให้ไปที่นั่น ถ้ายังให้ไปกรุงเทพฯ
     const initialPos = selectedLocation
       ? { lat: selectedLocation.lat, lng: selectedLocation.lng }
       : { lat: 13.7563, lng: 100.5018 };
 
-    mapRef.current = new google.maps.Map(mapContainerRef.current, {
+    const mapOptions = {
       center: initialPos,
       zoom: 15,
-    });
+      gestureHandling: "greedy", // ✅ ช่วยให้มือถือเลื่อนแผนที่ได้ถนัดขึ้น
+      disableDefaultUI: false,
+    };
 
-    // 2. ล้างหมุดตัวเก่าในหน่วยความจำออกก่อน (สำคัญ!)
-    markerRef.current = null;
+    mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
 
-    // 3. ถ้ามีตำแหน่งที่เลือกไว้เดิม (เช่น พฤกษา 12) ให้วาดหมุดลงไปใหม่ทันที
-    if (selectedLocation) {
-      markerRef.current = new google.maps.Marker({
-        position: initialPos,
-        map: mapRef.current,
-        draggable: true,
-      });
-
-      markerRef.current.addListener("dragend", (event: any) => {
-        updateLocation(event.latLng.lat(), event.latLng.lng());
-      });
-    }
-
-    // 4. ส่วนการดึงพิกัดปัจจุบัน (Geolocation) ให้ทำงานเฉพาะตอนที่ยังไม่มีการเลือกตำแหน่งเท่านั้น
-    if (!selectedLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const currentPos = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        mapRef.current.setCenter(currentPos);
-
-        if (!markerRef.current) {
-          markerRef.current = new google.maps.Marker({
-            position: currentPos,
-            map: mapRef.current,
-            draggable: true,
-          });
-          markerRef.current.addListener("dragend", (event: any) => {
-            updateLocation(event.latLng.lat(), event.latLng.lng());
-          });
-        }
-        updateLocation(currentPos.lat, currentPos.lng);
-      });
-    }
-
-    // Event คลิกเพื่อย้ายหมุด
-    mapRef.current.addListener("click", (e: any) => {
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
+    // 2. ฟังก์ชันช่วยสร้างหรือย้ายหมุด (เพื่อลดความซ้ำซ้อน)
+    const placeMarker = (location: { lat: number; lng: number }) => {
       if (!markerRef.current) {
         markerRef.current = new google.maps.Marker({
-          position: { lat, lng },
+          position: location,
           map: mapRef.current,
           draggable: true,
+          animation: google.maps.Animation.DROP, // ✅ ใส่ Animation ให้รู้ว่าหมุดลงแล้ว
         });
+
         markerRef.current.addListener("dragend", (event: any) => {
           updateLocation(event.latLng.lat(), event.latLng.lng());
         });
       } else {
-        markerRef.current.setPosition({ lat, lng });
+        markerRef.current.setPosition(location);
       }
+    };
+
+    // 3. วาดหมุดทันทีถ้ามีตำแหน่งเดิม (เช่น พฤกษา 12)
+    if (selectedLocation) {
+      placeMarker(initialPos);
+    }
+
+    // 4. ขอพิกัดปัจจุบัน (เฉพาะตอนไม่มีตำแหน่งเดิม)
+    if (!selectedLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentPos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          if (mapRef.current) {
+            mapRef.current.setCenter(currentPos);
+            placeMarker(currentPos);
+            updateLocation(currentPos.lat, currentPos.lng);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          // กรณีหาพิกัดไม่ได้ ให้ปักหมุดไว้ที่ Center เริ่มต้น (กรุงเทพฯ) เลยเพื่อให้คนใช้เห็นหมุด
+          placeMarker(initialPos);
+          updateLocation(initialPos.lat, initialPos.lng);
+        },
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
+    }
+
+    // 5. Event คลิกเพื่อย้ายหมุด
+    mapRef.current.addListener("click", (e: any) => {
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      placeMarker({ lat, lng });
       updateLocation(lat, lng);
     });
-  }, [showMap]); // ทำงานทุกครั้งที่เปิด/ปิด Popup แผนที่
+
+    // Cleanup เมื่อปิดหน้าต่าง
+    return () => {
+      if (markerRef.current) markerRef.current.setMap(null);
+      markerRef.current = null;
+    };
+  }, [showMap]);
 
   const updateLocation = (lat: number, lng: number) => {
     if (!geocoderRef.current) return;
@@ -298,181 +304,125 @@ export default function ReportForm() {
     <div className="min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <div className="text-center pt-8 pb-4">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-[#D4A373] rounded-full mb-4 shadow-lg">
-          <MdOutlinePets className="w-8 h-8 text-white" />
+      {/* Hero Section - ปรับขนาด Text ให้ Responsive */}
+      <div className="text-center pt-6 md:pt-10 pb-4 px-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-[#D4A373] rounded-full mb-3 md:mb-4 shadow-lg">
+          <MdOutlinePets className="w-6 h-6 md:w-8 md:h-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
           แจ้งพบสัตว์ไร้บ้าน
         </h1>
-        <p className="text-gray-600 max-w-md mx-auto px-4">
+        <p className="text-sm md:text-base text-gray-600 max-w-md mx-auto">
           ช่วยกันดูแลสัตว์เล็กสัตว์น้อยที่ต้องการความช่วยเหลือ
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-6">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-8 w-full max-w-lg space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ... (ส่วนเลือกประเภทสัตว์ ลักษณะ พฤติกรรม และสถานที่ เหมือนเดิม ไม่มีการเปลี่ยนแปลง) ... */}
+      <div className="flex flex-1 flex-col items-center justify-start md:justify-center px-4 py-4 md:py-8">
+        {/* Container - ปรับขนาดตามหน้าจอ */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-5 md:p-8 w-full max-w-2xl space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+            {/* ใช้ Grid ในจอใหญ่เพื่อลดความยาวฟอร์ม */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+              {/* ประเภทของสัตว์ */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  คุณพบสัตว์อะไร
+                </label>
+                <select
+                  name="animalType"
+                  value={formData.animalType}
+                  onChange={handleChange}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] transition-all bg-white text-sm"
+                >
+                  <option value="">-- เลือกประเภทสัตว์ --</option>
+                  <option value="dog">สุนัข</option>
+                  <option value="cat">แมว</option>
+                  <option value="other">อื่น ๆ (โปรดระบุ)</option>
+                </select>
+                {formData.animalType === "other" && (
+                  <div className="mt-3 animate-fade-in-down">
+                    <input
+                      type="text"
+                      name="customAnimal"
+                      value={formData.customAnimal || ""}
+                      onChange={handleChange}
+                      placeholder="ระบุชนิดสัตว์ (เช่น กระต่าย)"
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
+                    />
+                  </div>
+                )}
+              </div>
 
-            {/* ประเภทของสัตว์ */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                คุณพบสัตว์อะไร
-              </label>
-              <select
-                name="animalType"
-                value={formData.animalType}
-                onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
-              >
-                <option value="">-- เลือกประเภทสัตว์ --</option>
-                <option value="dog">สุนัข</option>
-                <option value="cat">แมว</option>
-                <option value="other">อื่น ๆ (โปรดระบุ)</option>
-              </select>
-              {formData.animalType === "other" && (
-                <div className="mt-3 animate-fade-in-down">
-                  <input
-                    type="text"
-                    name="customAnimal"
-                    value={formData.customAnimal || ""}
-                    onChange={handleChange}
-                    placeholder="โปรดระบุชนิดสัตว์ (เช่น กระต่าย, นก)"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white placeholder-gray-400"
-                  />
-                </div>
-              )}
+              {/* พฤติกรรม */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  พฤติกรรมที่สังเกตเห็น
+                </label>
+                <select
+                  name="behavior"
+                  value={formData.behavior}
+                  onChange={handleChange}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] transition-all bg-white text-sm"
+                >
+                  <option value="">-- เลือกพฤติกรรม --</option>
+                  <option value="friendly">เชื่อง เข้าหาคนได้</option>
+                  <option value="aggressive">ดุร้าย หลบหนี</option>
+                  <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
+                  <option value="other">อื่น ๆ</option>
+                </select>
+              </div>
             </div>
 
-            {/* ลักษณะของสัตว์ */}
+            {/* ลักษณะของสัตว์ - ใช้เต็มความกว้าง */}
             <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+              <label className="text-sm font-semibold text-gray-700">
                 ลักษณะของสัตว์
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="เช่น ขนสีน้ำตาล มีปลอกคอสีแดง ตัวเล็ก น่ารัก"
-                rows={3}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                placeholder="เช่น ขนสีน้ำตาล มีปลอกคอสีแดง"
+                rows={2}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] transition-all bg-white text-sm"
               />
             </div>
 
-            {/* พฤติกรรม */}
+            {/* สถานที่และแผนที่ */}
             <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                พฤติกรรมที่สังเกตเห็น
-              </label>
-              <select
-                name="behavior"
-                value={formData.behavior}
-                onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
-              >
-                <option value="">-- เลือกพฤติกรรม --</option>
-                <option value="friendly">เชื่อง เข้าหาคนได้</option>
-                <option value="aggressive">ดุร้าย หลบหนี</option>
-                <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
-                <option value="other">อื่น ๆ</option>
-              </select>
-            </div>
-
-            {/* สถานที่ */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+              <label className="text-sm font-semibold text-gray-700">
                 สถานที่พบสัตว์
               </label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="เช่น หน้าห้างสยามพารากอน ถนนพระราม 1"
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
-              />
-              <button
-                type="button"
-                onClick={handleMapToggle}
-                className="mt-3 inline-flex items-center px-4 py-2 bg-[#D4A373] text-white font-medium rounded-lg text-sm transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                <HiMapPin className="w-4 h-4 mr-2" />
-                {showMap ? "ปิดแผนที่" : "ปักหมุดบนแผนที่"}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="เช่น หน้าห้างสยามพารากอน"
+                  className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleMapToggle}
+                  className="sm:w-auto inline-flex justify-center items-center px-4 py-3 bg-[#D4A373] text-white font-medium rounded-xl text-sm transition-all shadow-md hover:bg-[#c49261]"
+                >
+                  <HiMapPin className="w-4 h-4 mr-2" />
+                  {showMap ? "ปิดแผนที่" : "ปักหมุด"}
+                </button>
+              </div>
               {selectedLocation && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium">
-                    📍 ตำแหน่งที่เลือก:
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    {selectedLocation.address}
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg animate-pulse">
+                  <p className="text-xs text-green-800 font-medium">
+                    📍 {selectedLocation.address}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* แผนที่ Popup (เหมือนเดิม) */}
-            {showMap && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                {/* ... Code แผนที่ ... */}
-                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      📍 เลือกตำแหน่งบนแผนที่
-                    </h3>
-                    <button
-                      onClick={() => setShowMap(false)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <HiXMark className="w-5 h-5 text-gray-500" />
-                    </button>
-                  </div>
-
-                  <div className="p-4">
-                    <p className="text-sm text-gray-600 mb-3">
-                      คลิกบนแผนที่เพื่อปักหมุดตำแหน่งที่พบสัตว์
-                    </p>
-                    <div
-                      ref={mapContainerRef}
-                      className="w-full h-64 bg-gray-100 rounded-lg border-2 border-gray-200"
-                    />
-
-                    {selectedLocation && (
-                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-sm font-medium text-amber-800">
-                          ตำแหน่งที่เลือก:
-                        </p>
-                        <p className="text-xs text-amber-600 mt-1">
-                          {selectedLocation.address}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex gap-3 mt-4">
-                      <button
-                        onClick={handleSelectLocation}
-                        disabled={!selectedLocation}
-                        className="flex-1 bg-linear-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
-                      >
-                        ยืนยันตำแหน่ง
-                      </button>
-                      <button
-                        onClick={() => setShowMap(false)}
-                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
-                      >
-                        ยกเลิก
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* วันที่และเวลา */}
             <div className="space-y-2">
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+              <label className="text-sm font-semibold text-gray-700">
                 วันที่และเวลาที่พบ
               </label>
               <input
@@ -480,125 +430,134 @@ export default function ReportForm() {
                 name="dateTime"
                 value={formData.dateTime}
                 onChange={handleChange}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] focus:ring-2 focus:ring-[#D4A373]/20 transition-all duration-300 bg-white"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
               />
             </div>
 
-            {/* ✅ อัปโหลดรูปภาพ (UI ใหม่: รูปอยู่ในกรอบ) */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center mb-2">
+            {/* อัปโหลดรูปภาพ */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
                 <label className="text-sm font-semibold text-gray-700">
-                  อัปโหลดรูปภาพ (1-5 รูป)
+                  รูปภาพ (1-5 รูป)
                 </label>
-                <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
-                  {previewUrls.length} / 5 รูป
+                <span className="text-[10px] md:text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
+                  {previewUrls.length} / 5
                 </span>
               </div>
 
-              {/* Main Upload Container Area */}
               <div
-                className={`relative border-2 border-dashed rounded-xl p-4 transition-all duration-300 bg-white
-                  ${
-                    previewUrls.length > 0
-                      ? "border-gray-300"
-                      : "border-gray-300 hover:border-[#D4A373] hover:bg-[#D4A373]/5 group"
-                  }`}
+                className={`relative border-2 border-dashed rounded-xl p-3 md:p-4 transition-all bg-white border-gray-200 ${previewUrls.length === 0 && "hover:border-[#D4A373] hover:bg-[#D4A373]/5"}`}
               >
-                {/* Hidden Input Field */}
                 <input
                   id="file-upload"
-                  name="file-upload"
                   type="file"
                   accept="image/*"
-                  multiple // สำคัญ: เลือกหลายรูป
+                  multiple
                   disabled={previewUrls.length >= 5}
                   onChange={handleImageChange}
                   className="sr-only"
                 />
 
-                {/* CASE 1: ยังไม่มีรูปเลย -> แสดง Placeholder ตรงกลาง */}
-                {previewUrls.length === 0 && (
+                {previewUrls.length === 0 ? (
                   <label
                     htmlFor="file-upload"
-                    className="cursor-pointer flex flex-col items-center justify-center h-32 space-y-3"
+                    className="cursor-pointer flex flex-col items-center justify-center py-8 space-y-2"
                   >
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-[#D4A373]/20">
-                      <HiPhoto className="w-6 h-6 text-gray-400 group-hover:text-[#D4A373] transition-colors duration-300" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-600">
-                        คลิกเพื่อเพิ่มรูปภาพ
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        สูงสุด 5 รูป (JPG, PNG)
-                      </p>
-                    </div>
+                    <HiPhoto className="w-10 h-10 text-gray-300" />
+                    <p className="text-xs font-semibold text-gray-500 text-center">
+                      คลิกเพื่ออัปโหลดรูปภาพ
+                    </p>
                   </label>
-                )}
-
-                {/* CASE 2: มีรูปแล้ว -> แสดง Grid รูปภาพ + ปุ่ม Add More */}
-                {previewUrls.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {/* Loop แสดงรูปที่มีอยู่ */}
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
                     {previewUrls.map((url, index) => (
                       <div
                         key={index}
-                        className="relative group/item aspect-square rounded-lg overflow-hidden border border-gray-200 shadow-sm"
+                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-200"
                       >
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* ปุ่มลบ (กากบาทมุมขวาบน) */}
+                        <img src={url} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-white/80 hover:bg-red-50 text-gray-600 hover:text-red-500 p-1 rounded-full shadow-sm transition-all opacity-0 group-hover/item:opacity-100 scale-90 hover:scale-100"
-                          title="ลบรูปภาพ"
+                          className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-full shadow-sm"
                         >
-                          <HiXMark className="w-4 h-4" />
+                          <HiXMark className="w-3 h-3 md:w-4 h-4" />
                         </button>
                       </div>
                     ))}
-
-                    {/* ปุ่ม "เพิ่มรูป" (แสดงถ้ายังไม่ครบ 5) */}
                     {previewUrls.length < 5 && (
                       <label
                         htmlFor="file-upload"
-                        className="aspect-square cursor-pointer rounded-lg border-2 border-dashed border-gray-300 hover:border-[#D4A373] hover:bg-[#D4A373]/10 flex flex-col items-center justify-center text-gray-400 hover:text-[#D4A373] transition-all duration-200 group/add"
+                        className="aspect-square cursor-pointer rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#D4A373]"
                       >
-                        <HiPhoto className="w-8 h-8 mb-1 transition-transform group-hover/add:scale-110" />
-                        <span className="text-xs font-semibold">
-                          + เพิ่มรูป
-                        </span>
+                        <span className="text-xl">+</span>
                       </label>
                     )}
                   </div>
                 )}
               </div>
-
-              {/* Helper Text */}
-              {previewUrls.length > 0 && previewUrls.length < 5 && (
-                <p className="text-xs text-gray-500 text-right">
-                  สามารถเพิ่มได้อีก {5 - previewUrls.length} รูป
-                </p>
-              )}
             </div>
 
-            {/* ปุ่มส่ง */}
+            {/* ปุ่มส่งรายงาน */}
             <button
               type="submit"
-              className="w-full bg-linear-to-r from-[#D4A373] to-[#FAEDCD] hover:from-[#D4A373] hover:to-[#F1E8AD]
-             text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl 
-             transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 
-             disabled:cursor-not-allowed disabled:transform-none text-lg"
+              className="w-full bg-linear-to-r from-[#D4A373] to-[#FAEDCD] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 text-base md:text-lg mt-4"
             >
               ส่งรายงาน
             </button>
           </form>
         </div>
       </div>
+
+      {/* Map Popup - ปรับขนาดให้เต็มจอในมือถือ */}
+      {showMap && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 flex items-center justify-center p-0 md:p-4">
+          <div className="bg-white w-full h-full md:h-auto md:max-w-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-gray-800 flex items-center">
+                <HiMapPin className="mr-2 text-[#D4A373]" /> ปักหมุดตำแหน่ง
+              </h3>
+              <button
+                onClick={() => setShowMap(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <HiXMark className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 md:flex-none p-4 space-y-4">
+              <div
+                ref={mapContainerRef}
+                className="w-full h-[60vh] md:h-80 bg-gray-100 rounded-xl border"
+              />
+
+              {selectedLocation && (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-xs text-amber-700 font-medium">
+                    {selectedLocation.address}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSelectLocation}
+                  disabled={!selectedLocation}
+                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md"
+                >
+                  ยืนยันตำแหน่ง
+                </button>
+                <button
+                  onClick={() => setShowMap(false)}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-colors"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
