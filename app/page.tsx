@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import { Mali } from "next/font/google";
 import { useSession, signIn } from "next-auth/react";
+import PetCard from "./components/PetCard";
 
 const MapComponent = dynamic(() => import("@/app/components/LeafletMap"), {
   ssr: false,
@@ -281,21 +282,7 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {rehomingPosts.map((post) => (
-            <Link key={post.post_id} href={`/rehoming-report/${post.post_id}`} className="group bg-white rounded-2xl p-3 shadow-md border hover:border-orange-200 transition-all">
-              <div className="relative overflow-hidden rounded-xl mb-3 aspect-square">
-                <img src={post.images?.[0]?.image_url} alt={post.pet_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                <div className="absolute top-2 right-2 bg-orange-400 text-white text-[10px] px-2 py-1 rounded-full font-bold">หาบ้านอยู่</div>
-              </div>
-              <h3 className="font-bold text-lg text-gray-800 mb-2">{post.pet_name}</h3>
-              <div className="text-sm text-gray-500 space-y-1">
-                <p className="flex items-center gap-2">
-                    {post.sex === "MALE" ? <FaMars className="text-blue-500" /> : <FaVenus className="text-pink-500" />}
-                    {getSexLabel(post.sex)}
-                </p>
-                <p className="flex items-center gap-2"><HiOutlineCalendar className="text-[#D4A373]" /> อายุ: {post.age}</p>
-                <p className="flex items-center gap-2"><FiMapPin className="text-red-500" /> {post.address}</p>
-              </div>
-            </Link>
+            <PetCard key={post.post_id} post={post} />
           ))}
         </div>
         <div className="text-center mt-8">
