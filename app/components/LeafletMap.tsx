@@ -183,6 +183,30 @@ export default function LeafletMap({
                       {getBehaviorLabel(post.behavior)}
                     </p>
                   </div>
+                  {/* --- ส่วนที่เพิ่มใหม่: รายชื่อผู้ช่วยเหลือล่าสุด --- */}
+                  {post.recent_helpers && post.recent_helpers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {post.recent_helpers
+                        .slice(0, 2)
+                        .map((helper: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full text-[9px] font-medium border border-blue-100"
+                          >
+                            <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse" />
+                            {helper.user_name}{" "}
+                            {helper.type === "FEED"
+                              ? "ให้อาหารแล้ว"
+                              : "สนใจรับเลี้ยง"}
+                          </div>
+                        ))}
+                      {post.recent_helpers.length > 2 && (
+                        <span className="text-[9px] text-gray-400 self-center">
+                          +{post.recent_helpers.length - 2} คนอื่นๆ
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* ปุ่ม Action */}
                   <div className="flex gap-2 mb-2">
