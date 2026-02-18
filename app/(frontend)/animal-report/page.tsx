@@ -276,7 +276,7 @@ export default function ReportForm() {
               {/* ประเภทของสัตว์ */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  คุณพบสัตว์อะไร
+                  คุณพบสัตว์อะไร <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="animalType"
@@ -306,7 +306,7 @@ export default function ReportForm() {
               {/* พฤติกรรม */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  พฤติกรรมที่สังเกตเห็น
+                  พฤติกรรมที่สังเกตเห็น <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="behavior"
@@ -341,7 +341,7 @@ export default function ReportForm() {
             {/* สถานที่และแผนที่ */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">
-                สถานที่พบสัตว์
+                สถานที่พบสัตว์ <span className="text-red-500">*</span>
               </label>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
@@ -373,7 +373,7 @@ export default function ReportForm() {
             {/* วันที่และเวลา */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">
-                วันที่และเวลาที่พบ
+                วันที่และเวลาที่พบ <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -393,7 +393,7 @@ export default function ReportForm() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-semibold text-gray-700">
-                  รูปภาพ (1-5 รูป)
+                  รูปภาพ (1-5 รูป) <span className="text-red-500">*</span>
                 </label>
                 <span className="text-[10px] md:text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full">
                   {previewUrls.length} / 5
