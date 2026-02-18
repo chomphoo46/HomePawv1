@@ -1,20 +1,9 @@
-// HomePage.tsx
 "use client";
-import React, { useEffect, useState, useRef, JSX, Suspense } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import {
-  HiOutlineTag,
-  HiOutlineCalendar,
-  HiOutlinePhone,
-  HiSearch,
-} from "react-icons/hi";
-import {
-  FaMars,
-  FaVenus,
-  FaGenderless,
-  FaTimesCircle,
-  FaSearchLocation,
-} from "react-icons/fa";
+import dynamic from 'next/dynamic';
+import { HiOutlineCalendar, HiOutlinePhone, HiSearch } from "react-icons/hi";
+import { FaMars, FaVenus, FaGenderless, FaTimesCircle, FaSearchLocation } from "react-icons/fa";
 import { FaCircleCheck, FaHeart } from "react-icons/fa6";
 import { MdOutlineQuestionAnswer } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
@@ -24,8 +13,11 @@ import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import { Mali } from "next/font/google";
 import { useSession, signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import MapFocusHandler from "@/app/components/MapFocusHandler";
+
+const MapComponent = dynamic(() => import("@/app/components/LeafletMap"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center text-gray-400">กำลังโหลดแผนที่...</div>
+});
 
 const mali = Mali({
   subsets: ["latin", "thai"],
@@ -33,1069 +25,281 @@ const mali = Mali({
 });
 
 // --- Helper Functions ---
-// สูตรคำนวณระยะทาง (Haversine Formula) สำหรับ Smart Search
-function getDistanceFromLatLonInKm(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-) {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) *
-      Math.cos(deg2rad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
-function deg2rad(deg: number) {
-  return deg * (Math.PI / 180);
-}
-
-const getAnimalTypeLabel = (type: string) => {
-  switch (type) {
-    case "dog":
-      return "สุนัข";
-    case "cat":
-      return "แมว";
-    default:
-      return "อื่นๆ";
-  }
-};
 const getBehaviorLabel = (behavior: string) => {
   switch (behavior) {
-    case "friendly":
-      return "เชื่อง เข้าหาคนได้";
-    case "aggressive":
-      return "ดุร้าย";
-    case "injured":
-      return "บาดเจ็บ ต้องการความช่วยเหลือ";
-    default:
-      return "อื่นๆ";
+    case "friendly": return "เชื่อง เข้าหาคนได้";
+    case "aggressive": return "ดุร้าย";
+    case "injured": return "บาดเจ็บ ต้องการความช่วยเหลือ";
+    default: return "อื่นๆ";
   }
 };
-const getMarkerIcon = (type: string) => {
-  switch (type) {
-    case "dog":
-      return "/icons/pin-dog.png";
-    case "cat":
-      return "/icons/pin-cat.png";
-    default:
-      return "/icons/pin-other.png";
-  }
-};
+
 const formatDateTime = (dateString: string) => {
   if (!dateString) return "ไม่ระบุเวลา";
   return new Date(dateString).toLocaleString("th-TH", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
   });
 };
 
 export default function HomePage() {
-  const [userName, setUserName] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Map Refs
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]); // ใช้ useRef แทน window.markers
-
-  const { data: session, status } = useSession();
-
-  // State สำหรับ Data
-  const [allAnimalPosts, setAllAnimalPosts] = useState<any[]>([]); // เก็บข้อมูล Master
-  const [filteredPosts, setFilteredPosts] = useState<any[]>([]); // เก็บข้อมูลที่ผ่านการกรอง/ค้นหา
+  // States
+  const [allAnimalPosts, setAllAnimalPosts] = useState<any[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<any[]>([]);
   const [rehomingPosts, setRehomingPosts] = useState<any[]>([]);
-
-  // State สำหรับ Smart Search
   const [searchCriteria, setSearchCriteria] = useState({
-    type: "all",
-    keyword: "",
-    behavior: "all",
-    onlyActive: true,
-    userLat: 13.7563, // Default Bangkok
-    userLng: 100.5018,
+    type: "all", keyword: "", behavior: "all", onlyActive: true,
+    userLat: 13.7563, userLng: 100.5018,
   });
   const [isSmartSearchActive, setIsSmartSearchActive] = useState(false);
-
-  const router = useRouter();
-  const [stats, setStats] = useState({
-    foundAnimals: 0,
-    rehomingPosts: 0,
-    urgentHelp: 0,
-  });
+  const [mapView, setMapView] = useState({ center: [13.7563, 100.5018] as [number, number], zoom: 12 });
+  const [stats, setStats] = useState({ foundAnimals: 0, rehomingPosts: 0, urgentHelp: 0 });
 
   const getSexLabel = (sex: string) => {
     switch (sex) {
-      case "MALE":
-        return "เพศ: ผู้";
-      case "FEMALE":
-        return "เพศ: เมีย";
-      default:
-        return "ไม่ระบุ";
+      case "MALE": return "เพศ: ผู้";
+      case "FEMALE": return "เพศ: เมีย";
+      default: return "ไม่ระบุ";
     }
   };
 
-  // Mapping สถานะต่างๆ
-  const neuteredstatusIcons: Record<
-    string,
-    { label: string; icon: JSX.Element }
-  > = {
-    NEUTERED: {
-      label: "ทำหมันแล้ว",
-      icon: <FaCircleCheck size={22} style={{ color: "green" }} />,
-    },
-    NOT_NEUTERED: {
-      label: "ยังไม่ได้ทำหมัน",
-      icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
-    },
+  const healthStatusIcons: Record<string, { label: string; icon: any }> = {
+    VACCINATED: { label: "ฉีดวัคซีนแล้ว", icon: <FaCircleCheck size={22} style={{ color: "green" }} /> },
+    NOT_VACCINATED: { label: "ยังไม่ได้ฉีดวัคซีน", icon: <FaTimesCircle size={22} style={{ color: "red" }} /> },
   };
 
-  const healthStatusIcons: Record<
-    string,
-    { label: string; icon: JSX.Element }
-  > = {
-    VACCINATED: {
-      label: "ฉีดวัคซีนแล้ว",
-      icon: <FaCircleCheck size={22} style={{ color: "green" }} />,
-    },
-    NOT_VACCINATED: {
-      label: "ยังไม่ได้ฉีดวัคซีน",
-      icon: <FaTimesCircle size={22} style={{ color: "red" }} />,
-    },
+  const neuteredstatusIcons: Record<string, { label: string; icon: any }> = {
+    NEUTERED: { label: "ทำหมันแล้ว", icon: <FaCircleCheck size={22} style={{ color: "green" }} /> },
+    NOT_NEUTERED: { label: "ยังไม่ได้ทำหมัน", icon: <FaTimesCircle size={22} style={{ color: "red" }} /> },
   };
 
-  // โหลดชื่อผู้ใช้งานจาก localStorage
+  // 1. Geolocation
   useEffect(() => {
-    const name = localStorage.getItem("userName");
-    setUserName(name);
-
-    // Smart Feature: ขอพิกัดผู้ใช้ทันทีที่เข้าเว็บ
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-
-        // 1. อัปเดตพิกัดเข้า State เพื่อใช้คำนวณระยะทาง
-        setSearchCriteria((prev) => ({
-          ...prev,
-          userLat: coords.lat,
-          userLng: coords.lng,
-        }));
-
-        // 2. สั่งให้แผนที่เลื่อนไปที่ตำแหน่งปัจจุบันของเรา (ถ้าแผนที่โหลดเสร็จแล้ว)
-        if (mapRef.current) {
-          mapRef.current.setCenter(coords);
-          mapRef.current.setZoom(14); // ปรับระดับการซูมให้พอดี (ประมาณ 14-15 กำลังสวยครับ)
-        }
+        const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setSearchCriteria(prev => ({ ...prev, userLat: coords[0], userLng: coords[1] }));
+        setMapView({ center: coords, zoom: 14 });
       });
     }
   }, []);
 
-  // ปิดเมนูเมื่อคลิกนอก
+  // 2. Fetch Data
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    }
-    if (showMenu) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showMenu]);
-
-  // --- Map Initialization ---
-  const initMapOnce = () => {
-    if (mapRef.current) return;
-    const google = (window as any).google;
-    if (!google) return;
-
-    // ใช้ค่าจาก searchCriteria ที่เราอัปเดตจาก Geolocation
-    const map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat: searchCriteria.userLat, lng: searchCriteria.userLng },
-      zoom: 12,
-      gestureHandling: "greedy",
-    });
-    mapRef.current = map;
-  };
-
-  useEffect(() => {
-    const checkGoogle = () => {
-      if ((window as any).google && (window as any).google.maps) {
-        initMapOnce();
-      } else {
-        setTimeout(checkGoogle, 100);
-      }
-    };
-    checkGoogle();
-  }, []);
-
-  //Handle Help Action
-  useEffect(() => {
-    (window as any).handleHelpAction = async (
-      report_id: number,
-      action_type: "FEED" | "ADOPT",
-    ) => {
-      if (status === "unauthenticated") {
-        alert("กรุณาเข้าสู่ระบบก่อนดำเนินการ");
-        signIn(undefined, { callbackUrl: "/" });
-        return;
-      }
-      if (status === "loading") {
-        alert("กำลังตรวจสอบข้อมูลผู้ใช้, กรุณาลองอีกครั้ง");
-        return;
-      }
-
-      const message =
-        action_type === "FEED"
-          ? "ยืนยันว่าคุณได้ให้อาหารสัตว์ตัวนี้แล้ว?"
-          : "คุณสนใจรับเลี้ยงสัตว์ตัวนี้ใช่ไหม? (ระบบจะแจ้งเตือนผู้โพสต์)";
-
-      if (!confirm(message)) return;
-
+    async function fetchData() {
       try {
-        const res = await fetch("/api/help-action", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ report_id, action_type }),
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "เกิดข้อผิดพลาด");
+        const [animalRes, rehomeRes, helpRes] = await Promise.all([
+          fetch("/api/animal-report", { cache: "no-store" }),
+          fetch("/api/rehoming-report", { cache: "no-store" }),
+          fetch("/api/help-action", { cache: "no-store" })
+        ]);
+        if (animalRes.ok && rehomeRes.ok && helpRes.ok) {
+          const aData = await animalRes.json();
+          const rData = await rehomeRes.json();
+          const hData = await helpRes.json();
+          setAllAnimalPosts(aData);
+          setFilteredPosts(aData);
+          setRehomingPosts(rData.slice(0, 4));
+          setStats({ foundAnimals: aData.length, rehomingPosts: rData.length, urgentHelp: hData.length });
         }
-
-        alert("ขอบคุณสำหรับการช่วยเหลือ! (บันทึกข้อมูลสำเร็จ)");
-        window.location.reload();
-      } catch (err: any) {
-        console.error(err);
-        alert(`เกิดข้อผิดพลาด: ${err.message}`);
-      }
-    };
-
-    return () => {
-      (window as any).handleHelpAction = undefined;
-    };
-  }, [status, session]);
-
-  // --- Add Markers Logic (Updated for Responsive) ---
-  const addMarkers = () => {
-    const google = (window as any).google;
-    if (!google || !mapRef.current || !filteredPosts) return;
-
-    // 1. ลบ Marker เก่า โดยใช้ markersRef
-    if (markersRef.current.length > 0) {
-      markersRef.current.forEach((m) => m.setMap(null));
-      markersRef.current = [];
+      } catch (err) { console.error(err); }
     }
+    fetchData();
+  }, []);
 
-    // 2. วนลูปสร้าง Marker ใหม่
-    filteredPosts.forEach((post) => {
-      if (!post.latitude || !post.longitude) return;
-
-      const iconUrl = getMarkerIcon(post.animal_type);
-      const matchScore = post.matchScore || 0;
-      const isHighMatch = isSmartSearchActive && matchScore > 70;
-
-      const marker = new google.maps.Marker({
-        position: {
-          lat: parseFloat(post.latitude),
-          lng: parseFloat(post.longitude),
-        },
-        map: mapRef.current,
-        title: post.animal_type,
-        icon: {
-          url: iconUrl,
-          scaledSize: new google.maps.Size(
-            isHighMatch ? 65 : 53,
-            isHighMatch ? 65 : 53,
-          ),
-          anchor: new google.maps.Point(26.5, 53),
-        },
-        animation: isHighMatch ? google.maps.Animation.BOUNCE : null,
-      });
-
-      // Data Prep
-      const imageUrl =
-        post.images?.length > 0
-          ? post.images[0].image_url
-          : "https://via.placeholder.com/300x200.png?text=No+Image";
-
-      const location = post.location || "ไม่ระบุตำแหน่ง";
-      const getAnimalTypeLabel = (type: string | number) => {
-        const typeMap: Record<string, string> = {
-          dog: "สุนัข",
-          cat: "แมว",
-          other: "อื่นๆ",
-        };
-        return typeMap[String(type)] || type;
-      };
-      const behavior = getBehaviorLabel(post.behavior);
-      const dateTime = formatDateTime(post.created_at);
-      const reporter = post.user?.name || "ไม่ระบุชื่อ";
-      const description = post.description || "ไม่มีคำอธิบาย";
-
-      // Badge Logic
-      let scoreBadge = "";
-      if (isSmartSearchActive) {
-        scoreBadge = `
-            <div style="background: ${
-              matchScore > 70 ? "#4ADE80" : "#FACC15"
-            }; color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-bottom: 8px; display: inline-block;">
-               ตรงกับที่คุณหา ${matchScore}%
-            </div>
-         `;
-      }
-
-      // Help Summary
-      const feedActions = post.actions.filter(
-        (a: any) => a.action_type === "FEED",
-      );
-      const adoptActions = post.actions.filter(
-        (a: any) => a.action_type === "ADOPT",
-      );
-
-      let helpSummaryHtml = "";
-      if (feedActions.length > 0) {
-        const feederNames = [
-          ...new Set(feedActions.map((a: any) => a.user.name || "ผู้ใจดี")),
-        ].join(", ");
-        helpSummaryHtml += `<p style="margin: 4px 0; font-size: 0.85rem; color: #6D4C41;">🧡 <strong>คนให้อาหารแล้ว:</strong> ${feederNames}</p>`;
-      }
-      if (adoptActions.length > 0) {
-        const adopterNames = [
-          ...new Set(adoptActions.map((a: any) => a.user.name || "ผู้ใจดี")),
-        ].join(", ");
-        helpSummaryHtml += `<p style="margin: 4px 0; font-size: 0.85rem; color: #4A5A2A;">💚 <strong>คนสนใจรับเลี้ยง:</strong> ${adopterNames}</p>`;
-      }
-      if (helpSummaryHtml === "") {
-        helpSummaryHtml =
-          '<p style="margin: 4px 0; font-size: 0.85rem; color: #777;"><i>ยังไม่มีคนให้ความช่วยเหลือ...</i></p>';
-      }
-
-      // --- Slider & Responsive HTML ---
-
-      // 1. ดึงลิสต์รูปภาพ
-      const imagesList =
-        post.images && post.images.length > 0
-          ? post.images.map((img: any) =>
-              typeof img === "string" ? img : img.image_url,
-            )
-          : [imageUrl];
-
-      const sliderId = `slider-${post.report_id}`;
-
-      // 2. สร้าง HTML รูปภาพ
-      const imagesHtml = imagesList
-        .map(
-          (url: any) => `
-  <img src="${url}" style="min-width: 100%; height: 100%; object-fit: cover; display: block; scroll-snap-align: start;">
-`,
-        )
-        .join("");
-
-      // 3. ปุ่มลูกศร
-      const arrowsHtml =
-        imagesList.length > 1
-          ? `
-  <button onclick="var el = document.getElementById('${sliderId}'); el.scrollBy({left: -el.clientWidth, behavior: 'smooth'})" 
-    style="position: absolute; top: 50%; left: 4px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s; font-size: 0.75rem;">
-    ❮
-  </button>
-  <button onclick="var el = document.getElementById('${sliderId}'); el.scrollBy({left: el.clientWidth, behavior: 'smooth'})" 
-    style="position: absolute; top: 50%; right: 4px; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 20; transition: background 0.2s; font-size: 0.75rem;">
-    ❯
-  </button>
-`
-          : "";
-      const contentString = `
-  <div style="
-      font-family: '${mali.style.fontFamily}', sans-serif; 
-      width: 100%;
-      background: white; 
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
-  ">
-    <div style="width: 100%; height: 140px; overflow: hidden; position: relative; flex-shrink: 0;">
-      <div id="${sliderId}" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 100%; scrollbar-width: none; -ms-overflow-style: none;">
-        ${imagesHtml}
-      </div>
-      ${arrowsHtml}
-      
-      <div style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 12px; z-index: 10;">
-         <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
-           post.status === "STILL_THERE"
-             ? "#EF4444"
-             : post.status === "MOVED"
-               ? "#F59E0B"
-               : "#10B981"
-         }; display: inline-block; margin-right: 4px;"></div>
-         <span style="font-size: 0.65rem; font-weight: 600; color: white;">
-           ${post.status === "STILL_THERE" ? "ยังอยู่ที่เดิม" : post.status === "MOVED" ? "ย้าย/ไม่เจอ" : "ช่วยแล้ว"}
-         </span>
-      </div>
-    </div>
-    </div>
-    
-    <div style="padding: 12px; padding-bottom: 30px; box-sizing: border-box;">
-      <h3 style="margin: 0; font-size: 0.9rem; color: #111827; font-weight: 700; line-height: 1.3;">
-        พบที่ ${location}
-      </h3>
-      <p style="font-size: 0.65rem; color: #6B7280; margin: 2px 0 8px 0;">${dateTime} • โดย ${reporter}</p>
-      
-      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px; margin-bottom: 12px; font-size: 0.75rem;">
-         <div style="margin-bottom: 4px; color: #374151;">
-           <span style="color: #9CA3AF; font-size: 0.7rem;">ลักษณะ:</span> ${description}
-         </div>
-         <div style="color: #374151;">
-           <span style="color: #9CA3AF; font-size: 0.7rem;">พฤติกรรม:</span> ${behavior}
-         </div>
-      </div>
-
-      ${helpSummaryHtml ? `<div style="background: #ECFDF5; padding: 6px 8px; border-radius: 6px; margin-bottom: 12px; font-size: 0.7rem; color: #065F46;">${helpSummaryHtml}</div>` : ""}
-      
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-         <button onclick="handleHelpAction(${post.report_id}, 'FEED')" 
-           style="flex: 1; height: 40px; background: #FFF7ED; color: #C2410C; border: 1px solid #FFEDD5; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
-           ให้อาหาร
-         </button>
-         <button onclick="handleHelpAction(${post.report_id}, 'ADOPT')" 
-           style="flex: 1; height: 40px; background: #D4A373; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
-           รับเลี้ยง
-         </button>
-      </div>
-      
-      <button onclick="window.location.href='/animal-report/${post.report_id}'" 
-          style="width: 100%; padding: 6px 0; background: transparent; color: #6B7280; border: none; cursor: pointer; font-size: 0.7rem; text-decoration: underline;">
-          ดูรายละเอียดเพิ่มเติม
-      </button>
-    </div>
-  </div>
-`;
-      const infoWindow = new google.maps.InfoWindow({ content: contentString });
-      marker.addListener("click", () =>
-        infoWindow.open(mapRef.current, marker),
-      );
-
-      markersRef.current.push(marker);
-    });
-
-    if (isSmartSearchActive && filteredPosts.length > 0 && mapRef.current) {
-      const bounds = new google.maps.LatLngBounds();
-      filteredPosts.forEach((post) => {
-        if (post.latitude && post.longitude) {
-          bounds.extend({
-            lat: parseFloat(post.latitude),
-            lng: parseFloat(post.longitude),
-          });
-        }
-      });
-      mapRef.current.fitBounds(bounds);
-    }
-  };
-
-  // Re-run addMarkers when filteredPosts updates
-  useEffect(() => {
-    if (mapRef.current && filteredPosts.length > 0) {
-      addMarkers();
-    }
-  }, [filteredPosts]);
-
-  // --- Handle Smart Search Logic ---
+  // 3. Smart Search Logic
   const handleSmartSearch = () => {
     if (!allAnimalPosts.length) return;
     setIsSmartSearchActive(true);
 
     const scoredPosts = allAnimalPosts.map((post) => {
-      // Hard Filters
-      if (searchCriteria.onlyActive && post.status !== "STILL_THERE") {
-        return { ...post, matchScore: 0 };
-      }
-      if (
-        searchCriteria.behavior !== "all" &&
-        post.behavior !== searchCriteria.behavior
-      ) {
-        return { ...post, matchScore: 0 };
-      }
+      if (searchCriteria.onlyActive && post.status !== "STILL_THERE") return { ...post, matchScore: 0 };
+      if (searchCriteria.behavior !== "all" && post.behavior !== searchCriteria.behavior) return { ...post, matchScore: 0 };
 
       let score = 0;
+      const isTypeMatch = searchCriteria.type === "all" || 
+        (searchCriteria.type === "other" && post.animal_type !== "dog" && post.animal_type !== "cat") ||
+        (post.animal_type === searchCriteria.type);
 
-      // 1. Type Score
-      let isTypeMatch = false;
-      if (searchCriteria.type === "all") {
-        isTypeMatch = true;
-      } else if (searchCriteria.type === "other") {
-        if (post.animal_type !== "dog" && post.animal_type !== "cat") {
-          isTypeMatch = true;
-        }
-      } else {
-        if (post.animal_type === searchCriteria.type) {
-          isTypeMatch = true;
-        }
-      }
+      if (!isTypeMatch) return { ...post, matchScore: 0 };
+      score += 30;
 
-      if (isTypeMatch) {
-        score += 30;
-      } else {
-        return { ...post, matchScore: 0 };
-      }
+      const dist = getDistanceFromLatLonInKm(searchCriteria.userLat, searchCriteria.userLng, parseFloat(post.latitude), parseFloat(post.longitude));
+      if (dist < 2) score += 40; else if (dist < 10) score += 20;
 
-      // 2. Distance Score
-      if (post.latitude && post.longitude) {
-        const dist = getDistanceFromLatLonInKm(
-          searchCriteria.userLat,
-          searchCriteria.userLng,
-          parseFloat(post.latitude),
-          parseFloat(post.longitude),
-        );
-        if (dist < 2) score += 40;
-        else if (dist < 5) score += 30;
-        else if (dist < 10) score += 20;
-        else score += 5;
-      }
-
-      // 3. Keyword Score
-      if (searchCriteria.keyword && post.description) {
-        const keywords = searchCriteria.keyword.split(" ");
-        let hit = 0;
-        keywords.forEach((word) => {
-          if (post.description.includes(word)) hit++;
-        });
-        if (hit > 0) score += 30;
-      }
+      if (searchCriteria.keyword && post.description?.toLowerCase().includes(searchCriteria.keyword.toLowerCase())) score += 30;
 
       return { ...post, matchScore: Math.min(score, 100) };
     });
 
-    const results = scoredPosts
-      .filter((p) => p.matchScore > 0)
-      .sort((a, b) => b.matchScore - a.matchScore);
-
+    const results = scoredPosts.filter(p => p.matchScore > 0).sort((a, b) => b.matchScore - a.matchScore);
     setFilteredPosts(results);
-
-    // Auto Zoom
-    if (results.length > 0 && results[0].latitude && mapRef.current) {
-      mapRef.current.panTo({
-        lat: parseFloat(results[0].latitude),
-        lng: parseFloat(results[0].longitude),
-      });
-      mapRef.current.setZoom(14);
+    
+    if (results.length > 0) {
+      setMapView({ center: [parseFloat(results[0].latitude), parseFloat(results[0].longitude)], zoom: 15 });
     }
   };
 
   const handleReset = () => {
     setFilteredPosts(allAnimalPosts);
     setIsSmartSearchActive(false);
-    setSearchCriteria((prev) => ({
-      ...prev,
-      keyword: "",
-      type: "all",
-      behavior: "all",
-      onlyActive: true,
-    }));
+    setSearchCriteria(prev => ({ ...prev, keyword: "", type: "all", behavior: "all", onlyActive: true }));
   };
-
-  // Fetch Animal Posts
-  useEffect(() => {
-    async function fetchAnimalPosts() {
-      try {
-        const res = await fetch("/api/animal-report", { cache: "no-store" });
-        const data = await res.json();
-        setAllAnimalPosts(data);
-        setFilteredPosts(data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchAnimalPosts();
-  }, []);
-
-  // Fetch Rehoming & Stats
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch Latest Rehoming
-        const resRehome = await fetch("/api/rehoming-report", {
-          cache: "no-store",
-        });
-        if (resRehome.ok) {
-          const data = await resRehome.json();
-          const sorted = data.sort(
-            (a: any, b: any) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime(),
-          );
-          setRehomingPosts(sorted.slice(0, 4));
-        }
-
-        // Fetch Stats
-        const [rehomingRes, animalReportRes, helpActionRes] = await Promise.all(
-          [
-            fetch("/api/rehoming-report", { cache: "no-store" }),
-            fetch("/api/animal-report", { cache: "no-store" }),
-            fetch("/api/help-action", { cache: "no-store" }),
-          ],
-        );
-
-        if (rehomingRes.ok && animalReportRes.ok && helpActionRes.ok) {
-          const rData = await rehomingRes.json();
-          const aData = await animalReportRes.json();
-          const hData = await helpActionRes.json();
-          setStats({
-            rehomingPosts: rData.length,
-            foundAnimals: aData.length,
-            urgentHelp: hData.length,
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchData();
-  }, []);
 
   return (
     <div className={`min-h-screen bg-white text-gray-800 ${mali.className}`}>
       <Header />
-      <Suspense fallback={null}>
-        <MapFocusHandler
-          mapRef={mapRef}
-          allAnimalPosts={allAnimalPosts}
-          markersRef={markersRef}
-        />
-      </Suspense>
+      
+      {/* Hero Sections */}
       <div className="w-full">
-        {/* Row 1: ข้อความ (ซ้าย) - รูปภาพ (ขวา) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px] relative">
-          {/* Text Area */}
-          <div className="flex flex-col justify-center items-center p-8 md:p-1 order-2 md:order-1 relative overflow-hidden">
-            <div className="relative z-10 max-w-lg">
+        {/* Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-125">
+          <div className="flex flex-col justify-center items-center p-8 order-2 md:order-1">
+            <div className="max-w-lg">
               <div className="inline-flex items-center gap-2 bg-[#FEFAE0] bg-opacity-10 px-4 py-2 rounded-full mb-6">
                 <span className="text-sm">แจ้งพบสัตว์</span>
               </div>
-
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-                ช่วยเหลือสัตว์ไร้บ้าน
-              </h2>
-
-              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
-                หากคุณพบสัตว์ที่ถูกทอดทิ้ง เจ็บป่วย หรือไม่มีที่อยู่อาศัย
-                การแจ้งข้อมูลของคุณจะช่วยให้ผู้อื่นสามารถเข้ามาดูแล ให้อาหาร
-                หรือประสานการช่วยเหลือได้ตรงจุด
-                <br className="hidden md:block" /> เพราะทุกการแจ้ง
-                คือโอกาสใหม่ของหนึ่งชีวิต
-              </p>
-
-              <button
-                onClick={() => router.push("/animal-report")}
-                className="animate-bounce group relative bg-linear-to-r from-[#D4A373] to-[#c49261] hover:from-[#c49261] hover:to-[#b58350] text-white font-semibold py-4 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
-              >
-                <span className="relative z-10">
-                  แจ้งพบสัตว์ไร้บ้าน ได้ที่นี่
-                </span>
-                <svg
-                  className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300"></div>
-              </button>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">ช่วยเหลือสัตว์ไร้บ้าน</h2>
+              <p className="text-gray-600 mb-8">หากคุณพบสัตว์ที่ถูกทอดทิ้ง หรือเจ็บป่วย ทุกการแจ้งคือโอกาสใหม่ของหนึ่งชีวิต</p>
+              <button onClick={() => router.push("/animal-report")} className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg">แจ้งพบสัตว์ไร้บ้าน ได้ที่นี่</button>
             </div>
           </div>
-
-          {/* Image Area */}
-          <div className="h-80 md:h-auto relative order-1 md:order-2 overflow-hidden group">
-            <div className="absolute inset-0 bg-linear-to-br from-[#D4A373] to-transparent opacity-20 z-10 group-hover:opacity-30 transition-opacity duration-500"></div>
-            <img
-              src="/Cat2.jpg"
-              alt="Stray Cat"
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-black to-transparent opacity-40 z-10"></div>
+          <div className="h-80 md:h-auto order-1 md:order-2 overflow-hidden group">
+            <img src="/Cat2.jpg" alt="Stray Cat" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
           </div>
         </div>
 
-        {/* Row 2: รูปภาพ (ซ้าย) - ข้อความ (ขวา) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 min-h-[500px] relative">
-          {/* Image Area */}
-          <div className="h-80 md:h-auto relative overflow-hidden group">
-            <div className="absolute inset-0 bg-linear-to-bl from-[#D4A373] to-transparent opacity-20 z-10 group-hover:opacity-30 transition-opacity duration-500"></div>
-            <img
-              src="/Dog.png"
-              alt="Smiling Dog"
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-black to-transparent opacity-40 z-10"></div>
+        {/* Row 2 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-125">
+          <div className="h-80 md:h-auto overflow-hidden group">
+            <img src="/Dog.png" alt="Smiling Dog" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
           </div>
-
-          {/* Text Area */}
-          <div className="flex flex-col justify-center items-center p-8 md:p-16 relative overflow-hidden">
-            <div className="relative z-10 max-w-lg">
+          <div className="flex flex-col justify-center items-center p-8">
+            <div className="max-w-lg">
               <div className="inline-flex items-center gap-2 bg-[#FEFAE0] bg-opacity-10 px-4 py-2 rounded-full mb-6">
                 <span className="text-sm">หาบ้านใหม่</span>
               </div>
-
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-                มอบบ้านใหม่ที่อบอุ่น
-              </h2>
-
-              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
-                เมื่อไม่สามารถดูแลเขาได้เหมือนเดิม การหาบ้านใหม่ที่อบอุ่น
-                อาจเป็นทางเลือกที่ดีที่สุด สำหรับสัตว์เลี้ยงที่คุณรัก
-                <br className="hidden md:block" />{" "}
-                เราขอช่วยเป็นสะพานให้เขาได้พบกับเจ้าของคนใหม่
-              </p>
-
-              <button
-                onClick={() => router.push("/form-rehoming")}
-                className="animate-bounce group relative bg-linear-to-r from-[#D4A373] to-[#c49261] hover:from-[#c49261] hover:to-[#b58350] text-white font-semibold py-4 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
-              >
-                <span className="relative z-10">หาบ้านให้น้อง ได้ที่นี่</span>
-                <svg
-                  className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300"></div>
-              </button>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">มอบบ้านใหม่ที่อบอุ่น</h2>
+              <p className="text-gray-600 mb-8">เราขอช่วยเป็นสะพานให้สัตว์เลี้ยงที่คุณรักได้พบกับเจ้าของคนใหม่ที่อบอุ่น</p>
+              <button onClick={() => router.push("/form-rehoming")} className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg">หาบ้านให้น้อง ได้ที่นี่</button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- Statistics Section --- */}
+      {/* Stats Section */}
       <section className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center py-14 px-4">
-        {[
-          {
-            label: "ประกาศหาบ้าน",
-            count: stats.rehomingPosts,
-            color: "text-purple-600",
-            bgColor: "bg-purple-100",
-            IconComponent: Home,
-          },
-          {
-            label: "สัตว์ไร้บ้านที่พบ",
-            count: stats.foundAnimals,
-            color: "text-[#D4A373]",
-            bgColor: "bg-orange-100",
-            IconComponent: PawPrint,
-          },
-          {
-            label: "คนช่วยเหลือ",
-            count: stats.urgentHelp,
-            color: "text-green-600",
-            bgColor: "bg-green-100",
-            IconComponent: Heart,
-          },
-        ].map((item, i) => (
-          <div key={i} className="flex flex-col items-center">
-            {/* ส่วนแสดงไอคอน */}
-            <div
-              className={`${item.bgColor} ${item.color} w-14 h-14 rounded-full flex items-center justify-center mb-4`}
-            >
-              <item.IconComponent className="w-7 h-7" strokeWidth={2} />
-            </div>
-
-            <p className={`text-3xl font-bold ${item.color} mb-1`}>
-              {item.count}
-            </p>
-            <p className="text-gray-600 font-medium">{item.label}</p>
-          </div>
-        ))}
+        <div>
+            <div className="bg-purple-100 text-purple-600 w-14 h-14 rounded-full flex items-center justify-center mb-4 mx-auto"><Home className="w-7 h-7" /></div>
+            <p className="text-3xl font-bold text-purple-600 mb-1">{stats.rehomingPosts}</p>
+            <p className="text-gray-600">ประกาศหาบ้าน</p>
+        </div>
+        <div>
+            <div className="bg-orange-100 text-[#D4A373] w-14 h-14 rounded-full flex items-center justify-center mb-4 mx-auto"><PawPrint className="w-7 h-7" /></div>
+            <p className="text-3xl font-bold text-[#D4A373] mb-1">{stats.foundAnimals}</p>
+            <p className="text-gray-600">สัตว์ไร้บ้านที่พบ</p>
+        </div>
+        <div>
+            <div className="bg-green-100 text-green-600 w-14 h-14 rounded-full flex items-center justify-center mb-4 mx-auto"><Heart className="w-7 h-7" /></div>
+            <p className="text-3xl font-bold text-green-600 mb-1">{stats.urgentHelp}</p>
+            <p className="text-gray-600">คนช่วยเหลือ</p>
+        </div>
       </section>
 
-      {/* --- Smart Search Section --- */}
+      {/* Smart Search Section */}
       <section className="px-4 pt-6 pb-2">
-        <div className="p-6 text-black">
+        <div className="p-6 text-black bg-gray-50 rounded-3xl">
           <div className="flex items-center gap-3 mb-5">
             <FaSearchLocation className="text-black text-xl" />
-            <div>
-              <h2 className="text-xl font-bold ">
-                ค้นหาสัตว์เลี้ยง / กรองสัตว์ในพื้นที่
-              </h2>
-            </div>
+            <h2 className="text-xl font-bold">ค้นหาสัตว์เลี้ยง / กรองสัตว์ในพื้นที่</h2>
           </div>
-
-          {/* แถวที่ 1 */}
           <div className="flex flex-col md:flex-row gap-3 mb-3">
-            <select
-              className="flex-1 rounded-xl border border-gray-300 hover:border-[#D4A373] px-4 py-3 text-gray-800 outline-none"
-              value={searchCriteria.type}
-              onChange={(e) =>
-                setSearchCriteria({ ...searchCriteria, type: e.target.value })
-              }
-            >
+            <select className="flex-1 rounded-xl border px-4 py-3 outline-none" value={searchCriteria.type} onChange={(e) => setSearchCriteria({ ...searchCriteria, type: e.target.value })}>
               <option value="all">ทุกประเภท</option>
               <option value="dog">สุนัข</option>
               <option value="cat">แมว</option>
               <option value="other">อื่นๆ</option>
             </select>
-
-            <select
-              className="flex-1 rounded-xl px-4 py-3 text-gray-800 outline-none border border-gray-300 hover:border-[#D4A373]"
-              value={searchCriteria.behavior}
-              onChange={(e) =>
-                setSearchCriteria({
-                  ...searchCriteria,
-                  behavior: e.target.value,
-                })
-              }
-            >
+            <select className="flex-1 rounded-xl border px-4 py-3 outline-none" value={searchCriteria.behavior} onChange={(e) => setSearchCriteria({ ...searchCriteria, behavior: e.target.value })}>
               <option value="all">พฤติกรรม (ทั้งหมด)</option>
               <option value="friendly">เชื่อง เข้าหาคนได้</option>
               <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
               <option value="aggressive">ดุร้าย</option>
             </select>
           </div>
-
-          {/* แถวที่ 2 */}
           <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-2 relative">
-              <input
-                type="text"
-                placeholder={
-                  searchCriteria.type === "other"
-                    ? "พิมพ์ประเภทสัตว์ (เช่น กระต่าย, นก...)"
-                    : "ระบุลักษณะ (เช่น สีขาว, ปลอกคอ...)"
-                }
-                className="w-full rounded-xl px-4 py-3 pl-10 text-gray-800 outline-none border border-gray-300 hover:border-[#D4A373]"
-                value={searchCriteria.keyword}
-                onChange={(e) =>
-                  setSearchCriteria({
-                    ...searchCriteria,
-                    keyword: e.target.value,
-                  })
-                }
-              />
+            <div className="flex-2 relative w-full">
+              <input type="text" placeholder="ระบุลักษณะ..." className="w-full rounded-xl px-4 py-3 pl-10 border outline-none" value={searchCriteria.keyword} onChange={(e) => setSearchCriteria({ ...searchCriteria, keyword: e.target.value })} />
               <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
             </div>
-
-            <button
-              onClick={handleSmartSearch}
-              className="bg-white text-[#D4A373] font-bold px-6 py-3 rounded-xl hover:bg-orange-50 transition-colors shadow-md flex items-center justify-center gap-2"
-            >
-              <BiTargetLock /> ค้นหา
-            </button>
-            {isSmartSearchActive && (
-              <button
-                onClick={handleReset}
-                className="bg-white text-black px-6 py-3 rounded-xl hover:bg-orange-50 transition-colors shadow-md flex items-center justify-center gap-2"
-              >
-                ล้างค่า
-              </button>
-            )}
-          </div>
-
-          {/* แถวที่ 3 */}
-          <div className="mt-3 flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="activeOnly"
-              className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500"
-              checked={searchCriteria.onlyActive}
-              onChange={(e) =>
-                setSearchCriteria({
-                  ...searchCriteria,
-                  onlyActive: e.target.checked,
-                })
-              }
-            />
-            <label
-              htmlFor="activeOnly"
-              className="text-sm font-medium cursor-pointer select-none"
-            >
-              แสดงเฉพาะตัวที่ยังอยู่ (ยังไม่มีคนช่วย)
-            </label>
+            <button onClick={handleSmartSearch} className="bg-[#D4A373] text-white font-bold px-6 py-3 rounded-xl shadow-md flex items-center justify-center gap-2"><BiTargetLock /> ค้นหา</button>
+            {isSmartSearchActive && <button onClick={handleReset} className="bg-white text-black px-6 py-3 rounded-xl border shadow-md">ล้างค่า</button>}
           </div>
         </div>
       </section>
 
       {/* Map Section */}
       <section className="px-4 py-6">
-        <div className="flex items-center gap-3 mb-4 justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-red-100 p-2 rounded-full">
-              <FiMapPin size={24} className="text-red-500" />
-            </div>
-            <div>
-              <h2 className="font-bold text-xl text-gray-800">
-                {isSmartSearchActive
-                  ? `ผลการค้นหา (${filteredPosts.length} รายการ)`
-                  : "พิกัดสัตว์ไร้บ้าน"}
-              </h2>
-              {isSmartSearchActive && (
-                <p className="text-sm text-[#D4A373] font-bold">
-                  เรียงตามความเหมือนและระยะทาง
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        {/* Map Container */}
-        <div
-          id="map"
-          className="w-full h-[50vh] md:h-[600px] lg:h-[700px] rounded-2xl overflow-hidden shadow-lg border-2 border-orange-100"
-        />
-      </section>
-
-      {/* Latest Posts Section */}
-      <section className="px-4 py-8 bg-linear-to-b from-white to-orange-50/30">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-pink-100 p-2 rounded-full">
-            <FaHeart size={24} className="text-pink-500" />
-          </div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-red-100 p-2 rounded-full"><FiMapPin size={24} className="text-red-500" /></div>
           <h2 className="font-bold text-xl text-gray-800">
-            ประกาศหาบ้านล่าสุด
+            {isSmartSearchActive ? `ผลการค้นหา (${filteredPosts.length} รายการ)` : "พิกัดสัตว์ไร้บ้าน"}
           </h2>
         </div>
+        <div className="w-full h-[50vh] md:h-150 rounded-2xl overflow-hidden shadow-lg border-2 border-orange-100 relative z-0">
+          <MapComponent 
+            posts={filteredPosts} 
+            center={mapView.center} 
+            zoom={mapView.zoom} 
+            isSmartSearch={isSmartSearchActive}
+            router={router}
+            formatDateTime={formatDateTime}
+            getBehaviorLabel={getBehaviorLabel}
+          />
+        </div>
+      </section>
 
+      {/* Latest Rehoming Section */}
+      <section className="px-4 py-8">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="bg-pink-100 p-2 rounded-full"><FaHeart size={24} className="text-pink-500" /></div>
+            <h2 className="font-bold text-xl text-gray-800">ประกาศหาบ้านล่าสุด</h2>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {rehomingPosts.map((post) => (
-            <Link
-              key={post.post_id}
-              href={`/rehoming-report/${post.post_id}`}
-              className="group bg-white rounded-2xl p-3 shadow-md hover:shadow-xl transition-all duration-300 border border-transparent hover:border-orange-200"
-            >
-              <div className="relative overflow-hidden rounded-xl mb-3">
-                <div className="absolute top-3 right-3 z-10">
-                  {post.status === "ADOPTED" ? (
-                    <span className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
-                      <FaCircleCheck className="text-white" /> ได้บ้านแล้ว
-                    </span>
-                  ) : (
-                    <span className="bg-[#D4A373]/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm animate-pulse">
-                      หาบ้านอยู่
-                    </span>
-                  )}
-                </div>
-                {post.images?.length > 0 ? (
-                  <img
-                    src={post.images[0].image_url}
-                    alt={post.pet_name}
-                    className={`w-full aspect-4/3 object-cover transition-transform duration-500 group-hover:scale-110 ${
-                      post.status === "ADOPTED"
-                        ? "grayscale opacity-80"
-                        : "group-hover:scale-105"
-                    }`}
-                  />
-                ) : (
-                  <div className="w-full aspect-4/3 bg-gray-100 flex items-center justify-center text-gray-400">
-                    ไม่มีรูปภาพ
-                  </div>
-                )}
-
-                {post.status === "ADOPTED" && (
-                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center"></div>
-                )}
+            <Link key={post.post_id} href={`/rehoming-report/${post.post_id}`} className="group bg-white rounded-2xl p-3 shadow-md border hover:border-orange-200 transition-all">
+              <div className="relative overflow-hidden rounded-xl mb-3 aspect-square">
+                <img src={post.images?.[0]?.image_url} alt={post.pet_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <div className="absolute top-2 right-2 bg-orange-400 text-white text-[10px] px-2 py-1 rounded-full font-bold">หาบ้านอยู่</div>
               </div>
-
-              <div className="px-2 pb-2">
-                <h2 className="font-bold text-lg text-gray-800 mb-2 group-hover:text-[#D4A373] transition-colors">
-                  {post.pet_name}
-                </h2>
-
-                <div className="text-sm text-gray-500 space-y-1.5">
-                  <p className="flex items-center gap-2">
-                    {post.sex === "MALE" ? (
-                      <FaMars className="text-blue-500" />
-                    ) : post.sex === "FEMALE" ? (
-                      <FaVenus className="text-pink-500" />
-                    ) : (
-                      <FaGenderless className="text-gray-400" />
-                    )}
+              <h3 className="font-bold text-lg text-gray-800 mb-2">{post.pet_name}</h3>
+              <div className="text-sm text-gray-500 space-y-1">
+                <p className="flex items-center gap-2">
+                    {post.sex === "MALE" ? <FaMars className="text-blue-500" /> : <FaVenus className="text-pink-500" />}
                     {getSexLabel(post.sex)}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <HiOutlineCalendar className="text-[#D4A373] shrink-0" />
-                    <span className="truncate">
-                      อายุ: {post.age || "ไม่ระบุ"}
-                    </span>
-                  </p>
-
-                  <p className="flex items-center gap-2">
-                    <MdOutlineQuestionAnswer className="text-[#D4A373] shrink-0" />
-                    <span className="truncate">
-                      เหตุผล: {post.reason || "ไม่ระบุ"}
-                    </span>
-                  </p>
-
-                  <p className="flex items-center gap-2">
-                    <HiOutlinePhone className="text-[#D4A373] shrink-0" />
-                    <span className="truncate">{post.phone || "ไม่ระบุ"}</span>
-                  </p>
-
-                  <p className="flex items-center gap-2">
-                    <FiMapPin className="text-red-500 shrink-0" />
-                    <span className="truncate">
-                      {post.address || "ไม่ระบุ"}
-                    </span>
-                  </p>
-
-                  {/* Footer */}
-                  <div className="px-4 pb-4 pt-2 mt-auto">
-                    <div className="flex items-center justify-between gap-4 text-xs md:text-sm pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="shrink-0">
-                          {healthStatusIcons[post.vaccination_status]?.icon}
-                        </span>
-                        <span className="truncate">
-                          {healthStatusIcons[post.vaccination_status]?.label ||
-                            "ไม่ระบุ"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 truncate min-w-0">
-                        <span className="shrink-0">
-                          {neuteredstatusIcons[post.neutered_status]?.icon}
-                        </span>
-                        <span className="truncate">
-                          {neuteredstatusIcons[post.neutered_status]?.label ||
-                            "ไม่ระบุ"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </p>
+                <p className="flex items-center gap-2"><HiOutlineCalendar className="text-[#D4A373]" /> อายุ: {post.age}</p>
+                <p className="flex items-center gap-2"><FiMapPin className="text-red-500" /> {post.address}</p>
               </div>
             </Link>
           ))}
         </div>
-
         <div className="text-center mt-8">
-          <button
-            onClick={() => router.push("/rehoming-report")}
-            className="px-6 py-2 bg-white border-2 border-[#D4A373] text-[#D4A373] rounded-full font-bold hover:bg-[#D4A373] hover:text-white transition-all shadow-sm"
-          >
-            ดูประกาศทั้งหมด →
-          </button>
+          <button onClick={() => router.push("/rehoming-report")} className="px-6 py-2 border-2 border-[#D4A373] text-[#D4A373] rounded-full font-bold hover:bg-[#D4A373] hover:text-white transition-all">ดูประกาศทั้งหมด →</button>
         </div>
       </section>
     </div>

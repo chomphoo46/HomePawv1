@@ -2,12 +2,21 @@
 
 import { useState, useEffect, useRef } from "react";
 import Header from "@/app/components/Header";
+import dynamic from "next/dynamic";
 import { HiPhoto, HiMapPin, HiXMark } from "react-icons/hi2";
 import { MdOutlinePets } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import { FaPaw, FaTrash } from "react-icons/fa"; // เพิ่ม icon ถังขยะ
 
+const MapComponent = dynamic(() => import("@/app/components/LocationPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
+      กำลังโหลดแผนที่...
+    </div>
+  ),
+});
 export default function ReportForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -22,11 +31,6 @@ export default function ReportForm() {
     lng: number;
     address: string;
   } | null>(null);
-
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const geocoderRef = useRef<any>(null);
 
   const [formData, setFormData] = useState({
     animalType: "",
@@ -56,114 +60,19 @@ export default function ReportForm() {
     };
   }, [previewUrls]);
 
-  // Map Logic
-  useEffect(() => {
-    if (!showMap || !mapContainerRef.current) return;
+  // ฟังก์ชันรับพิกัดจาก Map Component
+  const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    setSelectedLocation({ lat, lng, address });
+  };
 
-    const google = (window as any).google;
-    if (!google) return;
-
-    // 1. สร้าง Geocoder และ Map Instance
-    geocoderRef.current = new google.maps.Geocoder();
-
-    const initialPos = selectedLocation
-      ? { lat: selectedLocation.lat, lng: selectedLocation.lng }
-      : { lat: 13.7563, lng: 100.5018 };
-
-    const mapOptions = {
-      center: initialPos,
-      zoom: 15,
-      gestureHandling: "greedy", // ✅ ช่วยให้มือถือเลื่อนแผนที่ได้ถนัดขึ้น
-      disableDefaultUI: false,
-    };
-
-    mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
-
-    // 2. ฟังก์ชันช่วยสร้างหรือย้ายหมุด (เพื่อลดความซ้ำซ้อน)
-    const placeMarker = (location: { lat: number; lng: number }) => {
-      if (!markerRef.current) {
-        markerRef.current = new google.maps.Marker({
-          position: location,
-          map: mapRef.current,
-          draggable: true,
-          animation: google.maps.Animation.DROP, // ✅ ใส่ Animation ให้รู้ว่าหมุดลงแล้ว
-        });
-
-        markerRef.current.addListener("dragend", (event: any) => {
-          updateLocation(event.latLng.lat(), event.latLng.lng());
-        });
-      } else {
-        markerRef.current.setPosition(location);
-      }
-    };
-
-    // 3. วาดหมุดทันทีถ้ามีตำแหน่งเดิม (เช่น พฤกษา 12)
+  const handleConfirmLocation = () => {
     if (selectedLocation) {
-      placeMarker(initialPos);
+      setFormData((prev) => ({ ...prev, location: selectedLocation.address }));
     }
-
-    // 4. ขอพิกัดปัจจุบัน (เฉพาะตอนไม่มีตำแหน่งเดิม)
-    if (!selectedLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const currentPos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          if (mapRef.current) {
-            mapRef.current.setCenter(currentPos);
-            placeMarker(currentPos);
-            updateLocation(currentPos.lat, currentPos.lng);
-          }
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          // กรณีหาพิกัดไม่ได้ ให้ปักหมุดไว้ที่ Center เริ่มต้น (กรุงเทพฯ) เลยเพื่อให้คนใช้เห็นหมุด
-          placeMarker(initialPos);
-          updateLocation(initialPos.lat, initialPos.lng);
-        },
-        { enableHighAccuracy: true, timeout: 5000 },
-      );
-    }
-
-    // 5. Event คลิกเพื่อย้ายหมุด
-    mapRef.current.addListener("click", (e: any) => {
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
-      placeMarker({ lat, lng });
-      updateLocation(lat, lng);
-    });
-
-    // Cleanup เมื่อปิดหน้าต่าง
-    return () => {
-      if (markerRef.current) markerRef.current.setMap(null);
-      markerRef.current = null;
-    };
-  }, [showMap]);
-
-  const updateLocation = (lat: number, lng: number) => {
-    if (!geocoderRef.current) return;
-    geocoderRef.current.geocode(
-      { location: { lat, lng } },
-      (results: any, status: any) => {
-        if (status === "OK" && results[0]) {
-          setSelectedLocation({
-            lat,
-            lng,
-            address: results[0].formatted_address,
-          });
-        }
-      },
-    );
+    setShowMap(false);
   };
 
   const handleMapToggle = () => setShowMap((prev) => !prev);
-
-  const handleSelectLocation = () => {
-    if (selectedLocation)
-      setFormData((prev) => ({ ...prev, location: selectedLocation.address }));
-    setShowMap(false);
-  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -406,11 +315,11 @@ export default function ReportForm() {
                 />
                 <button
                   type="button"
-                  onClick={handleMapToggle}
-                  className="sm:w-auto inline-flex justify-center items-center px-4 py-3 bg-[#D4A373] text-white font-medium rounded-xl text-sm transition-all shadow-md hover:bg-[#c49261]"
+                  onClick={() => setShowMap(true)}
+                  className="sm:w-auto inline-flex justify-center items-center px-4 py-3 bg-[#D4A373] text-white font-medium rounded-xl text-sm transition-all shadow-md"
                 >
                   <HiMapPin className="w-4 h-4 mr-2" />
-                  {showMap ? "ปิดแผนที่" : "ปักหมุดบนแผนที่"}
+                  {formData.location ? "แก้ไขพิกัด" : "ปักหมุดบนแผนที่"}
                 </button>
               </div>
               {selectedLocation && (
@@ -520,6 +429,7 @@ export default function ReportForm() {
       {showMap && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 flex items-center justify-center p-0 md:p-4">
           <div className="bg-white w-full h-full md:h-auto md:max-w-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            {/* Header ของ Popup */}
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="font-semibold text-gray-800 flex items-center">
                 <HiMapPin className="mr-2 text-[#D4A373]" />{" "}
@@ -533,25 +443,35 @@ export default function ReportForm() {
               </button>
             </div>
 
+            {/* Body ของ Popup */}
             <div className="flex-1 md:flex-none p-4 space-y-4">
-              <div
-                ref={mapContainerRef}
-                className="w-full h-[60vh] md:h-80 bg-gray-100 rounded-xl border"
-              />
+              {/* เปลี่ยนจาก div ref เดิม เป็น Map Component ใหม่ */}
+              <div className="w-full h-[60vh] md:h-80 bg-gray-100 rounded-xl border overflow-hidden relative z-0">
+                <MapComponent
+                  onLocationSelect={handleLocationSelect}
+                  initialPos={selectedLocation || undefined}
+                />
+              </div>
 
-              {selectedLocation && (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+              {/* ส่วนแสดงที่วันที่เลือก (Address) */}
+              <div className="min-h-15 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                {selectedLocation ? (
                   <p className="text-xs text-amber-700 font-medium">
-                    {selectedLocation.address}
+                    📍 {selectedLocation.address}
                   </p>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-gray-400 italic">
+                    * กรุณาคลิกเลือกตำแหน่งบนแผนที่ หรือลากหมุดเพื่อระบุตำแหน่ง
+                  </p>
+                )}
+              </div>
 
+              {/* ปุ่มกดยืนยัน/ยกเลิก */}
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={handleSelectLocation}
+                  onClick={handleConfirmLocation} // ฟังก์ชันที่เราสร้างใหม่เพื่อบันทึกที่อยู่ลง Form
                   disabled={!selectedLocation}
-                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md"
+                  className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md active:scale-95"
                 >
                   ยืนยันตำแหน่ง
                 </button>
