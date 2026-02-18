@@ -60,6 +60,43 @@ export default function ReportForm() {
     };
   }, [previewUrls]);
 
+  useEffect(() => {
+    if (showMap && !selectedLocation) {
+      // ถ้าเปิดแผนที่ขึ้นมาและยังไม่มีการปักหมุด ให้ขอตำแหน่งปัจจุบัน
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            // เรียก Reverse Geocoding เพื่อเอาที่อยู่ (Address) จากพิกัด
+            try {
+              const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+              );
+              const data = await res.json();
+              const address = data.display_name || "ตำแหน่งปัจจุบันของคุณ";
+
+              setSelectedLocation({
+                lat: latitude,
+                lng: longitude,
+                address: address,
+              });
+            } catch (error) {
+              console.error("Error fetching address:", error);
+              setSelectedLocation({
+                lat: latitude,
+                lng: longitude,
+                address: "พบตำแหน่งของคุณแล้ว",
+              });
+            }
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+          },
+        );
+      }
+    }
+  }, [showMap]);
   // ฟังก์ชันรับพิกัดจาก Map Component
   const handleLocationSelect = (lat: number, lng: number, address: string) => {
     setSelectedLocation({ lat, lng, address });
