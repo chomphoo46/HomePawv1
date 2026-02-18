@@ -77,7 +77,7 @@ export default function LeafletMap({
               <div className="flex flex-col w-full bg-white overflow-hidden">
                 
                 {/* 1. ส่วนรูปภาพและ Image Slider */}
-                <div className="relative w-full h-[140px] overflow-hidden group">
+                <div className="relative w-full h-35 overflow-hidden group">
                   <div 
                     id={`slider-${post.report_id}`}
                     className="flex overflow-x-auto scroll-snap-x mandatory h-full no-scrollbar"
@@ -87,7 +87,7 @@ export default function LeafletMap({
                       <img 
                         key={idx}
                         src={url} 
-                        className="w-full h-full object-cover flex-shrink-0 scroll-snap-align-start"
+                        className="w-full h-full object-cover shrink-0 scroll-snap-align-start"
                         alt="animal"
                       />
                     ))}
