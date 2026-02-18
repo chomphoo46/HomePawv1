@@ -60,38 +60,40 @@ export default function ReportForm() {
     };
   }, [previewUrls]);
 
+  // ใส่ไว้ในตัวฟังก์ชัน ReportForm
   useEffect(() => {
+    // ทำงานเฉพาะเมื่อเปิด Map และยังไม่มีตำแหน่งที่เคยเลือกไว้
     if (showMap && !selectedLocation) {
-      // ถ้าเปิดแผนที่ขึ้นมาและยังไม่มีการปักหมุด ให้ขอตำแหน่งปัจจุบัน
-      if ("geolocation" in navigator) {
+      if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords;
 
-            // เรียก Reverse Geocoding เพื่อเอาที่อยู่ (Address) จากพิกัด
+            // ดึงที่อยู่ภาษาไทยจากพิกัดปัจจุบัน
             try {
               const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=th`,
               );
               const data = await res.json();
-              const address = data.display_name || "ตำแหน่งปัจจุบันของคุณ";
 
+              // ส่งตำแหน่งปัจจุบันเข้าไปใน State
               setSelectedLocation({
                 lat: latitude,
                 lng: longitude,
-                address: address,
+                address: data.display_name || "ตำแหน่งปัจจุบันของคุณ",
               });
             } catch (error) {
-              console.error("Error fetching address:", error);
+              // ถ้าดึงที่อยู่ไม่สำเร็จ อย่างน้อยก็เอาพิกัดมา
               setSelectedLocation({
                 lat: latitude,
                 lng: longitude,
-                address: "พบตำแหน่งของคุณแล้ว",
+                address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
               });
             }
           },
           (error) => {
-            console.error("Error getting location:", error);
+            console.error("Geolocation Error:", error);
+            // ถ้าผู้ใช้ไม่อนุญาตสิทธิ์ GPS แผนที่จะอยู่ที่ Default (กรุงเทพ) ตามที่คุณตั้งไว้ใน Picker
           },
         );
       }
