@@ -107,16 +107,6 @@ export default function HomePage() {
     urgentHelp: 0,
   });
 
-  const getSexLabel = (sex: string) => {
-    switch (sex) {
-      case "MALE":
-        return "เพศ: ผู้";
-      case "FEMALE":
-        return "เพศ: เมีย";
-      default:
-        return "ไม่ระบุ";
-    }
-  };
   const handleHelp = async (id: string, type: "FEED" | "ADOPT") => {
     if (!session) {
       alert("กรุณาเข้าสู่ระบบก่อนให้ความช่วยเหลือ");
@@ -124,14 +114,21 @@ export default function HomePage() {
     }
 
     try {
-      // 1. เรียก API เพื่อบันทึกลง Database (ตัวอย่าง)
       const response = await fetch("/api/help-action", {
         method: "POST",
-        body: JSON.stringify({ report_id: id, type, user_id: session.user.id }),
+        headers: {
+          "Content-Type": "application/json", // เพิ่ม Header เพื่อความชัวร์
+        },
+        body: JSON.stringify({
+          report_id: parseInt(id), // แปลง string เป็น number ตามที่ API ต้องการ
+          action_type: type, // เปลี่ยนจาก type เป็น action_type ให้ตรงกับ API
+        }),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        // 2. อัปเดต State ทันทีเพื่อให้ชื่อปรากฏบนแผนที่
+        // อัปเดต State (เหมือนเดิม)
         const newHelper = {
           user_name: session.user.name,
           type: type,
@@ -140,7 +137,6 @@ export default function HomePage() {
         const updatePosts = (prevPosts: any[]) =>
           prevPosts.map((post) => {
             if (post.report_id === id) {
-              // เพิ่มคนช่วยใหม่เข้าไปใน array recent_helpers
               const currentHelpers = post.recent_helpers || [];
               return {
                 ...post,
@@ -152,6 +148,9 @@ export default function HomePage() {
 
         setAllAnimalPosts(updatePosts);
         setFilteredPosts(updatePosts);
+      } else {
+        console.error("Server error:", result.error);
+        alert(`เกิดข้อผิดพลาด: ${result.error}`);
       }
     } catch (error) {
       console.error("Error helping animal:", error);
