@@ -93,7 +93,7 @@ export default function LeafletMap({
 
         return (
           <Marker
-            key={post.report_id}
+            key={`${post.report_id}-${post.recent_helpers?.length || 0}`}
             position={[lat, lng]}
             icon={icon || undefined}
           >

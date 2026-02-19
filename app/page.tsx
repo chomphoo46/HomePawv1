@@ -117,9 +117,45 @@ export default function HomePage() {
         return "ไม่ระบุ";
     }
   };
-  const handleHelp = (id: string, type: string) => {
-    console.log("Helping animal:", id, "Action:", type);
-    // ใส่ Logic เช่นเปิด Modal หรือเรียก API ตรงนี้
+  const handleHelp = async (id: string, type: "FEED" | "ADOPT") => {
+    if (!session) {
+      alert("กรุณาเข้าสู่ระบบก่อนให้ความช่วยเหลือ");
+      return;
+    }
+
+    try {
+      // 1. เรียก API เพื่อบันทึกลง Database (ตัวอย่าง)
+      const response = await fetch("/api/help-action", {
+        method: "POST",
+        body: JSON.stringify({ report_id: id, type, user_id: session.user.id }),
+      });
+
+      if (response.ok) {
+        // 2. อัปเดต State ทันทีเพื่อให้ชื่อปรากฏบนแผนที่
+        const newHelper = {
+          user_name: session.user.name,
+          type: type,
+        };
+
+        const updatePosts = (prevPosts: any[]) =>
+          prevPosts.map((post) => {
+            if (post.report_id === id) {
+              // เพิ่มคนช่วยใหม่เข้าไปใน array recent_helpers
+              const currentHelpers = post.recent_helpers || [];
+              return {
+                ...post,
+                recent_helpers: [newHelper, ...currentHelpers],
+              };
+            }
+            return post;
+          });
+
+        setAllAnimalPosts(updatePosts);
+        setFilteredPosts(updatePosts);
+      }
+    } catch (error) {
+      console.error("Error helping animal:", error);
+    }
   };
   // 1. Geolocation
   useEffect(() => {
