@@ -83,7 +83,6 @@ export default function LeafletMap({
           isSmartSearch && post.matchScore > 70,
         );
 
-        // --- เตรียมข้อมูลรูปภาพสำหรับ Slider ---
         const imagesList =
           post.images && post.images.length > 0
             ? post.images.map((img: any) =>
@@ -97,63 +96,70 @@ export default function LeafletMap({
             position={[lat, lng]}
             icon={icon || undefined}
           >
-            <Popup minWidth={280} className={mali.className}>
-              <div className="flex flex-col w-full bg-white overflow-hidden">
-                {/* 1. ส่วนรูปภาพและ Image Slider */}
-                <div className="relative w-full h-35 overflow-hidden group">
+            <Popup
+              maxWidth={
+                window.innerWidth < 640 ? window.innerWidth * 0.85 : 320
+              }
+              className={`${mali.className} custom-popup`}
+            >
+              <div className="flex flex-col w-full max-w-70 sm:max-w-[320px] bg-white overflow-hidden rounded-lg shadow-lg">
+                {/* 1. Image Section - ใช้อัตราส่วนคงที่ */}
+                <div className="relative w-full aspect-video overflow-hidden group bg-gray-200">
                   <div
                     id={`slider-${post.report_id}`}
-                    className="flex overflow-x-auto scroll-snap-x mandatory h-full no-scrollbar"
+                    className="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
                     {imagesList.map((url: string, idx: number) => (
                       <img
                         key={idx}
                         src={url}
-                        className="w-full h-full object-cover shrink-0 scroll-snap-align-start"
+                        className="w-full h-full object-cover shrink-0 snap-start"
                         alt="animal"
                       />
                     ))}
                   </div>
 
-                  {/* ปุ่มลูกศร */}
+                  {/* Arrow Buttons - ซ่อนใน Mobile ถ้าไม่อยากให้รก หรือทำให้เล็กลง */}
                   {imagesList.length > 1 && (
-                    <>
+                    <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           document
                             .getElementById(`slider-${post.report_id}`)
-                            ?.scrollBy({ left: -200, behavior: "smooth" })
-                        }
-                        className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center z-20 hover:bg-black/70"
+                            ?.scrollBy({ left: -200, behavior: "smooth" });
+                        }}
+                        className="pointer-events-auto bg-black/40 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-black/60 backdrop-blur-sm"
                       >
                         ❮
                       </button>
                       <button
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           document
                             .getElementById(`slider-${post.report_id}`)
-                            ?.scrollBy({ left: 200, behavior: "smooth" })
-                        }
-                        className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center z-20 hover:bg-black/70"
+                            ?.scrollBy({ left: 200, behavior: "smooth" });
+                        }}
+                        className="pointer-events-auto bg-black/40 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-black/60 backdrop-blur-sm"
                       >
                         ❯
                       </button>
-                    </>
+                    </div>
                   )}
 
-                  {/* Badge สถานะ */}
-                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full z-10 flex items-center gap-1">
+                  {/* Badge Status - ปรับขนาด Text เล็กน้อย */}
+                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full z-10 flex items-center gap-1.5">
                     <div
-                      className={`w-1.5 h-1.5 rounded-full ${
+                      className={`w-2 h-2 rounded-full ${
                         post.status === "STILL_THERE"
                           ? "bg-red-500"
                           : post.status === "MOVED"
                             ? "bg-amber-500"
                             : "bg-green-500"
-                      }`}
+                      } animate-pulse`}
                     />
-                    <span className="text-[10px] text-white font-semibold">
+                    <span className="text-[10px] sm:text-[11px] text-white font-bold">
                       {post.status === "STILL_THERE"
                         ? "ยังอยู่ที่เดิม"
                         : post.status === "MOVED"
@@ -163,37 +169,41 @@ export default function LeafletMap({
                   </div>
                 </div>
 
-                {/* 2. ส่วนข้อมูลรายละเอียด */}
-                <div className="p-3">
-                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">
+                {/* 2. Content Section - ปรับ Padding และ Max Height */}
+                <div className="p-3 max-h-[60vh] overflow-y-auto">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight mb-1 truncate">
                     พบที่ {post.location}
                   </h3>
-                  <p className="text-[10px] text-gray-400 mb-2">
+                  <p className="text-[10px] text-gray-500 mb-2">
                     {formatDateTime(post.created_at)} • โดย{" "}
                     {post.user?.name || "ไม่ระบุ"}
                   </p>
 
-                  <div className="bg-gray-50 border border-gray-100 rounded-lg p-2 mb-3 text-[11px] text-gray-700 space-y-1">
-                    <p>
-                      <span className="text-gray-400">ลักษณะ:</span>{" "}
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 mb-3 text-[11px] sm:text-[12px] text-gray-700 space-y-1.5">
+                    <p className="line-clamp-2">
+                      <span className="font-semibold text-gray-400">
+                        ลักษณะ:
+                      </span>{" "}
                       {post.description || "ไม่มีคำอธิบาย"}
                     </p>
                     <p>
-                      <span className="text-gray-400">พฤติกรรม:</span>{" "}
+                      <span className="font-semibold text-gray-400">
+                        พฤติกรรม:
+                      </span>{" "}
                       {getBehaviorLabel(post.behavior)}
                     </p>
                   </div>
-                  {/* --- ส่วนที่เพิ่มใหม่: รายชื่อผู้ช่วยเหลือล่าสุด --- */}
+
+                  {/* Helpers Section */}
                   {post.recent_helpers && post.recent_helpers.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
                       {post.recent_helpers
                         .slice(0, 2)
                         .map((helper: any, idx: number) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full text-[9px] font-medium border border-blue-100"
+                            className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-medium border border-blue-100"
                           >
-                            <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse" />
                             {helper.user_name}{" "}
                             {helper.type === "FEED"
                               ? "ให้อาหารแล้ว"
@@ -202,23 +212,23 @@ export default function LeafletMap({
                         ))}
                       {post.recent_helpers.length > 2 && (
                         <span className="text-[9px] text-gray-400 self-center">
-                          +{post.recent_helpers.length - 2} คนอื่นๆ
+                          +{post.recent_helpers.length - 2}
                         </span>
                       )}
                     </div>
                   )}
 
-                  {/* ปุ่ม Action */}
-                  <div className="flex gap-2 mb-2">
+                  {/* Action Buttons - ปรับให้ยืดหยุ่น */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
-                      onClick={() => onHelpAction(post.report_id, "FEED")} // แก้ตรงนี้
-                      className="flex-1 h-9 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl font-bold text-xs hover:bg-orange-100"
+                      onClick={() => onHelpAction(post.report_id, "FEED")}
+                      className="py-2.5 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl font-bold text-xs active:scale-95 transition-transform"
                     >
                       ให้อาหาร
                     </button>
                     <button
-                      onClick={() => onHelpAction(post.report_id, "ADOPT")} // แก้ตรงนี้
-                      className="flex-1 h-9 bg-[#D4A373] text-white rounded-xl font-bold text-xs hover:bg-[#c49261]"
+                      onClick={() => onHelpAction(post.report_id, "ADOPT")}
+                      className="py-2.5 bg-[#D4A373] text-white rounded-xl font-bold text-xs shadow-sm active:scale-95 transition-transform"
                     >
                       รับเลี้ยง
                     </button>
@@ -228,9 +238,9 @@ export default function LeafletMap({
                     onClick={() =>
                       router.push(`/animal-report/${post.report_id}`)
                     }
-                    className="w-full text-[10px] text-gray-400 underline hover:text-gray-600"
+                    className="w-full text-[11px] text-gray-400 text-center hover:text-blue-500 transition-colors py-1"
                   >
-                    ดูรายละเอียดเพิ่มเติม
+                    ดูรายละเอียดทั้งหมด →
                   </button>
                 </div>
               </div>
