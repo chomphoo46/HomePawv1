@@ -1,43 +1,77 @@
 @import "tailwindcss";
-/* --- Leaflet Popup Overrides (ชุดไม้ตายสำหรับ Mobile) --- */
 
-/* บังคับให้ Leaflet Popup Content กินพื้นที่เต็ม 100% และไม่มี margin ส่วนเกิน */
-.custom-popup .leaflet-popup-content {
-  margin: 0 !important;
-  width: 270px !important; /* ต้องเท่ากับ maxWidth ใน Component */
+/* --- Leaflet Popup Overrides (ชุดไม้ตายสำหรับ Mobile - Optimized) --- */
+
+/* 1. คุมกรอบนอกสุด (Wrapper) */
+.custom-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 16px !important; /* โค้งมนสวยงามแบบ Modern App */
+  overflow: hidden !important; /* สำคัญมาก: กันรูปภาพ/เนื้อหาล้นขอบมน */
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* ปรับปรุงปุ่มปิดวงกลมให้แสดงผลบนมือถือชัดเจนขึ้น */
+/* 2. คุมพื้นที่เนื้อหาด้านใน */
+.custom-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: 270px !important;
+  line-height: inherit !important;
+}
+
+/* 3. ลบเงามาตรฐานของ Leaflet ออก */
+.custom-popup .leaflet-popup-shadow {
+  display: none !important;
+}
+
+/* 4. ปุ่มปิดวงกลม (ปรับปรุงความนิ่งและตำแหน่ง) */
 .custom-popup .leaflet-popup-close-button {
   background-color: white !important;
   border-radius: 50% !important;
-  top: 8px !important;
-  right: 8px !important;
-  width: 28px !important;
-  height: 28px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  top: 10px !important; /* ปรับลงมานิดให้ดูสมดุล */
+  right: 10px !important;
+  width: 30px !important;
+  height: 30px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   z-index: 1000 !important;
   border: none !important;
-  color: transparent !important; /* ซ่อนตัว 'x' เดิม */
+  color: transparent !important;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease !important;
 }
 
-/* วาดเส้นกากบาทใหม่ */
+.custom-popup .leaflet-popup-close-button:hover {
+  background-color: #f8f8f8 !important;
+  transform: scale(1.05);
+}
+
+/* 5. วาดกากบาทใหม่ (ใช้ค่ากึ่งกลางที่เป๊ะขึ้น) */
 .custom-popup .leaflet-popup-close-button::before,
 .custom-popup .leaflet-popup-close-button::after {
   content: "" !important;
   position: absolute !important;
-  width: 12px !important;
+  width: 14px !important;
   height: 2px !important;
-  background-color: #555 !important;
+  background-color: #333 !important;
   top: 50% !important;
   left: 50% !important;
+  border-radius: 10px !important;
 }
+
 .custom-popup .leaflet-popup-close-button::before {
-  transform: translate(-50%, -50%) rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg) !important;
 }
+
 .custom-popup .leaflet-popup-close-button::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
+  transform: translate(-50%, -50%) rotate(-45deg) !important;
+}
+
+/* 6. ปรับแต่งติ่งแหลมด้านล่าง (Tip) ให้เข้ากับเงาใหม่ */
+.custom-popup .leaflet-popup-tip {
+  background: white !important;
+  box-shadow: none !important; /* ลบเงาที่ติ่งเพื่อไม่ให้ดูแปลก */
 }

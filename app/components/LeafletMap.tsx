@@ -104,16 +104,19 @@ export default function LeafletMap({
             icon={icon || undefined}
           >
             <Popup
-              maxWidth={270} // บังคับความกว้างให้ตรงกับ CSS
-              maxHeight={420} // บังคับความสูงเพื่อให้ Leaflet เปิดระบบ Scroll ภายใน
+              maxWidth={270}
+              minWidth={270} // เพิ่ม minWidth ให้ UI นิ่ง
+              maxHeight={450} // ขยาย maxHeight ของ Popup ให้ครอบคลุมเนื้อหาที่จะ scroll
               className={`${mali.className} custom-popup`}
             >
               <div
-                className="flex flex-col w-full bg-white overflow-hidden overscroll-contain"
+                className="flex flex-col w-full bg-white overflow-hidden"
+                // หยุดทุก Event ไม่ให้ทะลุไปหาแผนที่ (ทั้งลาก, คลิก, ซูม)
+                onMouseDown={(e) => L.DomEvent.stopPropagation(e as any)}
                 onWheel={(e) => L.DomEvent.stopPropagation(e as any)}
               >
-                {/* 1. Image Section - ใช้อัตราส่วนคงที่ */}
-                <div className="relative w-full aspect-video overflow-hidden group bg-gray-200">
+                {/* 1. Image Slider Section */}
+                <div className="relative w-full aspect-video shrink-0 overflow-hidden group bg-gray-200">
                   <div
                     id={`slider-${post.report_id}`}
                     className="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar"
@@ -129,12 +132,12 @@ export default function LeafletMap({
                     ))}
                   </div>
 
-                  {/* Arrow Buttons - ซ่อนใน Mobile ถ้าไม่อยากให้รก หรือทำให้เล็กลง */}
+                  {/* Slider Buttons */}
                   {imagesList.length > 1 && (
                     <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
+                          L.DomEvent.stopPropagation(e as any);
                           document
                             .getElementById(`slider-${post.report_id}`)
                             ?.scrollBy({ left: -200, behavior: "smooth" });
@@ -145,7 +148,7 @@ export default function LeafletMap({
                       </button>
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
+                          L.DomEvent.stopPropagation(e as any);
                           document
                             .getElementById(`slider-${post.report_id}`)
                             ?.scrollBy({ left: 200, behavior: "smooth" });
@@ -157,16 +160,10 @@ export default function LeafletMap({
                     </div>
                   )}
 
-                  {/* Badge Status - ปรับขนาด Text เล็กน้อย */}
+                  {/* Status Badge */}
                   <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full z-10 flex items-center gap-1.5">
                     <div
-                      className={`w-2 h-2 rounded-full ${
-                        post.status === "STILL_THERE"
-                          ? "bg-red-500"
-                          : post.status === "MOVED"
-                            ? "bg-amber-500"
-                            : "bg-green-500"
-                      } animate-pulse`}
+                      className={`w-2 h-2 rounded-full ${post.status === "STILL_THERE" ? "bg-red-500" : post.status === "MOVED" ? "bg-amber-500" : "bg-green-500"} animate-pulse`}
                     />
                     <span className="text-[10px] sm:text-[11px] text-white font-bold">
                       {post.status === "STILL_THERE"
@@ -178,15 +175,23 @@ export default function LeafletMap({
                   </div>
                 </div>
 
+                {/* 2. Scrollable Content Section */}
                 <div
-                  className="p-3 overflow-y-auto"
-                  style={{ maxHeight: "300px" }}
+                  className="p-3 overflow-y-auto overscroll-contain"
+                  style={{
+                    maxHeight: "300px",
+                    WebkitOverflowScrolling: "touch", // สำหรับการ scroll ที่นุ่มนวลบน iOS
+                  }}
                 >
                   <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight mb-1 truncate">
                     พบที่ {post.location}
                   </h3>
 
-                  {/* รายละเอียด */}
+                  <p className="text-[10px] text-gray-500 mb-2">
+                    {formatDateTime(post.created_at)} • โดย{" "}
+                    {post.user?.name || "ไม่ระบุ"}
+                  </p>
+
                   <div className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 mb-3 text-[11px] text-gray-700 space-y-1.5">
                     <p className="line-clamp-2">
                       <span className="font-semibold text-gray-400">
@@ -210,7 +215,7 @@ export default function LeafletMap({
                         .map((helper: any, idx: number) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-medium border border-blue-100"
+                            className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-[9px] font-medium border border-blue-100"
                           >
                             {helper.user_name}{" "}
                             {helper.type === "FEED"
@@ -226,8 +231,8 @@ export default function LeafletMap({
                     </div>
                   )}
 
-                  {/* Action Buttons - ปรับให้ยืดหยุ่น */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 pb-4">
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 pb-2">
                     <button
                       onClick={(e) => {
                         L.DomEvent.stopPropagation(e as any);
@@ -249,10 +254,11 @@ export default function LeafletMap({
                   </div>
 
                   <button
-                    onClick={() =>
-                      router.push(`/animal-report/${post.report_id}`)
-                    }
-                    className="w-full text-[11px] text-gray-400 text-center hover:text-blue-500 transition-colors py-1"
+                    onClick={(e) => {
+                      L.DomEvent.stopPropagation(e as any);
+                      router.push(`/animal-report/${post.report_id}`);
+                    }}
+                    className="w-full text-[11px] text-gray-400 text-center hover:text-blue-500 transition-colors py-2"
                   >
                     ดูรายละเอียดทั้งหมด →
                   </button>
