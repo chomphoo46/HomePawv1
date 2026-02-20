@@ -66,7 +66,14 @@ export default function LeafletMap({
   if (typeof window === "undefined") return null;
 
   return (
-    <MapContainer center={center} zoom={zoom} className="w-full h-full z-0">
+    <MapContainer
+      center={center}
+      zoom={zoom}
+      className="w-full h-full"
+      dragging={true} 
+      scrollWheelZoom={false}
+      touchZoom={true}
+    >
       <ChangeView center={center} zoom={zoom} />
       <TileLayer
         attribution="&copy; OpenStreetMap contributors"
