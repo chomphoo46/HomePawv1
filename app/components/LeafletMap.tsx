@@ -70,7 +70,7 @@ export default function LeafletMap({
       center={center}
       zoom={zoom}
       className="w-full h-full"
-      dragging={true} 
+      dragging={true}
       scrollWheelZoom={false}
       touchZoom={true}
     >
@@ -104,12 +104,14 @@ export default function LeafletMap({
             icon={icon || undefined}
           >
             <Popup
-              maxWidth={
-                window.innerWidth < 640 ? window.innerWidth * 0.85 : 320
-              }
+              maxWidth={270} // บังคับความกว้างให้ตรงกับ CSS
+              maxHeight={420} // บังคับความสูงเพื่อให้ Leaflet เปิดระบบ Scroll ภายใน
               className={`${mali.className} custom-popup`}
             >
-              <div className="flex flex-col w-full max-w-70 sm:max-w-[320px] bg-white overflow-hidden rounded-lg shadow-lg">
+              <div
+                className="flex flex-col w-full bg-white overflow-hidden overscroll-contain"
+                onWheel={(e) => L.DomEvent.stopPropagation(e as any)}
+              >
                 {/* 1. Image Section - ใช้อัตราส่วนคงที่ */}
                 <div className="relative w-full aspect-video overflow-hidden group bg-gray-200">
                   <div
@@ -176,17 +178,16 @@ export default function LeafletMap({
                   </div>
                 </div>
 
-                {/* 2. Content Section - ปรับ Padding และ Max Height */}
-                <div className="p-3 max-h-[60vh] overflow-y-auto">
+                <div
+                  className="p-3 overflow-y-auto"
+                  style={{ maxHeight: "300px" }}
+                >
                   <h3 className="text-sm sm:text-base font-bold text-gray-900 leading-tight mb-1 truncate">
                     พบที่ {post.location}
                   </h3>
-                  <p className="text-[10px] text-gray-500 mb-2">
-                    {formatDateTime(post.created_at)} • โดย{" "}
-                    {post.user?.name || "ไม่ระบุ"}
-                  </p>
 
-                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 mb-3 text-[11px] sm:text-[12px] text-gray-700 space-y-1.5">
+                  {/* รายละเอียด */}
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-2.5 mb-3 text-[11px] text-gray-700 space-y-1.5">
                     <p className="line-clamp-2">
                       <span className="font-semibold text-gray-400">
                         ลักษณะ:
@@ -226,16 +227,22 @@ export default function LeafletMap({
                   )}
 
                   {/* Action Buttons - ปรับให้ยืดหยุ่น */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="grid grid-cols-2 gap-2 pt-2 pb-4">
                     <button
-                      onClick={() => onHelpAction(post.report_id, "FEED")}
-                      className="py-2.5 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl font-bold text-xs active:scale-95 transition-transform"
+                      onClick={(e) => {
+                        L.DomEvent.stopPropagation(e as any);
+                        onHelpAction(post.report_id, "FEED");
+                      }}
+                      className="py-3 bg-orange-50 text-orange-700 border border-orange-100 rounded-xl font-bold text-xs active:scale-95 transition-transform"
                     >
                       ให้อาหาร
                     </button>
                     <button
-                      onClick={() => onHelpAction(post.report_id, "ADOPT")}
-                      className="py-2.5 bg-[#D4A373] text-white rounded-xl font-bold text-xs shadow-sm active:scale-95 transition-transform"
+                      onClick={(e) => {
+                        L.DomEvent.stopPropagation(e as any);
+                        onHelpAction(post.report_id, "ADOPT");
+                      }}
+                      className="py-3 bg-[#D4A373] text-white rounded-xl font-bold text-xs shadow-sm active:scale-95 transition-transform"
                     >
                       รับเลี้ยง
                     </button>

@@ -1,66 +1,69 @@
 @import "tailwindcss";
-/* --- Google Maps InfoWindow Overrides --- */
+/* --- Leaflet Popup Overrides (ชุดไม้ตายสำหรับ Mobile) --- */
 
 /* 1. คุมกรอบสีขาวด้านนอกสุด */
-.gm-style-iw-c {
+.custom-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
   border-radius: 16px !important;
-  max-width: 270px !important; /* ✅ จำกัดความกว้างให้แคบกว่าจอมือถือทั่วไปเพื่อไม่ให้ล้นออกข้าง */
+  max-width: 270px !important; /* ✅ จำกัดความกว้าง */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
 }
 
 /* 2. คุมพื้นที่แสดงผลด้านใน */
-.gm-style-iw-d {
-  overflow-y: auto !important; /* ✅ อนุญาตให้เลื่อนขึ้น-ลงได้ */
-  overflow-x: hidden !important; /* ✅ ห้ามเลื่อนซ้าย-ขวาเด็ดขาด */
-  max-height: 400px !important; /* ✅ กำหนดความสูงสูงสุดเพื่อให้เลื่อนได้เมื่อเนื้อหาเยอะ */
-  padding: 0 !important;
+.custom-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: 100% !important;
+  overflow-y: auto !important; /* ✅ อนุญาตให้เลื่อนขึ้น-ลง */
+  overflow-x: hidden !important;
+  max-height: 420px !important; /* ✅ กันไม่ให้ล้นหน้าจอมือถือ */
 }
 
-/* ซ่อนแถบเลื่อนเพื่อให้ดูเหมือนแอปมือถือ */
-.gm-style-iw-d::-webkit-scrollbar {
+/* ซ่อนแถบเลื่อนเพื่อให้ดูเนียน */
+.custom-popup .leaflet-popup-content::-webkit-scrollbar {
   display: none;
 }
 
-/* --- ชุดไม้ตาย: สร้างปุ่มวงกลมและวาดเส้นกากบาทใหม่เอง --- */
-.gm-ui-hover-effect {
-  background-color: white !important; /* พื้นหลังขาว */
-  border-radius: 50% !important; /* ทรงกลม */
-  top: 8px !important;
-  right: 8px !important;
-  width: 30px !important;
-  height: 30px !important;
-  opacity: 1 !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+/* ลบหางลูกศรด้านล่าง (เลือกเปิด-ปิดได้) */
+.custom-popup .leaflet-popup-tip-container {
+  display: none;
+}
+
+/* --- สร้างปุ่มปิดวงกลมแบบใหม่ (สไตล์ที่คุณต้องการ) --- */
+.custom-popup .leaflet-popup-close-button {
+  background-color: white !important;
+  border-radius: 50% !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 32px !important;
+  height: 32px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  z-index: 999 !important;
+  z-index: 1000 !important;
   border: none !important;
-  outline: none !important;
+  padding: 0 !important;
+  color: transparent !important; /* ซ่อนตัว 'x' เดิม */
 }
 
-/* ซ่อนไอคอนกากบาทเดิมของ Google ทั้งหมดเพื่อไม่ให้ซ้อน */
-.gm-ui-hover-effect img, 
-.gm-ui-hover-effect span {
-  display: none !important;
-}
-
-/* วาดเส้นกากบาทใหม่ด้วย Pseudo-elements (เส้นตัดกัน 45 องศา) */
-.gm-ui-hover-effect::before,
-.gm-ui-hover-effect::after {
+/* วาดเส้นกากบาทใหม่ (สไตล์เดียวกับ Google Maps ที่คุณส่งมา) */
+.custom-popup .leaflet-popup-close-button::before,
+.custom-popup .leaflet-popup-close-button::after {
   content: '' !important;
   position: absolute !important;
-  width: 14px !important; /* ความยาวเส้น */
-  height: 2px !important; /* ความหนาเส้น */
-  background-color: #555 !important; /* สีเทาเข้ม */
+  width: 14px !important;
+  height: 2px !important;
+  background-color: #333 !important;
   border-radius: 1px !important;
+  top: 50% !important;
+  left: 50% !important;
 }
 
-.gm-ui-hover-effect::before {
-  transform: rotate(45deg) !important;
+.custom-popup .leaflet-popup-close-button::before {
+  transform: translate(-50%, -50%) rotate(45deg) !important;
 }
 
-.gm-ui-hover-effect::after {
-  transform: rotate(-45deg) !important;
+.custom-popup .leaflet-popup-close-button::after {
+  transform: translate(-50%, -50%) rotate(-45deg) !important;
 }
