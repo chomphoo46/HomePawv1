@@ -1,69 +1,43 @@
 @import "tailwindcss";
 /* --- Leaflet Popup Overrides (ชุดไม้ตายสำหรับ Mobile) --- */
 
-/* 1. คุมกรอบสีขาวด้านนอกสุด */
-.custom-popup .leaflet-popup-content-wrapper {
-  padding: 0 !important;
-  border-radius: 16px !important;
-  max-width: 270px !important; /* ✅ จำกัดความกว้าง */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
-  overflow: hidden !important;
-}
-
-/* 2. คุมพื้นที่แสดงผลด้านใน */
+/* บังคับให้ Leaflet Popup Content กินพื้นที่เต็ม 100% และไม่มี margin ส่วนเกิน */
 .custom-popup .leaflet-popup-content {
   margin: 0 !important;
-  width: 100% !important;
-  overflow-y: auto !important; /* ✅ อนุญาตให้เลื่อนขึ้น-ลง */
-  overflow-x: hidden !important;
-  max-height: 420px !important; /* ✅ กันไม่ให้ล้นหน้าจอมือถือ */
+  width: 270px !important; /* ต้องเท่ากับ maxWidth ใน Component */
 }
 
-/* ซ่อนแถบเลื่อนเพื่อให้ดูเนียน */
-.custom-popup .leaflet-popup-content::-webkit-scrollbar {
-  display: none;
-}
-
-/* ลบหางลูกศรด้านล่าง (เลือกเปิด-ปิดได้) */
-.custom-popup .leaflet-popup-tip-container {
-  display: none;
-}
-
-/* --- สร้างปุ่มปิดวงกลมแบบใหม่ (สไตล์ที่คุณต้องการ) --- */
+/* ปรับปรุงปุ่มปิดวงกลมให้แสดงผลบนมือถือชัดเจนขึ้น */
 .custom-popup .leaflet-popup-close-button {
   background-color: white !important;
   border-radius: 50% !important;
-  top: 12px !important;
-  right: 12px !important;
-  width: 32px !important;
-  height: 32px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 28px !important;
+  height: 28px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   z-index: 1000 !important;
   border: none !important;
-  padding: 0 !important;
   color: transparent !important; /* ซ่อนตัว 'x' เดิม */
 }
 
-/* วาดเส้นกากบาทใหม่ (สไตล์เดียวกับ Google Maps ที่คุณส่งมา) */
+/* วาดเส้นกากบาทใหม่ */
 .custom-popup .leaflet-popup-close-button::before,
 .custom-popup .leaflet-popup-close-button::after {
-  content: '' !important;
+  content: "" !important;
   position: absolute !important;
-  width: 14px !important;
+  width: 12px !important;
   height: 2px !important;
-  background-color: #333 !important;
-  border-radius: 1px !important;
+  background-color: #555 !important;
   top: 50% !important;
   left: 50% !important;
 }
-
 .custom-popup .leaflet-popup-close-button::before {
-  transform: translate(-50%, -50%) rotate(45deg) !important;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
-
 .custom-popup .leaflet-popup-close-button::after {
-  transform: translate(-50%, -50%) rotate(-45deg) !important;
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
