@@ -241,7 +241,7 @@ export default function ReportForm() {
         return;
       }
 
-      alert("ส่งรายงานสำเร็จ! ขอบคุณที่ช่วยเหลือน้องๆ ครับ");
+      alert("ส่งรายงานสำเร็จ! ขอบคุณที่ช่วยเหลือน้องๆ ค่ะ");
       const targetLat = selectedLocation?.lat || 0;
       const targetLng = selectedLocation?.lng || 0;
       router.push(`/?lat=${targetLat}&lng=${targetLng}`);
