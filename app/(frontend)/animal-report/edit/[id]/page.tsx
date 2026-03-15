@@ -393,7 +393,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
                     )}
                     <div className="flex gap-3 mt-4">
                       <button onClick={handleSelectLocation} disabled={!selectedLocation} 
-                        className="flex-1 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white py-2 rounded-lg transition-all shadow-md disabled:opacity-50"
+                        className="flex-1 bg-lenear-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white py-2 rounded-lg transition-all shadow-md disabled:opacity-50"
                       >
                         ยืนยันตำแหน่ง
                       </button>
@@ -442,7 +442,7 @@ export default function EditAnimalReportPage({ params }: { params: Promise<{ id:
                 </button>
                 <button
                 type="submit"
-                className="flex-[2] bg-gradient-to-r from-[#D4A373] to-[#FAEDCD] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                className="flex-2 bg-linear-to-r from-[#D4A373] to-[#FAEDCD] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                 >
                 บันทึกการแก้ไข
                 </button>
