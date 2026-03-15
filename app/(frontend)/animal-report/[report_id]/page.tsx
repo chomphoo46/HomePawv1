@@ -124,7 +124,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                       <img
                         src={imgs[0].image_url}
                         alt="animal-1"
-                        className="w-full max-w-2xl h-[400px] object-cover rounded-xl shadow-lg"
+                        className="w-full max-w-2xl h-100 object-cover rounded-xl shadow-lg"
                       />
                     </div>
                   );
@@ -178,7 +178,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 // 5️⃣ ห้ารูปขึ้นไป (Layout ซ้ายใหญ่ ขวาเล็ก)
                 default:
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3 max-w-6xl mx-auto h-[500px]">
+                    <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3 max-w-6xl mx-auto h-125">
                       {/* รูปใหญ่ซ้าย */}
                       <div className="rounded-2xl shadow-xl overflow-hidden h-full">
                         <img
@@ -267,7 +267,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                     ? "ดุร้าย/หวาดกลัว"
                     : animal.behavior === "injured"
                     ? "บาดเจ็บ ต้องการความช่วยเหลือ"
-                    : animal.behavior}
+                    : animal.behavior} 
                 </p>
               </div>
             </div>

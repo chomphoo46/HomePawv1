@@ -74,16 +74,13 @@ const getFoundStatusLabel = (status: string) => {
 };
 
 const getBehaviorLabel = (behavior: string) => {
-  switch (behavior) {
-    case "friendly":
-      return "เชื่อง เข้าหาคนได้";
-    case "aggressive":
-      return "ดุร้าย";
-    case "injured":
-      return "บาดเจ็บ ต้องการความช่วยเหลือ";
-    default:
-      return "อื่นๆ";
-  }
+  const map: Record<string, string> = {
+    friendly: "เชื่อง เข้าหาคนได้",
+    aggressive: "ดุร้าย/หวาดกลัว",
+    injured: "บาดเจ็บ ต้องการความช่วยเหลือ",
+  };
+
+  return map[behavior] || behavior;
 };
 
 const getRequestStatusBadge = (status: string) => {

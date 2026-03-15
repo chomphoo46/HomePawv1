@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     } = body;
 
     // ตรวจสอบข้อมูลที่จำเป็น
-    if (!animalType || !description || !behavior || !location || !images || images.length === 0) {
+    if (!animalType || !behavior || !location || !images || images.length === 0) {
       return NextResponse.json({ error: "กรอกข้อมูลไม่ครบถ้วน" }, { status: 400 });
     }
 
