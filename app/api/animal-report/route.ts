@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         user_id: session.user.id,
         animal_type: animalType,
         description,
-        behavior,
+        behavior: behavior,
         location: location,
         status: AnimalReportStatus.STILL_THERE,
         latitude: Number(lat),
