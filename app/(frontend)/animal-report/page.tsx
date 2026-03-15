@@ -324,7 +324,7 @@ export default function ReportForm() {
                   <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
                   <option value="other">อื่น ๆ</option>
                 </select>
-                {formData.animalType === "other" && (
+                {formData.behavior === "other" && (
                   <div className="mt-3 animate-fade-in-down">
                     <input
                       type="text"
