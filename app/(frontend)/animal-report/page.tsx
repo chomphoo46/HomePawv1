@@ -331,7 +331,7 @@ export default function ReportForm() {
                       name="custombehavior"
                       value={formData.custombehavior || ""}
                       onChange={handleChange}
-                      placeholder="ระบุชนิดสัตว์ (เช่น กระต่าย)"
+                      placeholder="ระบุพฤติกรรม (เช่น ใจดี ให้อาหารได้)"
                       className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
                     />
                   </div>
