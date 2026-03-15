@@ -1,17 +1,9 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
-import { HiOutlineCalendar, HiOutlinePhone, HiSearch } from "react-icons/hi";
-import {
-  FaMars,
-  FaVenus,
-  FaGenderless,
-  FaTimesCircle,
-  FaSearchLocation,
-} from "react-icons/fa";
-import { FaCircleCheck, FaHeart } from "react-icons/fa6";
-import { MdOutlineQuestionAnswer } from "react-icons/md";
+import {HiSearch } from "react-icons/hi";
+import {FaSearchLocation,} from "react-icons/fa";
+import { FaHeart } from "react-icons/fa6";
 import { FiMapPin } from "react-icons/fi";
 import { Home, PawPrint, Heart } from "lucide-react";
 import { BiTargetLock } from "react-icons/bi";

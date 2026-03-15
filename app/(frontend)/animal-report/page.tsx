@@ -37,6 +37,7 @@ export default function ReportForm() {
     customAnimal: "",
     description: "",
     behavior: "",
+    custombehavior: "",
     location: "",
     dateTime: "",
     moreInfo: "",
@@ -111,8 +112,6 @@ export default function ReportForm() {
     setShowMap(false);
   };
 
-  const handleMapToggle = () => setShowMap((prev) => !prev);
-
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -143,7 +142,7 @@ export default function ReportForm() {
     e.target.value = "";
   };
 
-  // ✅ ฟังก์ชันลบรูปภาพ
+  // ฟังก์ชันลบรูปภาพ
   const removeImage = (index: number) => {
     // ลบ URL ออกจาก memory
     URL.revokeObjectURL(previewUrls[index]);
@@ -217,6 +216,11 @@ export default function ReportForm() {
           ? formData.customAnimal
           : formData.animalType;
 
+      const finalBehavior =
+        formData.behavior === "other"
+          ? formData.custombehavior
+          : formData.behavior;
+
       const res = await fetch("/api/animal-report", {
         method: "POST",
         headers: {
@@ -225,7 +229,7 @@ export default function ReportForm() {
         body: JSON.stringify({
           animalType: finalAnimalType,
           description: formData.description,
-          behavior: formData.behavior,
+          behavior: finalBehavior,
           location: formData.location,
           dateTime: formData.dateTime,
           moreInfo: formData.moreInfo,
@@ -320,6 +324,18 @@ export default function ReportForm() {
                   <option value="injured">บาดเจ็บ ต้องการความช่วยเหลือ</option>
                   <option value="other">อื่น ๆ</option>
                 </select>
+                {formData.animalType === "other" && (
+                  <div className="mt-3 animate-fade-in-down">
+                    <input
+                      type="text"
+                      name="custombehavior"
+                      value={formData.custombehavior || ""}
+                      onChange={handleChange}
+                      placeholder="ระบุชนิดสัตว์ (เช่น กระต่าย)"
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-[#D4A373] bg-white text-sm"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

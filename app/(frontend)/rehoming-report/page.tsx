@@ -301,7 +301,7 @@ export default function RehomingReportPage() {
             <div className="flex items-end">
               <button
                 className="border-2 border-[#D4A373] rounded-xl cursor-pointer bg-[#D4A373] hover:bg-[#E76F51] 
-                   text-white w-20 md:w-20 h-[52px] flex items-center justify-center
+                   text-white w-20 md:w-20 h-13 flex items-center justify-center
                    shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300
                    group"
               >
