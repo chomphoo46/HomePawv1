@@ -182,6 +182,11 @@ export default function ReportForm() {
       return;
     }
 
+    if (formData.behavior === "other" && !formData.custombehavior) {
+      alert("กรุณาระบุประเภทสัตว์");
+      return;
+    }
+
     // Validation: ตรวจสอบรูปภาพ
     if (selectedImages.length === 0) {
       alert(

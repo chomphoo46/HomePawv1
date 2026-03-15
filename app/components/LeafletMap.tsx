@@ -203,7 +203,7 @@ export default function LeafletMap({
                       <span className="font-semibold text-gray-400">
                         พฤติกรรม:
                       </span>{" "}
-                      {getBehaviorLabel(post.finalBehavior)}
+                      {getBehaviorLabel(post.behavior)}
                     </p>
                   </div>
 
