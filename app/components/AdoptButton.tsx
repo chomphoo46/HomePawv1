@@ -71,15 +71,15 @@ export default function AdoptButton({
         '<label class="block text-sm font-medium text-gray-700 mb-1">ข้อความเพิ่มเติมถึงเจ้าของ (ถ้ามี)</label>' +
         '<textarea id="swal-note" class="swal2-textarea m-0! w-full!" placeholder="เช่น ความพร้อมในการเลี้ยง, เคยเลี้ยงสัตว์มาก่อนไหม"></textarea>' +
         "</div>",
+      customClass: {
+        confirmButton: "cursor-pointer",
+      },
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: "ยืนยันส่งคำขอ",
       confirmButtonColor: "#D4A373",
       cancelButtonText: "ยกเลิก",
-      customClass: {
-        confirmButton: "cursor-pointer",
-        cancelButton: "cursor-pointer",
-      },
+
       preConfirm: () => {
         const name = (document.getElementById("swal-name") as HTMLInputElement)
           .value;
