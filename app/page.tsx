@@ -287,7 +287,7 @@ export default function HomePage() {
               </p>
               <button
                 onClick={() => router.push("/animal-report")}
-                className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg"
+                className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg cursor-pointer"
               >
                 แจ้งพบสัตว์ไร้บ้าน ได้ที่นี่
               </button>
@@ -324,7 +324,7 @@ export default function HomePage() {
               </p>
               <button
                 onClick={() => router.push("/form-rehoming")}
-                className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg"
+                className="animate-bounce bg-[#D4A373] text-white font-semibold py-4 px-10 rounded-xl shadow-lg cursor-pointer"
               >
                 หาบ้านให้น้อง ได้ที่นี่
               </button>
