@@ -76,6 +76,10 @@ export default function AdoptButton({
       confirmButtonText: "ยืนยันส่งคำขอ",
       confirmButtonColor: "#D4A373",
       cancelButtonText: "ยกเลิก",
+      customClass: {
+        confirmButton: "cursor-pointer",
+        cancelButton: "cursor-pointer",
+      },
       preConfirm: () => {
         const name = (document.getElementById("swal-name") as HTMLInputElement)
           .value;
@@ -157,17 +161,17 @@ export default function AdoptButton({
           isAdopted || isOwnPost
             ? "bg-gray-300 text-gray-500 cursor-not-allowed"
             : isLoading
-            ? "bg-gray-400 text-white cursor-not-allowed"
-            : "bg-[#D4A373] hover:bg-[#B8956A] hover:shadow-lg text-white"
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-[#D4A373] hover:bg-[#B8956A] hover:shadow-lg text-white"
         }`}
     >
       {isAdopted
         ? "น้องได้บ้านแล้ว"
         : isOwnPost
-        ? "นี่คือโพสต์ของคุณ"
-        : isLoading
-        ? "กำลังส่งข้อมูล..."
-        : "สนใจรับเลี้ยง"}
+          ? "นี่คือโพสต์ของคุณ"
+          : isLoading
+            ? "กำลังส่งข้อมูล..."
+            : "สนใจรับเลี้ยง"}
     </button>
   );
 }
