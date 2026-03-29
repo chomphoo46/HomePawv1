@@ -1,46 +1,51 @@
-// app/api/rehome/my-posts/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PetSex, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET - ดึงโพสต์ของผู้ใช้ปัจจุบัน
+// GET - ดึงโพสต์ทั้งหมดของผู้ใช้ที่ล็อกอินอยู่
 export async function GET() {
   try {
+    // ตรวจสอบว่า user login อยู่หรือไม่
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // ใช้ user_id จาก session เพื่อดึงเฉพาะโพสต์ของเจ้าของที่ล็อกอิน
     const user_id = session.user.id;
 
     const posts = await prisma.petRehomePost.findMany({
       where: { user_id: String(user_id) },
-      orderBy: { created_at: "desc" },
+      orderBy: { created_at: "desc" }, // เรียงจากใหม่ไปเก่า
       include: {
-        images: true,
-        user: { select: { name: true, email: true } },
+        images: true, // ดึงรูปภาพของโพสต์มาด้วย
+        user: { select: { name: true, email: true } }, // ดึงข้อมูลผู้โพสต์บางส่วน
       },
     });
 
-    return NextResponse.json(posts);
+    // ส่งข้อมูลโพสต์กลับ
+    return NextResponse.json(posts, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "เกิดข้อผิดพลาด" }, { status: 500 });
   }
 }
 
-// DELETE - ลบโพสต์ของผู้ใช้ปัจจุบัน พร้อมรูปภาพ
+// DELETE - ลบโพสต์ของผู้ใช้ปัจจุบัน พร้อมรูปภาพที่เกี่ยวข้อง
 export async function DELETE(req: Request) {
   try {
+    // ตรวจสอบว่า user login อยู่หรือไม่
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const user_id = session.user.id;
 
+    // รับ post_id จาก request body
     const { post_id } = await req.json();
     if (!post_id) {
       return NextResponse.json(
@@ -49,8 +54,9 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // ตรวจสอบว่าโพสต์เป็นของผู้ใช้นี้
+    // ตรวจสอบก่อนว่าโพสต์นี้มีอยู่จริง และเป็นของ user คนที่ล็อกอินหรือไม่
     const post = await prisma.petRehomePost.findUnique({ where: { post_id } });
+
     if (!post || post.user_id !== String(user_id)) {
       return NextResponse.json(
         { error: "คุณไม่สามารถลบโพสต์นี้ได้" },
@@ -58,12 +64,12 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // ลบรูปภาพทั้งหมดของโพสต์ก่อน
+    // ลบรูปภาพทั้งหมดที่ผูกกับโพสต์นี้ก่อน
     await prisma.petRehomeImages.deleteMany({
       where: { post_id },
     });
 
-    // ลบโพสต์
+    // จากนั้นลบโพสต์หลัก
     const deletedPost = await prisma.petRehomePost.delete({
       where: { post_id },
     });
@@ -75,9 +81,10 @@ export async function DELETE(req: Request) {
   }
 }
 
-// PATCH = แก้ไขโพสต์
+// PATCH - แก้ไขโพสต์ของผู้ใช้ปัจจุบัน
 export async function PATCH(req: Request) {
   try {
+    // ตรวจสอบว่า user login อยู่หรือไม่
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -85,7 +92,7 @@ export async function PATCH(req: Request) {
 
     const user_id = session.user.id;
 
-    // ดึงค่าที่ส่งมาจาก frontend
+    // รับข้อมูลที่ต้องการแก้ไขจาก frontend
     const body = await req.json();
     const {
       post_id,
@@ -102,6 +109,7 @@ export async function PATCH(req: Request) {
       status,
     } = body;
 
+    // ต้องมี post_id เพื่อรู้ว่าจะอัปเดตโพสต์ไหน
     if (!post_id) {
       return NextResponse.json(
         { error: "post_id is required" },
@@ -109,7 +117,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // ตรวจสอบว่าโพสต์นี้มีจริงและเป็นของ user ที่ล็อกอิน
+    // ตรวจสอบว่าโพสต์นี้มีอยู่จริง
     const post = await prisma.petRehomePost.findUnique({
       where: { post_id },
     });
@@ -118,6 +126,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "ไม่พบโพสต์" }, { status: 404 });
     }
 
+    // ตรวจสอบสิทธิ์ว่าเป็นเจ้าของโพสต์จริงหรือไม่
     if (post.user_id !== String(user_id)) {
       return NextResponse.json(
         { error: "คุณไม่มีสิทธิ์แก้ไขโพสต์นี้" },
@@ -125,7 +134,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    // อัปเดตโพสต์ (เฉพาะฟิลด์ที่ส่งมา ไม่บังคับต้องใส่ทั้งหมด)
+    // อัปเดตเฉพาะ field ที่ถูกส่งมา (Partial Update)
     const updatedPost = await prisma.petRehomePost.update({
       where: { post_id },
       data: {

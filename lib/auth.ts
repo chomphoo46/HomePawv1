@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // 🔹 Credentials Login
+    //Credentials Login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // 🔹 Google Login
+    //Google Login
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,

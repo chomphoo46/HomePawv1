@@ -233,7 +233,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
                 // 4️⃣ สี่รูป → 2 บน 2 ล่าง
                 case 4:
                   return (
-                    <div className="max-w-[500px] mx-auto grid grid-cols-2 gap-2">
+                    <div className="max-w-125 mx-auto grid grid-cols-2 gap-2">
                       {imgs.map((img, i) => (
                         <div key={img.id} className="aspect-square w-full">
                           <img
@@ -443,6 +443,7 @@ export default async function DetailAnimalPage(props: DetailAnimalProps) {
             postId={animal.post_id}
             petName={animal.pet_name}
             currentUserId={currentUserId} // ส่ง ID ของ User ที่ Login อยู่ไปเช็ค
+            ownerUserId={animal.user_id}
             status={animal.status}
           />
         </div>
