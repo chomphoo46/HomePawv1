@@ -53,6 +53,10 @@ interface LeafletMapProps {
   onHelpAction: (postId: string, type: "FEED" | "ADOPT") => void;
 }
 
+type Props = {
+  post: any;
+  isSmartSearchActive: boolean;
+};
 export default function LeafletMap({
   posts,
   center,
@@ -205,6 +209,13 @@ export default function LeafletMap({
                       </span>{" "}
                       {getBehaviorLabel(post.behavior)}
                     </p>
+                    {isSmartSearch && post.matchScore !== undefined && (
+                      <div className="mt-2">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-[10px] font-bold">
+                          Match {post.matchScore}%
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Helpers Section */}

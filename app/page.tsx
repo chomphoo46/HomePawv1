@@ -201,7 +201,7 @@ export default function HomePage() {
     setIsSmartSearchActive(true);
 
     // วนลูปโพสต์ทั้งหมดเพื่อคำนวณคะแนนความตรง (matchScore)
-    const scoredPosts = allAnimalPosts.map((post) => {
+    const scoredPosts = filteredPosts.map((post) => {
       // ถ้าเลือกเฉพาะสัตว์ที่ยังอยู่ แต่โพสต์นี้ไม่ใช่ STILL_THERE ให้ตัดทิ้ง
       if (searchCriteria.onlyActive && post.status !== "STILL_THERE")
         return { ...post, matchScore: 0 };
