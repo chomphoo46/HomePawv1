@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
-import {HiSearch } from "react-icons/hi";
-import {FaSearchLocation,} from "react-icons/fa";
+import { HiSearch } from "react-icons/hi";
+import { FaSearchLocation } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa6";
 import { FiMapPin } from "react-icons/fi";
 import { Home, PawPrint, Heart } from "lucide-react";
@@ -192,40 +192,57 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // 3. Smart Search Logic
+  // 3. Smart Search Logic ใช้สำหรับค้นหาและจัดอันดับโพสต์ตามเงื่อนไขผู้ใช้
   const handleSmartSearch = () => {
+    // ถ้าไม่มีข้อมูลโพสต์เลย ไม่ต้องทำงานต่อ
     if (!allAnimalPosts.length) return;
+
+    // เปิดสถานะว่าใช้งาน Smart Search อยู่
     setIsSmartSearchActive(true);
 
+    // วนลูปโพสต์ทั้งหมดเพื่อคำนวณคะแนนความตรง (matchScore)
     const scoredPosts = allAnimalPosts.map((post) => {
+      // ถ้าเลือกเฉพาะสัตว์ที่ยังอยู่ แต่โพสต์นี้ไม่ใช่ STILL_THERE ให้ตัดทิ้ง
       if (searchCriteria.onlyActive && post.status !== "STILL_THERE")
         return { ...post, matchScore: 0 };
+
+      // ถ้าเลือกพฤติกรรมเฉพาะ แต่โพสต์นี้ไม่ตรง ให้ตัดทิ้ง
       if (
         searchCriteria.behavior !== "all" &&
         post.behavior !== searchCriteria.behavior
       )
         return { ...post, matchScore: 0 };
 
+      // เริ่มต้นคะแนน
       let score = 0;
+
+      // ตรวจสอบประเภทสัตว์
       const isTypeMatch =
-        searchCriteria.type === "all" ||
+        searchCriteria.type === "all" || // ถ้าเลือก all ให้ผ่านทุกประเภท
         (searchCriteria.type === "other" &&
           post.animal_type !== "dog" &&
-          post.animal_type !== "cat") ||
-        post.animal_type === searchCriteria.type;
+          post.animal_type !== "cat") || // กรณี other
+        post.animal_type === searchCriteria.type; // กรณีตรงประเภท
 
+      // ถ้าไม่ตรงประเภทสัตว์ ให้คะแนน 0
       if (!isTypeMatch) return { ...post, matchScore: 0 };
+
+      // ถ้าตรงประเภท เพิ่มคะแนน
       score += 30;
 
+      // คำนวณระยะทางระหว่างผู้ใช้กับตำแหน่งสัตว์
       const dist = getDistanceFromLatLonInKm(
         searchCriteria.userLat,
         searchCriteria.userLng,
         parseFloat(post.latitude),
         parseFloat(post.longitude),
       );
+
+      // ให้คะแนนตามระยะทาง (ใกล้ได้คะแนนมาก)
       if (dist < 2) score += 40;
       else if (dist < 10) score += 20;
 
+      // ตรวจสอบ keyword ใน description (ไม่สนตัวพิมพ์เล็กใหญ่)
       if (
         searchCriteria.keyword &&
         post.description
@@ -234,14 +251,19 @@ export default function HomePage() {
       )
         score += 30;
 
+      // คืนค่าโพสต์พร้อมคะแนน (ไม่เกิน 100)
       return { ...post, matchScore: Math.min(score, 100) };
     });
 
+    // กรองเฉพาะโพสต์ที่มีคะแนนมากกว่า 0 และเรียงจากมากไปน้อย
     const results = scoredPosts
       .filter((p) => p.matchScore > 0)
       .sort((a, b) => b.matchScore - a.matchScore);
+
+    // อัปเดตผลลัพธ์ที่ใช้แสดงใน UI
     setFilteredPosts(results);
 
+    // ถ้ามีผลลัพธ์ ให้เลื่อนแผนที่ไปตำแหน่งของโพสต์ที่คะแนนสูงสุด
     if (results.length > 0) {
       setMapView({
         center: [

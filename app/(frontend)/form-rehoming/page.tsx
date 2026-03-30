@@ -37,7 +37,7 @@ export default function FormRehomingPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
-  // ✅ ฟังก์ชันเพิ่มรูปภาพ
+  // ฟังก์ชันเพิ่มรูปภาพ
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
@@ -56,7 +56,7 @@ export default function FormRehomingPage() {
     e.target.value = "";
   };
 
-  // ✅ ฟังก์ชันลบรูปภาพ
+  // ฟังก์ชันลบรูปภาพ
   const removeImage = (index: number) => {
     URL.revokeObjectURL(previewUrls[index]);
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
@@ -102,7 +102,7 @@ export default function FormRehomingPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); //กันไม่ให้ form reload หน้าเมื่อ submit
     setSubmitting(true);
     setError("");
     setSuccess(false);
@@ -173,7 +173,7 @@ export default function FormRehomingPage() {
     } catch (err: any) {
       console.error("Submission error:", err);
       setError(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
-    } finally {
+    } finally { // ไม่ว่าจะสำเร็จหรือเกิด error ก็ต้องตั้ง submitting เป็น false เพื่อให้ปุ่มกลับมาใช้งานได้
       setSubmitting(false);
     }
   };
@@ -212,7 +212,6 @@ export default function FormRehomingPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
-            {/* ... (ส่วน Input เหมือนเดิม ไม่ต้องแก้ แต่ขอตัดมาแสดงเฉพาะจุดสำคัญ) ... */}
 
             {/* Pet Name & Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
